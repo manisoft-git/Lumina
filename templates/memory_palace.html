@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Memory Palace - Lumina{% endblock %}
+{% block content %}
+<div class="game-container">
+    <h1>🧠 Memory Palace</h1>
+    <div class="game-meta"><span id="mem-level">Level 1</span><span id="mem-status">Press Start</span></div>
+    <div id="mem-grid" class="mem-grid"></div>
+    <div class="game-controls">
+        <button id="mem-start" class="btn btn-primary">Start</button>
+    </div>
+    <div id="mem-results" class="results-panel" style="display:none">
+        <div class="stat-grid">
+            <div class="stat"><div class="stat-value" id="mem-final-level">0</div><div class="stat-label">Level Reached</div></div>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    let level = 1, sequence = [], playerSeq = [], active = false, showing = false;
+    const grid = document.getElementById('mem-grid');
+    const levelEl = document.getElementById('mem-level');
+    const statusEl = document.getElementById('mem-status');
+    const colors = ['#ef4444','#3b82f6','#22c55e','#eab308','#a855f7','#f97316'];
+    function buildGrid() {
+        grid.innerHTML = '';
+        for (let i = 0; i < 6; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'mem-cell';
+            cell.dataset.idx = i;
+            cell.style.background = colors[i];
+            cell.addEventListener('click', () => handleClick(i));
+            grid.appendChild(cell);
+        }
+    }
+    buildGrid();
+    function flash(idx, dur=400) {
+        const cell = grid.children[idx];
+        cell.classList.add('mem-flash');
+        setTimeout(() => cell.classList.remove('mem-flash'), dur);
+    }
+    function showSequence() {
+        showing = true; playerSeq = []; statusEl.textContent = 'Watch...';
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i >= sequence.length) { clearInterval(interval); showing = false; statusEl.textContent = 'Your turn!'; return; }
+            flash(sequence[i]); i++;
+        }, 600);
+    }
+    function nextLevel() {
+        levelEl.textContent = 'Level ' + level;
+        sequence.push(Math.floor(Math.random() * 6));
+        showSequence();
+    }
+    function handleClick(idx) {
+        if (!active || showing) return;
+        flash(idx, 200);
+        playerSeq.push(idx);
+        if (playerSeq[playerSeq.length - 1] !== sequence[playerSeq.length - 1]) {
+            active = false; statusEl.textContent = 'Game Over!';
+            document.getElementById('mem-results').style.display = 'block';
+            document.getElementById('mem-final-level').textContent = level;
+            fetch('/submit/memory', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({level_reached: level, max_pattern: sequence.length, attempts: 1})
+            });
+            return;
+        }
+        if (playerSeq.length === sequence.length) {
+            level++; setTimeout(nextLevel, 800);
+        }
+    }
+    document.getElementById('mem-start').addEventListener('click', () => {
+        level = 1; sequence = []; playerSeq = []; active = true;
+        document.getElementById('mem-results').style.display = 'none';
+        nextLevel();
+    });
+})();
+</script>
+{% endblock %}

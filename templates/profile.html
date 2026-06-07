@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}{{ user.fullname }} - Profile{% endblock %}
+{% block content %}
+<div class="profile-page">
+    <h1>{{ user.fullname }} <span class="role-badge">{{ user.role }}</span></h1>
+    <p>@{{ user.username }} • Level {{ user.level }} • {{ user.xp }} XP • Member since {{ user.created_at }}</p>
+    <div class="profile-grid">
+        <section class="profile-card">
+            <h2>Ratings</h2>
+            {% if ratings %}
+                <ul>{% for r in ratings %}<li>{{ r[0].capitalize() }}: <strong>{{ r[1] }}</strong> ({{ r[2] }} games)</li>{% endfor %}</ul>
+            {% else %}<p>No rated games yet.</p>{% endif %}
+        </section>
+        <section class="profile-card">
+            <h2>Recent Scores</h2>
+            {% if scores %}
+                <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead><tr><th>WPM</th><th>Acc</th><th>Net</th><th>Category</th><th>Date</th></tr></thead>
+                    <tbody>
+                        {% for s in scores %}
+                        <tr><td>{{ s[0]|round(1) }}</td><td>{{ s[1]|round(1) }}%</td><td>{{ s[2]|round(1) if s[2] else s[0]|round(1) }}</td><td>{{ s[3] or 'general' }}</td><td>{{ s[4] }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            {% else %}<p>No scores yet.</p>{% endif %}
+        </section>
+    </div>
+    <div class="profile-card" style="margin-top:22px;">
+        <h2>🎯 Skill Radar</h2>
+        <div style="position:relative;height:280px;max-width:400px;margin:0 auto;">
+            <canvas id="skill-radar"></canvas>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+            <button class="btn btn-secondary" onclick="shareProfile()">🔗 Share Profile</button>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    const ctx = document.getElementById('skill-radar');
+    if (!ctx) return;
+    const ratings = {{ ratings | tojson }} || [];
+    const scores = {{ scores | tojson }} || [];
+    let typing = 0, chess = 0, checkers = 0, math = 0, memory = 0;
+    ratings.forEach(r => {
+        if (r[0] === 'chess') chess = Math.min(100, r[1] / 20);
+        if (r[0] === 'checkers') checkers = Math.min(100, r[1] / 20);
+    });
+    if (scores.length > 0) {
+        const avgWpm = scores.reduce((a,s) => a + (s[2] || s[0]), 0) / scores.length;
+        typing = Math.min(100, avgWpm);
+    }
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Typing', 'Chess', 'Checkers', 'Math', 'Memory'],
+            datasets: [{
+                label: 'Skill Level',
+                data: [typing, chess, checkers, math, memory],
+                backgroundColor: 'rgba(56,189,248,0.2)',
+                borderColor: '#38bdf8',
+                pointBackgroundColor: '#38bdf8',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#38bdf8'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { display: false },
+                    grid: { color: 'rgba(148,163,184,0.1)' },
+                    pointLabels: { color: 'var(--text)', font: { size: 12 } }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+    window.shareProfile = function() {
+        const url = window.location.href;
+        if (navigator.share) {
+            navigator.share({ title: 'My Lumina Profile', url: url });
+        } else {
+            navigator.clipboard.writeText(url);
+            alert('Profile link copied to clipboard!');
+        }
+    };
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Tournament - Lumina{% endblock %}
+{% block content %}
+<div class="tournament-detail">
+    <h1>{{ tournament[1] }}</h1>
+    <p>{{ tournament[2].capitalize() }} • {{ tournament[3] }} • Status: <strong>{{ tournament[4] }}</strong></p>
+    {% if is_creator and tournament[4] == 'open' %}
+        <form method="POST" action="{{ url_for('start_tournament', tid=tournament[0]) }}" class="inline-form">
+            <button type="submit" class="btn btn-primary">Start Tournament</button>
+        </form>
+    {% endif %}
+    <h2>Players</h2>
+    <ul>{% for p in players %}<li>{{ p[2] }} (Lv.{{ p[3] }}) {% if p[6] %}❌ Eliminated{% endif %}</li>{% endfor %}</ul>
+    <h2>Matches</h2>
+    {% if matches %}
+        <div style="overflow-x:auto;">
+        <table class="data-table">
+            <thead><tr><th>Round</th><th>Player 1</th><th>Player 2</th><th>Winner</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for m in matches %}
+                <tr>
+                    <td>{{ m[2] }}</td>
+                    <td>{{ m[11] or 'TBD' }}</td>
+                    <td>{{ m[12] or 'TBD' }}</td>
+                    <td>{{ m[13] or '—' }}</td>
+                    <td>{{ m[8] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% endif %}
+    <a href="{{ url_for('tournament_bracket', tid=tournament[0]) }}" class="btn btn-secondary">View Bracket</a>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Global Chat - Lumina{% endblock %}
+{% block content %}
+<div class="chat-page" style="max-width:800px;margin:0 auto;">
+    <h1>Global Chat</h1>
+    <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:18px;display:flex;flex-direction:column;height:calc(100vh - 260px);">
+        <div id="global-chat-log" class="chat-log global-chat-log" role="log" aria-live="polite" aria-relevant="additions" style="flex:1;overflow-y:auto;font-size:0.92rem;"></div>
+        <form id="global-chat-form" class="chat-form" style="margin-top:12px;display:flex;gap:8px;">
+            <input type="text" id="global-chat-input" placeholder="Message everyone..." maxlength="500" aria-label="Global chat message" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);">
+            <button type="submit" class="btn btn-primary">Send</button>
+        </form>
+    </div>
+</div>
+<script>
+const socket = io();
+const log = document.getElementById('global-chat-log');
+const form = document.getElementById('global-chat-form');
+const input = document.getElementById('global-chat-input');
+
+socket.on('connect', () => {
+    console.log('Global chat connected');
+    const div = document.createElement('div');
+    div.style.color = 'var(--muted)';
+    div.style.fontSize = '0.8rem';
+    div.style.marginBottom = '8px';
+    div.textContent = 'Connected to global chat.';
+    log.appendChild(div);
+});
+
+socket.on('connect_error', (err) => {
+    console.error('Socket error:', err);
+    const div = document.createElement('div');
+    div.style.color = 'var(--danger)';
+    div.textContent = 'Connection error. Retrying...';
+    log.appendChild(div);
+});
+
+socket.on('global_message', (m) => {
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    div.style.marginBottom = '10px';
+    div.innerHTML = '<strong style="color:var(--primary)">' + m.username + ':</strong> <span style="color:var(--text)">' + m.message + '</span> <small style="color:var(--muted);font-size:0.72rem;">' + new Date(m.time).toLocaleTimeString() + '</small>';
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+});
+
+form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const msg = input.value.trim();
+    if (msg) { socket.emit('global_message', {message: msg}); input.value = ''; }
+});
+</script>
+{% endblock %}

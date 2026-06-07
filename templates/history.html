@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}History - Lumina{% endblock %}
+{% block content %}
+<div class="history-page">
+    <h1>Your Full History</h1>
+    <div style="overflow-x:auto;">
+    <table class="data-table">
+        <thead><tr><th>WPM</th><th>Accuracy</th><th>Net WPM</th><th>Errors</th><th>Category</th><th>Room</th><th>Date</th></tr></thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td>{{ r[0]|round(1) }}</td>
+                <td>{{ r[1]|round(1) }}%</td>
+                <td>{{ r[2]|round(1) if r[2] else r[0]|round(1) }}</td>
+                <td>{{ r[3] }}</td>
+                <td>{{ r[4] or 'general' }}</td>
+                <td>{% if r[5] %}<code>{{ r[5] }}</code>{% else %}—{% endif %}</td>
+                <td>{{ r[6] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Pattern Match - Lumina{% endblock %}
+{% block content %}
+<div class="game-container">
+    <h1>🔷 Pattern Match</h1>
+    <div class="game-meta"><span id="pat-progress">Puzzle 1/10</span><span id="pat-timer">30s</span></div>
+    <div id="pat-display" class="pat-display"></div>
+    <div id="pat-options" class="pat-options"></div>
+    <div class="game-controls">
+        <button id="pat-start" class="btn btn-primary">Start</button>
+    </div>
+    <div id="pat-results" class="results-panel" style="display:none">
+        <div class="stat-grid">
+            <div class="stat"><div class="stat-value" id="pat-solved">0</div><div class="stat-label">Solved</div></div>
+            <div class="stat"><div class="stat-value" id="pat-time">0</div><div class="stat-label">Avg Time (ms)</div></div>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    let puzzle = 0, solved = 0, times = [], active = false, startTime = 0, timerId = null, timeLeft = 30;
+    const display = document.getElementById('pat-display');
+    const options = document.getElementById('pat-options');
+    const progress = document.getElementById('pat-progress');
+    const timerEl = document.getElementById('pat-timer');
+    const shapes = ['■','●','▲','◆','★','♦'];
+    const colors = ['#ef4444','#3b82f6','#22c55e','#eab308','#a855f7'];
+    function genPuzzle() {
+        if (puzzle >= 10) { finish(); return; }
+        puzzle++; progress.textContent = 'Puzzle ' + puzzle + '/10';
+        const seq = [];
+        for (let i = 0; i < 4 + puzzle; i++) {
+            seq.push({shape: shapes[Math.floor(Math.random()*shapes.length)], color: colors[Math.floor(Math.random()*colors.length)]});
+        }
+        display.innerHTML = '';
+        seq.forEach((s, i) => {
+            const el = document.createElement('span');
+            el.textContent = s.shape; el.style.color = s.color; el.style.fontSize = '2rem'; el.style.margin = '0 4px';
+            display.appendChild(el);
+        });
+        const hiddenIdx = Math.floor(Math.random() * seq.length);
+        display.children[hiddenIdx].textContent = '?';
+        display.children[hiddenIdx].dataset.answer = seq[hiddenIdx].shape;
+        options.innerHTML = '';
+        const opts = [seq[hiddenIdx].shape];
+        while (opts.length < 4) {
+            const s = shapes[Math.floor(Math.random()*shapes.length)];
+            if (!opts.includes(s)) opts.push(s);
+        }
+        opts.sort(() => Math.random() - 0.5);
+        opts.forEach(o => {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-secondary pat-option';
+            btn.textContent = o;
+            btn.addEventListener('click', () => checkAnswer(o, seq[hiddenIdx].shape));
+            options.appendChild(btn);
+        });
+        startTime = Date.now();
+    }
+    function checkAnswer(guess, correct) {
+        if (!active) return;
+        const ms = Date.now() - startTime;
+        times.push(ms);
+        if (guess === correct) solved++;
+        genPuzzle();
+    }
+    function tick() { timeLeft--; timerEl.textContent = timeLeft + 's'; if (timeLeft <= 0) finish(); }
+    function finish() {
+        active = false; clearInterval(timerId);
+        document.getElementById('pat-results').style.display = 'block';
+        document.getElementById('pat-solved').textContent = solved;
+        const avg = times.length ? Math.round(times.reduce((a,b)=>a+b,0)/times.length) : 0;
+        document.getElementById('pat-time').textContent = avg;
+        fetch('/submit/pattern', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({puzzles_solved: solved, difficulty: 'medium', avg_time: avg})
+        });
+    }
+    document.getElementById('pat-start').addEventListener('click', () => {
+        puzzle = 0; solved = 0; times = []; active = true; timeLeft = 30;
+        document.getElementById('pat-results').style.display = 'none';
+        timerId = setInterval(tick, 1000); genPuzzle();
+    });
+})();
+</script>
+{% endblock %}

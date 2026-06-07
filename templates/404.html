@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found - Lumina{% endblock %}
+{% block content %}
+<div class="error-page">
+    <h1>404</h1>
+    <p>This page doesn't exist or has moved.</p>
+    <a href="{{ url_for('home') }}" class="btn btn-primary">Go Home</a>
+</div>
+{% endblock %}

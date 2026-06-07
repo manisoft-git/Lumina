@@ -1,0 +1,351 @@
+#!/usr/bin/env python3
+import json
+import random
+import string
+import hashlib
+from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
+from db import db_execute, db_fetchone, db_fetchall
+
+K_NEW, K_EST, K_MAST = 40, 20, 10
+
+def get_k(games, rating):
+    if games < 30: return K_NEW
+    if rating >= 2200: return K_MAST
+    return K_EST
+
+def expected(a, b):
+    return 1 / (1 + 10 ** ((b - a) / 400))
+
+def update_elo(uid, gtype, result):
+    row = db_fetchone("SELECT rating, games_played FROM user_ratings WHERE user_id=? AND game_type=?", (uid, gtype))
+    if not row:
+        db_execute("INSERT INTO user_ratings (user_id, game_type, rating, games_played) VALUES (?, ?, 1200, 0)", (uid, gtype))
+        rating, games = 1200, 0
+    else:
+        rating, games = row
+    bot_rating = 2000
+    exp = expected(rating, bot_rating)
+    k = get_k(games, rating)
+    new_r = max(100, min(3000, int(round(rating + k * (result - exp)))))
+    db_execute("UPDATE user_ratings SET rating=?, games_played=games_played+1 WHERE user_id=? AND game_type=?", (new_r, uid, gtype))
+    return new_r
+
+class User(UserMixin):
+    def __init__(self, row):
+        self.id = row[0]
+        self.username = row[1]
+        self.fullname = row[2]
+        self.email = row[3]
+        self.password_hash = row[4]
+        self.role = row[5]
+        self.xp = row[6] or 0
+        self.level = row[7] or 1
+        self.streak = row[8] or 0
+        self.longest_streak = row[9] or 0
+        self.last_active = row[10]
+        self.parent_code = row[11]
+        self.created_at = row[12]
+
+    def check_password(self, pw):
+        return check_password_hash(self.password_hash, pw)
+
+    @staticmethod
+    def create(username, fullname, email, password, role="student"):
+        ph = generate_password_hash(password)
+        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        cur = db_execute("INSERT INTO users (username, fullname, email, password_hash, role, parent_code) VALUES (?, ?, ?, ?, ?, ?)",
+                         (username, fullname, email, ph, role, code))
+        return cur.lastrowid
+
+    @staticmethod
+    def get_by_id(user_id):
+        row = db_fetchone("SELECT * FROM users WHERE id=?", (user_id,))
+        return User(row) if row else None
+
+    @staticmethod
+    def get_by_username(username):
+        row = db_fetchone("SELECT * FROM users WHERE username=?", (username,))
+        return User(row) if row else None
+
+    @staticmethod
+    def get_by_parent_code(code):
+        row = db_fetchone("SELECT * FROM users WHERE parent_code=?", (code,))
+        return User(row) if row else None
+
+def award_xp(user_id, amount):
+    db_execute("UPDATE users SET xp = xp + ? WHERE id=?", (amount, user_id))
+    row = db_fetchone("SELECT xp, level FROM users WHERE id=?", (user_id,))
+    xp, lvl = row
+    new_lvl = max(1, int((xp / 500) ** 0.6) + 1)
+    if new_lvl > lvl:
+        db_execute("UPDATE users SET level=? WHERE id=?", (new_lvl, user_id))
+    return new_lvl
+
+def check_streak(user_id):
+    today = datetime.utcnow().date().isoformat()
+    row = db_fetchone("SELECT last_active, streak, longest_streak FROM users WHERE id=?", (user_id,))
+    if not row: return
+    last, streak, longest = row
+    if last == today:
+        return streak
+    yesterday = (datetime.utcnow() - timedelta(days=1)).date().isoformat()
+    if last == yesterday:
+        streak += 1
+    else:
+        streak = 1
+    longest = max(longest, streak)
+    db_execute("UPDATE users SET streak=?, longest_streak=?, last_active=? WHERE id=?", (streak, longest, today, user_id))
+    return streak
+
+BADGES = {
+    "first_typing_test": {"name": "First Steps", "desc": "Completed your first typing test.", "xp": 50},
+    "speed_demon_50": {"name": "Speed Demon", "desc": "Reached 50 WPM.", "xp": 100},
+    "speed_demon_80": {"name": "Lightning", "desc": "Reached 80 WPM.", "xp": 200},
+    "accuracy_king": {"name": "Precision", "desc": "99%+ accuracy.", "xp": 150},
+    "competition_winner": {"name": "Champion", "desc": "Won a multiplayer race.", "xp": 100},
+    "chess_novice": {"name": "Pawn Star", "desc": "First chess game.", "xp": 50},
+    "checkers_novice": {"name": "Checker Champ", "desc": "First checkers game.", "xp": 50},
+    "math_whiz": {"name": "Math Whiz", "desc": "Scored 100+ in Math Sprint.", "xp": 100},
+    "memory_master": {"name": "Memory Master", "desc": "Reached level 10 in Memory Palace.", "xp": 150},
+    "react_ninja": {"name": "Ninja Reflex", "desc": "Reaction time under 200ms.", "xp": 100},
+    "pattern_solver": {"name": "Pattern Solver", "desc": "Solved 5 pattern puzzles.", "xp": 100},
+    "word_blitzer": {"name": "Word Blitzer", "desc": "Found 20 words in one round.", "xp": 100},
+    "tournament_winner": {"name": "Tournament King", "desc": "Won a tournament.", "xp": 300},
+    "homework_hero": {"name": "Homework Hero", "desc": "Completed 5 homework assignments.", "xp": 100},
+    "seven_streak": {"name": "Dedicated", "desc": "7-day login streak.", "xp": 200},
+}
+
+def check_badges(user_id):
+    existing = {r[0] for r in db_fetchall("SELECT badge_id FROM user_badges WHERE user_id=?", (user_id,))}
+    to_award = []
+    row = db_fetchone("SELECT MAX(wpm), MAX(accuracy) FROM scores WHERE user_id=?", (user_id,))
+    if row:
+        max_wpm, max_acc = row
+        if max_wpm >= 10: to_award.append("first_typing_test")
+        if max_wpm >= 50: to_award.append("speed_demon_50")
+        if max_wpm >= 80: to_award.append("speed_demon_80")
+        if max_acc and max_acc >= 99: to_award.append("accuracy_king")
+    row = db_fetchone("SELECT COUNT(*) FROM scores WHERE user_id=? AND room_id IS NOT NULL", (user_id,))
+    if row and row[0] > 0: to_award.append("competition_winner")
+    for gtype in ["chess", "checkers"]:
+        row = db_fetchone(f"SELECT COUNT(*) FROM {gtype}_games WHERE white_id=? OR black_id=?", (user_id, user_id))
+        if row and row[0] > 0: to_award.append(f"{gtype}_novice")
+    row = db_fetchone("SELECT MAX(score) FROM math_sprints WHERE user_id=?", (user_id,))
+    if row and row[0] and row[0] >= 100: to_award.append("math_whiz")
+    row = db_fetchone("SELECT MAX(level_reached) FROM memory_tests WHERE user_id=?", (user_id,))
+    if row and row[0] and row[0] >= 10: to_award.append("memory_master")
+    row = db_fetchone("SELECT MIN(best_ms) FROM reaction_tests WHERE user_id=?", (user_id,))
+    if row and row[0] and row[0] <= 200: to_award.append("react_ninja")
+    row = db_fetchone("SELECT SUM(puzzles_solved) FROM pattern_tests WHERE user_id=?", (user_id,))
+    if row and row[0] and row[0] >= 5: to_award.append("pattern_solver")
+    row = db_fetchone("SELECT MAX(score) FROM word_blitz_scores WHERE user_id=?", (user_id,))
+    if row and row[0] and row[0] >= 20: to_award.append("word_blitzer")
+    row = db_fetchone("SELECT COUNT(*) FROM tournament_matches WHERE winner_id=?", (user_id,))
+    if row and row[0] and row[0] > 0: to_award.append("tournament_winner")
+    row = db_fetchone("SELECT COUNT(*) FROM homework_submissions WHERE user_id=?", (user_id,))
+    if row and row[0] and row[0] >= 5: to_award.append("homework_hero")
+    row = db_fetchone("SELECT streak FROM users WHERE id=?", (user_id,))
+    if row and row[0] and row[0] >= 7: to_award.append("seven_streak")
+
+    new_badges = []
+    for bid in to_award:
+        if bid not in existing:
+            try:
+                db_execute("INSERT INTO user_badges (user_id, badge_id, awarded_at) VALUES (?, ?, ?)", (user_id, bid, datetime.utcnow().isoformat()))
+                award_xp(user_id, BADGES[bid]["xp"])
+                new_badges.append(bid)
+            except Exception:
+                pass
+    return new_badges
+
+def init_db():
+    is_pg = bool(__import__("config").DATABASE_URL)
+    pk = "id SERIAL PRIMARY KEY" if is_pg else "id INTEGER PRIMARY KEY AUTOINCREMENT"
+
+    tables = [
+        f"""CREATE TABLE IF NOT EXISTS users (
+            {pk}, username TEXT UNIQUE NOT NULL, fullname TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL,
+            role TEXT DEFAULT 'student', xp INTEGER DEFAULT 0, level INTEGER DEFAULT 1,
+            streak INTEGER DEFAULT 0, longest_streak INTEGER DEFAULT 0,
+            last_active DATE, parent_code TEXT UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS classrooms (
+            {pk}, teacher_id INTEGER NOT NULL, name TEXT NOT NULL,
+            code TEXT UNIQUE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        """CREATE TABLE IF NOT EXISTS classroom_members (
+            classroom_id INTEGER NOT NULL, student_id INTEGER NOT NULL,
+            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (classroom_id, student_id)
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS passages (
+            {pk}, category TEXT DEFAULT 'general', title TEXT,
+            content TEXT NOT NULL, difficulty TEXT DEFAULT 'medium'
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS custom_passages (
+            {pk}, teacher_id INTEGER NOT NULL, classroom_id INTEGER,
+            title TEXT NOT NULL, content TEXT NOT NULL, category TEXT DEFAULT 'custom',
+            difficulty TEXT DEFAULT 'medium', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS scores (
+            {pk}, user_id INTEGER NOT NULL, wpm REAL NOT NULL, accuracy REAL NOT NULL,
+            errors INTEGER DEFAULT 0, net_wpm REAL, passage_category TEXT,
+            room_id TEXT, error_map TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        """CREATE TABLE IF NOT EXISTS user_badges (
+            user_id INTEGER NOT NULL, badge_id TEXT NOT NULL,
+            awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (user_id, badge_id)
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS chat_messages (
+            {pk}, room TEXT DEFAULT 'global', user_id INTEGER NOT NULL,
+            username TEXT NOT NULL, message TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS chess_games (
+            {pk}, room_id TEXT UNIQUE NOT NULL, white_id INTEGER, black_id INTEGER,
+            pgn TEXT, result TEXT, status TEXT DEFAULT 'active', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS checkers_games (
+            {pk}, room_id TEXT UNIQUE NOT NULL, red_id INTEGER, black_id INTEGER,
+            board_state TEXT, result TEXT, status TEXT DEFAULT 'active', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        """CREATE TABLE IF NOT EXISTS user_ratings (
+            user_id INTEGER NOT NULL, game_type TEXT NOT NULL,
+            rating INTEGER DEFAULT 1200, games_played INTEGER DEFAULT 0,
+            PRIMARY KEY (user_id, game_type)
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS typing_replays (
+            {pk}, user_id INTEGER NOT NULL, passage TEXT NOT NULL,
+            keystrokes TEXT NOT NULL, wpm REAL, accuracy REAL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS daily_challenges (
+            {pk}, challenge_date DATE UNIQUE NOT NULL, game_type TEXT NOT NULL,
+            description TEXT NOT NULL, target_value INTEGER NOT NULL, reward_xp INTEGER DEFAULT 50
+        )""",
+        """CREATE TABLE IF NOT EXISTS user_challenges (
+            user_id INTEGER NOT NULL, challenge_id INTEGER NOT NULL,
+            progress INTEGER DEFAULT 0, completed INTEGER DEFAULT 0,
+            completed_at TIMESTAMP, PRIMARY KEY (user_id, challenge_id)
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS homework (
+            {pk}, teacher_id INTEGER NOT NULL, classroom_id INTEGER,
+            title TEXT NOT NULL, instructions TEXT, passage_content TEXT,
+            min_wpm_target INTEGER DEFAULT 0, due_date DATE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS homework_submissions (
+            {pk}, homework_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+            wpm REAL, accuracy REAL, completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS tournaments (
+            {pk}, name TEXT NOT NULL, game_type TEXT NOT NULL,
+            format TEXT DEFAULT 'bracket', status TEXT DEFAULT 'open',
+            max_players INTEGER DEFAULT 16, created_by INTEGER NOT NULL,
+            started_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        """CREATE TABLE IF NOT EXISTS tournament_players (
+            tournament_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+            seed INTEGER, score REAL DEFAULT 0, eliminated INTEGER DEFAULT 0,
+            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (tournament_id, user_id)
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS tournament_matches (
+            {pk}, tournament_id INTEGER NOT NULL, round_number INTEGER NOT NULL,
+            player1_id INTEGER, player2_id INTEGER, p1_score REAL, p2_score REAL,
+            winner_id INTEGER, status TEXT DEFAULT 'pending', room_id TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS certificates (
+            {pk}, user_id INTEGER NOT NULL, certificate_type TEXT NOT NULL,
+            milestone_value INTEGER NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS reaction_tests (
+            {pk}, user_id INTEGER NOT NULL, best_ms INTEGER, avg_ms INTEGER,
+            attempts INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS math_sprints (
+            {pk}, user_id INTEGER NOT NULL, correct INTEGER, total INTEGER,
+            difficulty TEXT, time_limit INTEGER, score INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS memory_tests (
+            {pk}, user_id INTEGER NOT NULL, level_reached INTEGER,
+            max_pattern_length INTEGER, attempts INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS pattern_tests (
+            {pk}, user_id INTEGER NOT NULL, puzzles_solved INTEGER,
+            difficulty TEXT, avg_time_ms INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS word_blitz_scores (
+            {pk}, user_id INTEGER NOT NULL, score INTEGER, words_found TEXT,
+            time_limit INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS api_keys (
+            {pk}, user_id INTEGER NOT NULL, key_hash TEXT UNIQUE NOT NULL,
+            name TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_used TIMESTAMP, request_count INTEGER DEFAULT 0, rate_limit INTEGER DEFAULT 100
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS client_agents (
+            {pk}, agent_id TEXT UNIQUE NOT NULL, user_id INTEGER,
+            hostname TEXT, ip_address TEXT, platform TEXT,
+            status TEXT DEFAULT 'online', last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS agent_commands (
+            {pk}, agent_id TEXT NOT NULL, command TEXT NOT NULL,
+            output TEXT, status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, completed_at TIMESTAMP
+        )""",
+    ]
+
+    for sql in tables:
+        db_execute(sql)
+
+    cnt = db_fetchone("SELECT COUNT(*) FROM passages")
+    if not cnt or cnt[0] == 0:
+        passages = [
+            ("general", "The Quick Brown Fox", "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump!"),
+            ("code", "Python Hello World", "def hello_world():\n    print('Hello, world!')\n\nif __name__ == '__main__':\n    hello_world()"),
+            ("quotes", "Einstein", "Imagination is more important than knowledge. For knowledge is limited, whereas imagination embraces the entire world."),
+            ("numbers", "Pi Digits", "3.1415926535 8979323846 2643383279 5028841971 6939937510 5820974944 5923078164"),
+            ("science", "DNA", "Deoxyribonucleic acid is a molecule composed of two polynucleotide chains that coil around each other to form a double helix."),
+            ("code", "JavaScript Function", "const greet = (name) => {\n  return `Hello, ${name}!`;\n};\nconsole.log(greet('Lumina'));"),
+            ("quotes", "Turing", "We can only see a short distance ahead, but we can see plenty there that needs to be done."),
+        ]
+        for cat, title, content in passages:
+            db_execute("INSERT INTO passages (category, title, content) VALUES (?, ?, ?)", (cat, title, content))
+
+    today = datetime.utcnow().date().isoformat()
+    exists = db_fetchone("SELECT 1 FROM daily_challenges WHERE challenge_date=?", (today,))
+    if not exists:
+        db_execute("INSERT INTO daily_challenges (challenge_date, game_type, description, target_value, reward_xp) VALUES (?, ?, ?, ?, ?)",
+                   (today, "typing", "Type at 40 WPM with 95% accuracy", 40, 50))
+
+    db_execute("CREATE INDEX IF NOT EXISTS idx_scores_user ON scores(user_id)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_scores_created ON scores(created_at)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_chat_room ON chat_messages(room)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_classroom_code ON classrooms(code)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_tournament_status ON tournaments(status)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_api_key ON api_keys(key_hash)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_agent_id ON client_agents(agent_id)")
+
+    # Per-key typing statistics table
+    db_execute("""
+        CREATE TABLE IF NOT EXISTS key_stats (
+            user_id INTEGER NOT NULL,
+            key_char TEXT NOT NULL,
+            total_hits INTEGER DEFAULT 0,
+            correct_hits INTEGER DEFAULT 0,
+            avg_time_ms REAL DEFAULT 0,
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, key_char)
+        )
+    """)
+    db_execute("""
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+

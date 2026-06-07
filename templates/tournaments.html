@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Tournaments - Lumina{% endblock %}
+{% block content %}
+<div class="tournaments-page">
+    <h1>🏆 Tournaments</h1>
+    <section class="tournament-section">
+        <h2>Create Tournament</h2>
+        <form method="POST" action="{{ url_for('create_tournament') }}" class="inline-form">
+            <input type="text" name="name" placeholder="Tournament Name" required>
+            <select name="game_type">
+                <option value="typing">Typing</option>
+                <option value="math">Math Sprint</option>
+                <option value="memory">Memory Palace</option>
+                <option value="chess">Chess</option>
+                <option value="checkers">Checkers</option>
+            </select>
+            <select name="format">
+                <option value="bracket">Single Elimination</option>
+            </select>
+            <input type="number" name="max_players" placeholder="Max Players" value="16" min="2" max="64">
+            <button type="submit" class="btn btn-primary">Create</button>
+        </form>
+    </section>
+    <section class="tournament-section">
+        <h2>Open Tournaments</h2>
+        {% if open_tournaments %}
+            <div class="tournament-list">
+                {% for t in open_tournaments %}
+                <div class="tournament-card">
+                    <h3>{{ t[1] }}</h3>
+                    <p>{{ t[2].capitalize() }} • {{ t[4] }} max • {{ t[3] }}</p>
+                    <form method="POST" action="{{ url_for('join_tournament', tid=t[0]) }}" class="inline-form">
+                        <button type="submit" class="btn btn-small">Join</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}<p>No open tournaments.</p>{% endif %}
+    </section>
+    <section class="tournament-section">
+        <h2>My Tournaments</h2>
+        {% if my_tournaments %}
+            <ul>{% for t in my_tournaments %}<li><a href="{{ url_for('tournament_detail', tid=t[0]) }}">{{ t[1] }}</a> ({{ t[3] }})</li>{% endfor %}</ul>
+        {% else %}<p>You haven't joined any tournaments.</p>{% endif %}
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Typing Replays - Lumina{% endblock %}
+{% block content %}
+<div class="page">
+    <h1>⌨️ Your Typing Replays</h1>
+    <p>Review your keystroke timing and analyze your technique.</p>
+    {% if replays %}
+    <div class="replay-list">
+        {% for r in replays %}
+        <div class="replay-card" style="background:var(--surface);padding:18px;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <strong>{{ r[1][:40] }}...</strong>
+                    <div style="color:var(--muted);font-size:0.85rem;margin-top:4px;">{{ r[4] }} • {{ r[2]|round(1) }} WPM • {{ r[3]|round(1) }}% acc</div>
+                </div>
+                <a href="/replay/{{ r[0] }}" class="btn btn-primary">Watch Replay</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-state-icon">🎬</div><p>No replays yet. Complete a typing test to save one!</p></div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Games - Lumina{% endblock %}
+{% block content %}
+<div class="games-hub">
+    <h1>Talent Games</h1>
+    <p>Discover your strengths across multiple disciplines. Every game earns XP toward your level.</p>
+    <div class="game-cards">
+        <div class="game-card"><h2>🧮 Math Sprint</h2><p>60 seconds of mental arithmetic.</p><a href="{{ url_for('math_sprint') }}" class="btn btn-primary">Play</a></div>
+        <div class="game-card"><h2>🧠 Memory Palace</h2><p>Simon Says pattern sequences.</p><a href="{{ url_for('memory_palace') }}" class="btn btn-primary">Play</a></div>
+        <div class="game-card"><h2>⚡ Reaction Test</h2><p>Click when green. How fast are you?</p><a href="{{ url_for('reaction_test') }}" class="btn btn-primary">Play</a></div>
+        <div class="game-card"><h2>🔷 Pattern Match</h2><p>Complete visual sequences under time pressure.</p><a href="{{ url_for('pattern_match') }}" class="btn btn-primary">Play</a></div>
+        <div class="game-card"><h2>🔤 Word Blitz</h2><p>Form as many words as possible from given letters.</p><a href="{{ url_for('word_blitz') }}" class="btn btn-primary">Play</a></div>
+        <div class="game-card"><h2>♟️ Chess</h2><p>Rated chess matches with Grandmaster Bot.</p><a href="{{ url_for('competitions_hub') }}" class="btn btn-primary">Play</a></div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Lumina - Discover Your Talent{% endblock %}
+{% block content %}
+<section class="hero" aria-labelledby="hero-title">
+    <h1 id="hero-title">Discover Your Talent</h1>
+    <p>Typing races, chess battles, math sprints, memory challenges, tournaments, and real-time competitions for your school. Earn XP, unlock badges, and climb the leaderboard.</p>
+    <div class="hero-stats" style="display:flex;justify-content:center;gap:28px;margin:24px 0;flex-wrap:wrap;">
+        <div style="text-align:center;"><div style="font-size:2rem;font-weight:800;color:var(--primary);">10+</div><div style="font-size:0.85rem;color:var(--muted);">Talent Games</div></div>
+        <div style="text-align:center;"><div style="font-size:2rem;font-weight:800;color:var(--primary);">∞</div><div style="font-size:0.85rem;color:var(--muted);">Classrooms</div></div>
+        <div style="text-align:center;"><div style="font-size:2rem;font-weight:800;color:var(--primary);">Real-time</div><div style="font-size:0.85rem;color:var(--muted);">Competitions</div></div>
+    </div>
+    <div class="hero-actions">
+        <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started — Free</a>
+        <a href="{{ url_for('leaderboard') }}" class="btn btn-secondary">View Leaderboard</a>
+    </div>
+</section>
+<section class="features" aria-labelledby="features-title">
+    <h2 id="features-title">What You Can Do</h2>
+    <div class="feature-grid">
+        <div class="feature-card"><h3>⌨️ Typing Races</h3><p>Practice solo or race friends in real-time. Track WPM, accuracy, and net WPM.</p></div>
+        <div class="feature-card"><h3>♟️ Chess Arena</h3><p>Play against classmates or challenge the Grandmaster Bot with FIDE rating.</p></div>
+        <div class="feature-card"><h3>🔴 Checkers</h3><p>Classic strategy with rated matches and built-in AI opponent.</p></div>
+        <div class="feature-card"><h3>🧮 Math Sprint</h3><p>60-second mental arithmetic challenges. Speed + accuracy under pressure.</p></div>
+        <div class="feature-card"><h3>🧠 Memory Palace</h3><p>Simon Says pattern sequences. How long can you remember?</p></div>
+        <div class="feature-card"><h3>⚡ Reaction Test</h3><p>Measure your reflexes. Click when green. Compete for fastest time.</p></div>
+        <div class="feature-card"><h3>📊 Analytics</h3><p>Keyboard heatmaps, progress charts, XP levels, and detailed history.</p></div>
+        <div class="feature-card"><h3>🏫 Classrooms</h3><p>Teachers create class codes. Students join and compete together.</p></div>
+        <div class="feature-card"><h3>🏆 Tournaments</h3><p>Single-elimination brackets across all game types. Win glory and XP.</p></div>
+    </div>
+</section>
+{% endblock %}

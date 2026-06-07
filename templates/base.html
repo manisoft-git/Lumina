@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lumina v5.1 — Discover Your Talent. Typing races, chess, math sprints, memory challenges, and real-time competitions for students.">
+    <meta name="theme-color" content="#38bdf8">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta property="og:title" content="Lumina — Talent Discovery Platform">
+    <meta property="og:description" content="Discover your talent through games. Earn XP, unlock badges, compete in tournaments.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{{ url_for('static', filename='og-image.png') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <title>{% block title %}Lumina{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='socket.io.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='sound.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to content</a>
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="nav-brand">
+            <a href="{{ url_for('home') }}" aria-label="Lumina Home">⚡ Lumina</a>
+            <button class="hamburger" aria-label="Toggle menu" aria-expanded="false" onclick="toggleNav()">☰</button>
+        </div>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="{{ url_for('home') }}">Home</a></li>
+            {% if current_user.is_authenticated %}
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('typing_page') }}">Solo Type</a></li>
+                <li><a href="{{ url_for('competitions_hub') }}">Compete</a></li>
+                <li><a href="{{ url_for('games_hub') }}">Games</a></li>
+                <li><a href="{{ url_for('tournament_list') }}">Tournaments</a></li>
+                <li><a href="{{ url_for('chat_page') }}">Chat</a></li>
+                <li><a href="{{ url_for('leaderboard') }}">Leaderboard</a></li>
+                <li><a href="{{ url_for('badges_page') }}">Badges</a></li>
+                <li><a href="{{ url_for('weekly') }}">Weekly</a></li>
+
+                {% if current_user.role == 'teacher' %}
+                    <li><a href="{{ url_for('teacher_panel') }}">Teacher</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('logout') }}">Logout ({{ current_user.username }})</a></li>
+            {% else %}
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+                <li><a href="{{ url_for('register') }}">Register</a></li>
+            {% endif %}
+            <li>
+                <select id="theme-select" aria-label="Theme" onchange="setTheme(this.value)">
+                    <option value="dark">🌙 Dark</option>
+                    <option value="light">☀️ Light</option>
+                    <option value="contrast">👁️ High Contrast</option>
+                </select>
+            </li>
+        </ul>
+    </nav>
+    <main id="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container" role="alert">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="site-footer">
+        <p>Lumina v5.0 — Talent Discovery Platform</p>
+    </footer>
+    <script>
+        function setTheme(t) { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('lumina-theme', t); }
+        function toggleNav() {
+            const nav = document.getElementById('nav-links');
+            nav.classList.toggle('open');
+            const btn = document.querySelector('.hamburger');
+            btn.setAttribute('aria-expanded', nav.classList.contains('open'));
+        }
+        (function(){ var t = localStorage.getItem('lumina-theme') || 'dark'; document.documentElement.setAttribute('data-theme', t); var s = document.getElementById('theme-select'); if(s) s.value = t; })();
+    </script>
+    {% block scripts %}{% endblock %}
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/sw.js').then(reg => {
+            console.log('[PWA] Service worker registered');
+        }).catch(err => {
+            console.log('[PWA] Service worker failed:', err);
+        });
+    }
+    </script>
+</body>
+</html>

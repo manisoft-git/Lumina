@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Teacher Panel - Lumina{% endblock %}
+{% block content %}
+<div class="teacher-page">
+    <h1>Teacher Panel</h1>
+    <section class="teacher-section">
+        <h2>Classrooms</h2>
+        <form method="POST" action="{{ url_for('create_classroom') }}" class="inline-form">
+            <input type="text" name="name" placeholder="Classroom Name" required>
+            <input type="text" name="code" placeholder="Unique Code" required maxlength="20">
+            <button type="submit" class="btn btn-primary">Create Classroom</button>
+        </form>
+        <div style="overflow-x:auto;">
+        <table class="data-table">
+            <thead><tr><th>Name</th><th>Code</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for c in classrooms %}
+                <tr><td>{{ c[1] }}</td><td><code>{{ c[2] }}</code></td><td>{{ c[3] }}</td><td><a href="{{ url_for('teacher_monitor', classroom_code=c[2]) }}" class="btn btn-small">Monitor</a></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </section>
+    <section class="teacher-section">
+        <h2>Custom Passages</h2>
+        <form method="POST" action="{{ url_for('create_passage') }}" class="inline-form">
+            <input type="text" name="title" placeholder="Title" required>
+            <select name="classroom_id">
+                <option value="">Global</option>
+                {% for c in classrooms %}<option value="{{ c[0] }}">{{ c[1] }}</option>{% endfor %}
+            </select>
+            <input type="text" name="category" placeholder="Category" value="custom">
+            <textarea name="content" placeholder="Passage content..." required rows="3"></textarea>
+            <button type="submit" class="btn btn-primary">Create Passage</button>
+        </form>
+        <ul>{% for p in custom_passages %}<li>{{ p[1] }} ({{ p[2] }})</li>{% endfor %}</ul>
+    </section>
+    <section class="teacher-section">
+        <h2>Homework</h2>
+        <form method="POST" action="{{ url_for('create_homework') }}" class="inline-form">
+            <input type="text" name="title" placeholder="Title" required>
+            <select name="classroom_id" required>
+                {% for c in classrooms %}<option value="{{ c[0] }}">{{ c[1] }}</option>{% endfor %}
+            </select>
+            <textarea name="instructions" placeholder="Instructions" rows="2"></textarea>
+            <textarea name="passage" placeholder="Passage content for typing test" rows="3"></textarea>
+            <input type="number" name="min_wpm" placeholder="Min WPM target" value="0">
+            <input type="date" name="due_date">
+            <button type="submit" class="btn btn-primary">Assign Homework</button>
+        </form>
+        <ul>{% for h in homeworks %}<li>{{ h[1] }} — Due {{ h[2] }}</li>{% endfor %}</ul>
+    </section>
+    <section class="teacher-section">
+        <h2>Export Data</h2>
+        <a href="{{ url_for('export_csv') }}" class="btn btn-primary">Download CSV (All Scores)</a>
+        <a href="{{ url_for('api_docs') }}" class="btn btn-secondary">API Documentation</a>
+    </section>
+</div>
+{% endblock %}

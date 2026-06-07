@@ -1,0 +1,740 @@
+#!/usr/bin/env python3
+"""SocketIO events for Lumina v5.0 — register_sockets(socketio) pattern"""
+import json
+import random
+import time
+from datetime import datetime
+from flask import request
+from flask_login import current_user
+from flask_socketio import emit, join_room, leave_room
+
+from extensions import socketio
+from db import db_execute, db_fetchall, db_fetchone
+from models import update_elo
+
+TYPING_ROOMS = {}
+CHESS_ROOMS = {}
+CHECKERS_ROOMS = {}
+MONITOR_SUBSCRIBERS = {}
+SPECTATORS = {}
+AGENTS = {}  # agent_id -> {sid, user_id, hostname, platform, last_seen}
+PRODUCER_ROOMS = {}  # agent_id -> producer_sid
+
+# Safe command whitelist for remote diagnostics
+SAFE_COMMANDS = {
+    'ipconfig', 'ping', 'hostname', 'whoami', 'systeminfo',
+    'netstat', 'tasklist', 'ver', 'date', 'time', 'dir',
+    'echo', 'cls', 'path', 'vol', 'driverquery', 'getmac',
+    'nslookup', 'tracert', 'route', 'arp', 'net', 'wmic'
+}
+
+def get_username():
+    return current_user.username if current_user.is_authenticated else "Guest"
+
+def get_user_id():
+    return current_user.id if current_user.is_authenticated else None
+
+def is_safe_command(cmd):
+    base = cmd.strip().split()[0].lower() if cmd.strip() else ''
+    return base in SAFE_COMMANDS
+
+CHAT_RATELIMIT = {}  # sid -> {count, last_reset}
+
+def check_chat_rate(sid):
+    now = datetime.utcnow().timestamp()
+    entry = CHAT_RATELIMIT.get(sid, {"count": 0, "last_reset": now})
+    if now - entry["last_reset"] > 10:
+        entry = {"count": 0, "last_reset": now}
+    entry["count"] += 1
+    CHAT_RATELIMIT[sid] = entry
+    return entry["count"] <= 5
+
+def register_sockets(socketio):
+
+    @socketio.on("connect")
+    def handle_connect():
+        try:
+            print(f"[./] Socket connect: sid={request.sid}")
+            emit("connection_status", {"status": "connected", "sid": request.sid})
+        except Exception as e:
+            print(f"[./] Error in connect handler: {e}")
+
+    # ---------- Global Chat ----------
+    @socketio.on("global_message")
+    def handle_global_message(data):
+        if not check_chat_rate(request.sid):
+            emit("global_error", {"msg": "Rate limit: max 5 messages per 10 seconds"})
+            return
+        msg = data.get("message", "").strip()
+        if not msg or len(msg) > 500:
+            return
+        uname = get_username()
+        uid = get_user_id()
+        db_execute("INSERT INTO chat_messages (room, user_id, username, message) VALUES (?, ?, ?, ?)",
+                   ("global", uid, uname, msg))
+        emit("global_message", {"username": uname, "message": msg, "time": datetime.utcnow().isoformat()}, broadcast=True)
+
+    @socketio.on("join_room_chat")
+    def handle_join_room_chat(data):
+        room = data.get("room")
+        if room:
+            join_room(room)
+            emit("room_chat_status", {"room": room, "status": "joined"})
+
+    @socketio.on("room_message")
+    def handle_room_message(data):
+        room = data.get("room", "").strip()
+        msg = data.get("message", "").strip()
+        if not room or not msg or len(msg) > 500:
+            return
+        uname = get_username()
+        uid = get_user_id()
+        db_execute("INSERT INTO chat_messages (room, user_id, username, message) VALUES (?, ?, ?, ?)",
+                   (room, uid, uname, msg))
+        emit("room_message", {"username": uname, "message": msg, "time": datetime.utcnow().isoformat()}, room=room)
+
+    # ---------- Typing Competitions ----------
+    @socketio.on("join_typing_room")
+    def handle_join_typing_room(data):
+        room_id = data.get("room_id")
+        if not room_id:
+            return
+        join_room(room_id)
+        if room_id not in TYPING_ROOMS:
+            TYPING_ROOMS[room_id] = {
+                "state": "lobby", "passage": data.get("passage", ""),
+                "players": {}, "start_time": None, "results": []
+            }
+        TYPING_ROOMS[room_id]["players"][request.sid] = {
+            "username": get_username(), "user_id": get_user_id(),
+            "progress": 0, "wpm": 0, "accuracy": 0, "finished": False
+        }
+        emit("room_state", TYPING_ROOMS[room_id], room=room_id)
+
+    @socketio.on("typing_ready")
+    def handle_typing_ready(data):
+        room_id = data.get("room_id")
+        room = TYPING_ROOMS.get(room_id)
+        if not room:
+            return
+        sid = request.sid
+        if sid in room["players"]:
+            room["players"][sid]["ready"] = True
+        if len(room["players"]) >= 1 and all(p.get("ready") for p in room["players"].values()):
+            room["state"] = "countdown"
+            emit("countdown", {"value": 3}, room=room_id)
+            socketio.sleep(1)
+            emit("countdown", {"value": 2}, room=room_id)
+            socketio.sleep(1)
+            emit("countdown", {"value": 1}, room=room_id)
+            socketio.sleep(1)
+            room["state"] = "racing"
+            room["start_time"] = time.time()
+            emit("race_start", {"passage": room["passage"], "start_time": room["start_time"]}, room=room_id)
+
+    @socketio.on("progress_update")
+    def handle_progress_update(data):
+        room_id = data.get("room_id")
+        room = TYPING_ROOMS.get(room_id)
+        if not room or room["state"] != "racing":
+            return
+        sid = request.sid
+        if sid not in room["players"]:
+            return
+        room["players"][sid]["progress"] = data.get("progress", 0)
+        room["players"][sid]["wpm"] = data.get("wpm", 0)
+        room["players"][sid]["accuracy"] = data.get("accuracy", 0)
+        emit("player_update", {
+            "sid": sid, "username": room["players"][sid]["username"],
+            "progress": data.get("progress", 0), "wpm": data.get("wpm", 0), "accuracy": data.get("accuracy", 0)
+        }, room=room_id, include_self=False)
+        emit("spectator_update", {"room": room_id, "players": room["players"]}, room=f"spec_{room_id}")
+
+    @socketio.on("race_complete")
+    def handle_race_complete(data):
+        room_id = data.get("room_id")
+        room = TYPING_ROOMS.get(room_id)
+        if not room:
+            return
+        sid = request.sid
+        if sid in room["players"]:
+            room["players"][sid]["finished"] = True
+            room["players"][sid]["final_wpm"] = data.get("wpm", 0)
+            room["players"][sid]["final_accuracy"] = data.get("accuracy", 0)
+            room["results"].append({
+                "username": room["players"][sid]["username"], "user_id": room["players"][sid]["user_id"],
+                "wpm": data.get("wpm", 0), "accuracy": data.get("accuracy", 0), "net_wpm": data.get("net_wpm", 0)
+            })
+        if all(p.get("finished") for p in room["players"].values()):
+            room["state"] = "complete"
+            emit("race_finished", {"results": room["results"]}, room=room_id)
+            emit("spectator_finished", {"room": room_id, "results": room["results"]}, room=f"spec_{room_id}")
+
+    @socketio.on("leave_typing_room")
+    def handle_leave_typing_room(data):
+        room_id = data.get("room_id")
+        leave_room(room_id)
+        if room_id in TYPING_ROOMS and request.sid in TYPING_ROOMS[room_id]["players"]:
+            del TYPING_ROOMS[room_id]["players"][request.sid]
+            if not TYPING_ROOMS[room_id]["players"]:
+                del TYPING_ROOMS[room_id]
+
+    @socketio.on("spectator_message")
+    def handle_spectator_message(data):
+        room_id = data.get("room_id")
+        msg = data.get("message", "").strip()
+        if not room_id or not msg or len(msg) > 500:
+            return
+        if not check_chat_rate(request.sid):
+            emit("spectator_error", {"msg": "Rate limit"})
+            return
+        uname = get_username()
+        emit("spectator_chat", {
+            "username": uname,
+            "message": msg,
+            "time": datetime.utcnow().isoformat()
+        }, room=f"spec_{room_id}")
+
+    @socketio.on("join_spectator")
+    def handle_join_spectator(data):
+        room_id = data.get("room_id")
+        game_type = data.get("game_type", "typing")
+        if room_id:
+            join_room(f"spec_{room_id}")
+            SPECTATORS.setdefault(room_id, set()).add(request.sid)
+            emit("spectator_joined", {"room": room_id, "game_type": game_type})
+            if game_type == "typing" and room_id in TYPING_ROOMS:
+                emit("spectator_state", {"players": TYPING_ROOMS[room_id]["players"], "state": TYPING_ROOMS[room_id]["state"]})
+            elif game_type == "chess" and room_id in CHESS_ROOMS:
+                emit("spectator_state", CHESS_ROOMS[room_id])
+            elif game_type == "checkers" and room_id in CHECKERS_ROOMS:
+                emit("spectator_state", CHECKERS_ROOMS[room_id])
+
+    # ---------- Teacher Monitor ----------
+    @socketio.on("teacher_subscribe")
+    def handle_teacher_subscribe(data):
+        code = data.get("classroom_code")
+        if code:
+            join_room(f"monitor_{code}")
+            MONITOR_SUBSCRIBERS.setdefault(code, set()).add(request.sid)
+
+    @socketio.on("student_pulse")
+    def handle_student_pulse(data):
+        uid = get_user_id()
+        if not uid:
+            return
+        rows = db_fetchall("SELECT classroom_id FROM classroom_members WHERE student_id=?", (uid,))
+        for r in rows:
+            cls = db_fetchone("SELECT code FROM classrooms WHERE id=?", (r[0],))
+            if cls:
+                emit("monitor_update", {
+                    "username": get_username(), "user_id": uid,
+                    "wpm": data.get("wpm", 0), "accuracy": data.get("accuracy", 0),
+                    "activity": data.get("activity", "idle"), "room": data.get("room")
+                }, room=f"monitor_{cls[0]}")
+
+    # ---------- Client Agent Diagnostics ----------
+    @socketio.on("agent_register")
+    def handle_agent_register(data):
+        agent_id = data.get("agent_id")
+        if not agent_id:
+            return
+        AGENTS[agent_id] = {
+            "sid": request.sid,
+            "user_id": data.get("user_id"),
+            "hostname": data.get("hostname", "Unknown"),
+            "ip_address": data.get("ip_address", ""),
+            "platform": data.get("platform", ""),
+            "last_seen": datetime.utcnow().isoformat()
+        }
+        db_execute("""
+            INSERT INTO client_agents (agent_id, user_id, hostname, ip_address, platform, status, last_seen)
+            VALUES (?, ?, ?, ?, ?, 'online', ?)
+            ON CONFLICT(agent_id) DO UPDATE SET
+                user_id=excluded.user_id, hostname=excluded.hostname,
+                ip_address=excluded.ip_address, platform=excluded.platform,
+                status='online', last_seen=excluded.last_seen
+        """, (agent_id, data.get("user_id"), data.get("hostname"), data.get("ip_address"), data.get("platform"), datetime.utcnow().isoformat()))
+        join_room(f"agent_{agent_id}")
+        emit("agent_registered", {"agent_id": agent_id, "status": "ok"})
+        emit("agent_online", {"agent_id": agent_id, "hostname": data.get("hostname"), "ip_address": data.get("ip_address"), "platform": data.get("platform")}, broadcast=True, namespace="/")
+
+    @socketio.on("agent_heartbeat")
+    def handle_agent_heartbeat(data):
+        agent_id = data.get("agent_id")
+        if agent_id in AGENTS:
+            AGENTS[agent_id]["last_seen"] = datetime.utcnow().isoformat()
+            db_execute("UPDATE client_agents SET last_seen=? WHERE agent_id=?", (datetime.utcnow().isoformat(), agent_id))
+
+    @socketio.on("agent_output")
+    def handle_agent_output(data):
+        try:
+            agent_id = data.get("agent_id")
+            output = data.get("output", "")
+            cmd = data.get("command", "")
+            db_execute("UPDATE agent_commands SET output=?, status='complete', completed_at=? WHERE agent_id=? AND command=? AND status='pending'",
+                       (output, datetime.utcnow().isoformat(), agent_id, cmd))
+            emit("producer_output", {
+                "agent_id": agent_id,
+                "command": cmd,
+                "output": output,
+                "timestamp": datetime.utcnow().isoformat()
+            }, room=f"producer_{agent_id}")
+        except Exception as e:
+            print(f"[./] Error in handle_agent_output: {e}")
+
+    @socketio.on("producer_subscribe")
+    def handle_producer_subscribe(data):
+        agent_id = data.get("agent_id")
+        if agent_id:
+            join_room(f"producer_{agent_id}")
+            PRODUCER_ROOMS[request.sid] = agent_id
+
+    @socketio.on("producer_command")
+    def handle_producer_command(data):
+        agent_id = data.get("agent_id")
+        cmd = data.get("command", "").strip()
+        if not agent_id or not cmd:
+            emit("producer_error", {"msg": "Missing agent_id or command"})
+            return
+        if not is_safe_command(cmd):
+            emit("producer_error", {"msg": f"Command '{cmd}' is not in the safe diagnostics whitelist."})
+            return
+        if agent_id not in AGENTS:
+            emit("producer_error", {"msg": f"Agent '{agent_id}' is not online."})
+            return
+        db_execute("INSERT INTO agent_commands (agent_id, command, status) VALUES (?, ?, 'pending')",
+                   (agent_id, cmd))
+        emit("run_command", {"command": cmd}, room=f"agent_{agent_id}")
+        emit("producer_ack", {"agent_id": agent_id, "command": cmd, "status": "sent"})
+
+    @socketio.on("disconnect")
+    def handle_disconnect():
+        # Clean up producer subscriptions
+        if request.sid in PRODUCER_ROOMS:
+            del PRODUCER_ROOMS[request.sid]
+        # Clean up agent if this sid matches
+        for aid, info in list(AGENTS.items()):
+            if info.get("sid") == request.sid:
+                db_execute("UPDATE client_agents SET status='offline' WHERE agent_id=?", (aid,))
+                del AGENTS[aid]
+                emit("agent_offline", {"agent_id": aid}, broadcast=True, namespace="/")
+                break
+
+    # ---------- Chess ----------
+    try:
+        import chess as chess_lib
+        CHESS_AVAILABLE = True
+    except Exception:
+        CHESS_AVAILABLE = False
+
+    class SimpleChessBot:
+        def __init__(self, depth=2):
+            self.depth = depth
+        def best_move(self, board_fen, maximizing=True):
+            if not CHESS_AVAILABLE:
+                return None
+            b = chess_lib.Board(board_fen)
+            return self._minimax(b, self.depth, maximizing)[1]
+        def _minimax(self, board, depth, maximizing):
+            if depth == 0 or board.is_game_over():
+                return self._eval(board), None
+            best_move = None
+            if maximizing:
+                max_eval = -9999
+                for move in board.legal_moves:
+                    board.push(move)
+                    ev, _ = self._minimax(board, depth - 1, False)
+                    board.pop()
+                    if ev > max_eval:
+                        max_eval = ev; best_move = move
+                return max_eval, best_move
+            else:
+                min_eval = 9999
+                for move in board.legal_moves:
+                    board.push(move)
+                    ev, _ = self._minimax(board, depth - 1, True)
+                    board.pop()
+                    if ev < min_eval:
+                        min_eval = ev; best_move = move
+                return min_eval, best_move
+        def _eval(self, board):
+            if board.is_checkmate():
+                return -1000 if board.turn else 1000
+            vals = {chess_lib.PAWN: 1, chess_lib.KNIGHT: 3, chess_lib.BISHOP: 3, chess_lib.ROOK: 5, chess_lib.QUEEN: 9, chess_lib.KING: 0}
+            score = 0
+            for sq, piece in board.piece_map().items():
+                v = vals.get(piece.piece_type, 0)
+                score += v if piece.color == chess_lib.WHITE else -v
+            return score
+
+    CHESS_BOT = SimpleChessBot(depth=2)
+
+    @socketio.on("join_chess_room")
+    def handle_join_chess_room(data):
+        try:
+            room_id = data.get("room_id")
+            if not room_id:
+                emit("chess_error", {"msg": "No room_id provided"})
+                return
+            join_room(room_id)
+            if room_id not in CHESS_ROOMS:
+                CHESS_ROOMS[room_id] = {
+                    "white": None, "black": None, "turn": "white",
+                    "board": chess_lib.Board().fen() if CHESS_AVAILABLE else "start",
+                    "status": "waiting", "spectators": [], "history": []
+                }
+            room = CHESS_ROOMS[room_id]
+            uid = get_user_id()
+            uname = get_username()
+            if room["white"] is None:
+                room["white"] = {"sid": request.sid, "uid": uid, "name": uname}
+                emit("chess_assigned", {"color": "white"})
+            elif room["black"] is None and room["white"]["uid"] != uid:
+                room["black"] = {"sid": request.sid, "uid": uid, "name": uname}
+                emit("chess_assigned", {"color": "black"})
+                room["status"] = "active"
+                emit("game_start", {"turn": "white", "board": room["board"]}, room=room_id)
+            else:
+                room["spectators"].append(request.sid)
+                emit("chess_assigned", {"color": "spectator"})
+            emit("chess_state", room, room=room_id)
+            emit("chess_state", room, room=f"spec_{room_id}")
+        except Exception as e:
+            print(f"[./] Error in join_chess_room: {e}")
+            import traceback
+            traceback.print_exc()
+            emit("chess_error", {"msg": f"Server error: {str(e)}"})
+
+    @socketio.on("chess_move")
+    def handle_chess_move(data):
+        try:
+            room_id = data.get("room_id")
+            move_uci = data.get("move")
+            room = CHESS_ROOMS.get(room_id)
+            if not room or room["status"] != "active":
+                return
+            uid = get_user_id()
+            is_white = room["white"] and room["white"]["uid"] == uid
+            is_black = room["black"] and room["black"]["uid"] == uid
+            if (room["turn"] == "white" and not is_white) or (room["turn"] == "black" and not is_black):
+                emit("chess_error", {"msg": "Not your turn or you are not a player in this room."})
+                return
+            if not CHESS_AVAILABLE:
+                emit("chess_error", {"msg": "Chess engine not installed on server."})
+                return
+            board = chess_lib.Board(room["board"])
+            result = None
+            # Handle resign
+            if move_uci == 'resign':
+                room["status"] = "complete"
+                result = "0-1" if is_white else "1-0"
+                room["result"] = result
+                room["history"].append("resign")
+                db_execute("INSERT INTO chess_games (room_id, white_id, black_id, pgn, result, status) VALUES (?, ?, ?, ?, ?, ?)",
+                           (room_id, room["white"]["uid"], room["black"]["uid"], str(board), result, "complete"))
+                if result == "1-0":
+                    if room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 1)
+                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 0)
+                else:
+                    if room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 0)
+                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 1)
+                emit("chess_update", {"board": room["board"], "turn": room["turn"], "last_move": "resign", "result": result, "history": room["history"]}, room=room_id)
+                emit("chess_update", {"board": room["board"], "turn": room["turn"], "last_move": "resign", "result": result, "history": room["history"]}, room=f"spec_{room_id}")
+                return
+            try:
+                m = chess_lib.Move.from_uci(move_uci)
+                if m not in board.legal_moves:
+                    emit("chess_error", {"msg": "Illegal move"})
+                    return
+                board.push(m)
+                room["history"].append(move_uci)
+            except Exception:
+                emit("chess_error", {"msg": "Invalid move format"})
+                return
+            room["board"] = board.fen()
+            room["turn"] = "black" if room["turn"] == "white" else "white"
+            if board.is_game_over():
+                room["status"] = "complete"
+                result = "1-0" if board.result() == "1-0" else "0-1" if board.result() == "0-1" else "draw"
+                room["result"] = result
+                db_execute("INSERT INTO chess_games (room_id, white_id, black_id, pgn, result, status) VALUES (?, ?, ?, ?, ?, ?)",
+                           (room_id, room["white"]["uid"], room["black"]["uid"], str(board), result, "complete"))
+                if result == "1-0":
+                    if room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 1)
+                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 0)
+                elif result == "0-1":
+                    if room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 0)
+                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 1)
+                else:
+                    if room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 0.5)
+                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 0.5)
+            emit("chess_update", {"board": room["board"], "turn": room["turn"], "last_move": move_uci, "result": result, "history": room["history"]}, room=room_id)
+            emit("chess_update", {"board": room["board"], "turn": room["turn"], "last_move": move_uci, "result": result, "history": room["history"]}, room=f"spec_{room_id}")
+        except Exception as e:
+            print(f"[./] Error in chess_move: {e}")
+            import traceback
+            traceback.print_exc()
+            emit("chess_error", {"msg": f"Server error: {str(e)}"})
+
+    @socketio.on("start_chess_bot")
+    def handle_start_chess_bot(data):
+        try:
+            room_id = data.get("room_id")
+            if not room_id:
+                emit("chess_error", {"msg": "No room_id provided"})
+                return
+            join_room(room_id)
+            uid = get_user_id()
+            uname = get_username()
+            CHESS_ROOMS[room_id] = {
+                "white": {"sid": request.sid, "uid": uid, "name": uname},
+                "black": {"sid": "bot", "uid": -1, "name": "Manisoft_Chess[GM]"},
+                "turn": "white", "board": chess_lib.Board().fen() if CHESS_AVAILABLE else "start",
+                "status": "active", "spectators": [], "history": []
+            }
+            emit("chess_assigned", {"color": "white"})
+            emit("game_start", {"turn": "white", "board": CHESS_ROOMS[room_id]["board"]}, room=room_id)
+        except Exception as e:
+            print(f"[./] Error in start_chess_bot: {e}")
+            import traceback
+            traceback.print_exc()
+            emit("chess_error", {"msg": f"Server error: {str(e)}"})
+
+    @socketio.on("chess_bot_move")
+    def handle_chess_bot_move(data):
+        try:
+            room_id = data.get("room_id")
+            room = CHESS_ROOMS.get(room_id)
+            if not room or not CHESS_AVAILABLE:
+                return
+            if room["turn"] == "black" and room["black"] and room["black"].get("uid") == -1:
+                try:
+                    board = chess_lib.Board(room["board"])
+                    _, best = CHESS_BOT.best_move(room["board"], False)
+                    if best:
+                        board.push(best)
+                        room["board"] = board.fen()
+                        room["turn"] = "white"
+                        room["history"].append(best.uci())
+                        emit("chess_update", {"board": room["board"], "turn": "white", "last_move": best.uci(), "history": room["history"]}, room=room_id)
+                        emit("chess_update", {"board": room["board"], "turn": "white", "last_move": best.uci(), "history": room["history"]}, room=f"spec_{room_id}")
+                    else:
+                        emit("chess_error", {"msg": "Bot has no legal moves"}, room=room_id)
+                except Exception as e:
+                    emit("chess_error", {"msg": f"Bot error: {str(e)}"}, room=room_id)
+
+        except Exception as e:
+            print(f"[./] Error in chess_bot_move: {e}")
+            import traceback
+            traceback.print_exc()
+            emit("chess_error", {"msg": f"Bot error: {str(e)}"}, room=room_id)
+    # ---------- Checkers ----------
+    INITIAL_CHECKERS = [
+        [0, -1, 0, -1, 0, -1, 0, -1],
+        [-1, 0, -1, 0, -1, 0, -1, 0],
+        [0, -1, 0, -1, 0, -1, 0, -1],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 0, 1, 0, 1, 0, 1, 0],
+        [0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 0],
+    ]
+
+    def checkers_moves(board, turn):
+        moves = []
+        directions = [(-1, -1), (-1, 1)] if turn == "red" else [(1, -1), (1, 1)]
+        king_dirs = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        for r in range(8):
+            for c in range(8):
+                piece = board[r][c]
+                if piece == 0:
+                    continue
+                is_red = piece > 0
+                is_king = abs(piece) == 2
+                if turn == "red" and not is_red:
+                    continue
+                if turn == "black" and is_red:
+                    continue
+                dirs = king_dirs if is_king else directions
+                for dr, dc in dirs:
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < 8 and 0 <= nc < 8:
+                        if board[nr][nc] == 0:
+                            moves.append({"from": [r, c], "to": [nr, nc], "capture": False})
+                        elif (board[nr][nc] > 0) != is_red:
+                            jr, jc = nr + dr, nc + dc
+                            if 0 <= jr < 8 and 0 <= jc < 8 and board[jr][jc] == 0:
+                                moves.append({"from": [r, c], "to": [jr, jc], "capture": True, "captured": [nr, nc]})
+        return moves
+
+    def apply_checkers_move(board, move):
+        b = [row[:] for row in board]
+        fr, fc = move["from"]
+        tr, tc = move["to"]
+        piece = b[fr][fc]
+        b[tr][tc] = piece
+        b[fr][fc] = 0
+        if move.get("capture"):
+            cr, cc = move["captured"]
+            b[cr][cc] = 0
+        if piece == 1 and tr == 0:
+            b[tr][tc] = 2
+        if piece == -1 and tr == 7:
+            b[tr][tc] = -2
+        return b
+
+    class CheckersBot:
+        def best_move(self, board, turn):
+            moves = checkers_moves(board, turn)
+            if not moves:
+                return None
+            captures = [m for m in moves if m.get("capture")]
+            if captures:
+                return random.choice(captures)
+            return random.choice(moves)
+
+    CHECKERS_BOT = CheckersBot()
+
+    @socketio.on("join_checkers_room")
+    def handle_join_checkers_room(data):
+        try:
+            room_id = data.get("room_id")
+            if not room_id:
+                emit("checkers_error", {"msg": "No room_id provided"})
+                return
+            join_room(room_id)
+            if room_id not in CHECKERS_ROOMS:
+                CHECKERS_ROOMS[room_id] = {
+                    "red": None, "black": None, "turn": "red",
+                    "board": [row[:] for row in INITIAL_CHECKERS],
+                    "status": "waiting", "spectators": [], "history": []
+                }
+            room = CHECKERS_ROOMS[room_id]
+            uid = get_user_id()
+            uname = get_username()
+            if room["red"] is None:
+                room["red"] = {"sid": request.sid, "uid": uid, "name": uname}
+                emit("checkers_assigned", {"color": "red"})
+            elif room["black"] is None and room["red"]["uid"] != uid:
+                room["black"] = {"sid": request.sid, "uid": uid, "name": uname}
+                emit("checkers_assigned", {"color": "black"})
+                room["status"] = "active"
+                emit("checkers_start", {"turn": "red", "board": room["board"]}, room=room_id)
+            else:
+                room["spectators"].append(request.sid)
+                emit("checkers_assigned", {"color": "spectator"})
+            emit("checkers_state", room, room=room_id)
+            emit("checkers_state", room, room=f"spec_{room_id}")
+        except Exception as e:
+            print(f"[./] Error in join_checkers_room: {e}")
+            import traceback
+            traceback.print_exc()
+            emit("checkers_error", {"msg": f"Server error: {str(e)}"})
+
+    @socketio.on("checkers_move")
+    def handle_checkers_move(data):
+        try:
+            room_id = data.get("room_id")
+            move = data.get("move")
+            room = CHECKERS_ROOMS.get(room_id)
+            if not room or room["status"] != "active":
+                return
+            uid = get_user_id()
+            is_red = room["red"] and room["red"]["uid"] == uid
+            is_black = room["black"] and room["black"]["uid"] == uid
+            if (room["turn"] == "red" and not is_red) or (room["turn"] == "black" and not is_black):
+                emit("checkers_error", {"msg": "Not your turn or you are not a player in this room."})
+                return
+            legal = checkers_moves(room["board"], room["turn"])
+            matched = None
+            for l in legal:
+                if l.get("from") == move.get("from") and l.get("to") == move.get("to"):
+                    matched = l
+                    break
+            if not matched:
+                emit("checkers_error", {"msg": "Illegal move"})
+                return
+            room["board"] = apply_checkers_move(room["board"], matched)
+            room["turn"] = "black" if room["turn"] == "red" else "red"
+            room["history"].append(move)
+            opp_moves = checkers_moves(room["board"], room["turn"])
+            red_pieces = sum(1 for r in room["board"] for p in r if p > 0)
+            black_pieces = sum(1 for r in room["board"] for p in r if p < 0)
+            result = None
+            if red_pieces == 0:
+                result = "black"; room["status"] = "complete"
+            elif black_pieces == 0:
+                result = "red"; room["status"] = "complete"
+            elif not opp_moves:
+                result = "red" if room["turn"] == "black" else "black"
+                room["status"] = "complete"
+            if result:
+                db_execute("INSERT INTO checkers_games (room_id, red_id, black_id, board_state, result, status) VALUES (?, ?, ?, ?, ?, ?)",
+                           (room_id, room["red"]["uid"] if room["red"] else None,
+                            room["black"]["uid"] if room["black"] else None,
+                            json.dumps(room["board"]), result, "complete"))
+                if result == "red":
+                    if room["red"]["uid"]: update_elo(room["red"]["uid"], "checkers", 1)
+                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "checkers", 0)
+                elif result == "black":
+                    if room["red"]["uid"]: update_elo(room["red"]["uid"], "checkers", 0)
+                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "checkers", 1)
+            emit("checkers_update", {"board": room["board"], "turn": room["turn"], "last_move": move, "result": result, "history": room["history"]}, room=room_id)
+            emit("checkers_update", {"board": room["board"], "turn": room["turn"], "last_move": move, "result": result, "history": room["history"]}, room=f"spec_{room_id}")
+        except Exception as e:
+            print(f"[./] Error in checkers_move: {e}")
+            import traceback
+            traceback.print_exc()
+            emit("checkers_error", {"msg": f"Server error: {str(e)}"})
+    @socketio.on("start_checkers_bot")
+    def handle_start_checkers_bot(data):
+        try:
+            room_id = data.get("room_id")
+            if not room_id:
+                emit("checkers_error", {"msg": "No room_id provided"})
+                return
+            join_room(room_id)
+            uid = get_user_id()
+            uname = get_username()
+            CHECKERS_ROOMS[room_id] = {
+                "red": {"sid": request.sid, "uid": uid, "name": uname},
+                "black": {"sid": "bot", "uid": -1, "name": "Manisoft_Checkers[M]"},
+                "turn": "red", "board": [row[:] for row in INITIAL_CHECKERS],
+                "status": "active", "spectators": [], "history": []
+            }
+            emit("checkers_assigned", {"color": "red"})
+            emit("checkers_start", {"turn": "red", "board": CHECKERS_ROOMS[room_id]["board"]}, room=room_id)
+        except Exception as e:
+            print(f"[./] Error in start_checkers_bot: {e}")
+            import traceback
+            traceback.print_exc()
+            emit("checkers_error", {"msg": f"Server error: {str(e)}"})
+
+    @socketio.on("checkers_bot_move")
+    def handle_checkers_bot_move(data):
+        try:
+            room_id = data.get("room_id")
+            room = CHECKERS_ROOMS.get(room_id)
+            if not room:
+                return
+            if room["turn"] == "black" and room["black"] and room["black"].get("uid") == -1:
+                try:
+                    move = CHECKERS_BOT.best_move(room["board"], "black")
+                    if move:
+                        room["board"] = apply_checkers_move(room["board"], move)
+                        room["turn"] = "red"
+                        room["history"].append(move)
+                        emit("checkers_update", {"board": room["board"], "turn": "red", "last_move": move, "history": room["history"]}, room=room_id)
+                        emit("checkers_update", {"board": room["board"], "turn": "red", "last_move": move, "history": room["history"]}, room=f"spec_{room_id}")
+                    else:
+                        emit("checkers_error", {"msg": "Bot has no legal moves"}, room=room_id)
+                except Exception as e:
+                    emit("checkers_error", {"msg": f"Bot error: {str(e)}"}, room=room_id)
+
+
+        except Exception as e:
+            print(f"[./] Error in checkers_bot_move: {e}")
+            import traceback
+            traceback.print_exc()
+            emit("checkers_error", {"msg": f"Bot error: {str(e)}"}, room=room_id)

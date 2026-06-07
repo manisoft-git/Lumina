@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Tournament Bracket - Lumina{% endblock %}
+{% block content %}
+<div class="bracket-page">
+    <h1>{{ tournament[1] }} — Bracket</h1>
+    <div class="bracket-container">
+        {% for m in matches %}
+            {% if loop.first or m[2] != matches[loop.index0 - 1][2] %}
+                <div class="bracket-round">
+                    <h3>Round {{ m[2] }}</h3>
+            {% endif %}
+            <div class="bracket-match {% if m[8] == 'complete' %}complete{% endif %}">
+                <div class="bracket-player {% if m[7] == m[3] %}winner{% endif %}">{{ m[11] or 'TBD' }}</div>
+                <div class="bracket-vs">vs</div>
+                <div class="bracket-player {% if m[7] == m[4] %}winner{% endif %}">{{ m[12] or 'TBD' }}</div>
+                {% if m[8] == 'complete' %}<div class="bracket-score">{{ m[5]|round(1) }} - {{ m[6]|round(1) }}</div>{% endif %}
+            </div>
+            {% if loop.last or m[2] != matches[loop.index0 + 1][2] %}
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

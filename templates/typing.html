@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Typing Test - Lumina{% endblock %}
+{% block content %}
+<div class="typing-page {% if focus %}focus-mode{% endif %}">
+    <div class="typing-header">
+        <h1>Solo Typing</h1>
+        <div class="typing-meta">
+            <span id="category-badge" class="badge">{{ category }}</span>
+            <span id="timer">60s</span>
+            <span id="live-wpm">0 WPM</span>
+            <span id="live-acc">100%</span>
+        </div>
+        <div class="typing-controls">
+            <label><input type="checkbox" id="focus-toggle" {% if focus %}checked{% endif %} onchange="toggleFocus()"> Focus Mode</label>
+            <label><input type="checkbox" id="ghost-toggle"> Ghost Racer</label>
+            <select id="time-select" aria-label="Duration">
+                <option value="60" selected>60s</option>
+                <option value="30">30s</option>
+                <option value="120">120s</option>
+            </select>
+        </div>
+    </div>
+    <div id="typing-arena" class="typing-arena" role="application" aria-label="Typing test area">
+        <div id="passage-display" class="passage-display" aria-live="polite" aria-atomic="true"></div>
+        <input type="text" id="hidden-input" class="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type here">
+        <div id="ghost-cursor" class="ghost-cursor" style="display:none" aria-hidden="true"></div>
+    </div>
+    <div id="results-panel" class="results-panel" style="display:none" role="region" aria-label="Results">
+        <div class="stat-grid">
+            <div class="stat"><div class="stat-value" id="res-wpm">0</div><div class="stat-label">WPM</div></div>
+            <div class="stat"><div class="stat-value" id="res-acc">0%</div><div class="stat-label">Accuracy</div></div>
+            <div class="stat"><div class="stat-value" id="res-net">0</div><div class="stat-label">Net WPM</div></div>
+            <div class="stat"><div class="stat-value" id="res-errs">0</div><div class="stat-label">Errors</div></div>
+        </div>
+        <div class="results-actions">
+            <a href="{{ url_for('typing_page', category=category) }}" class="btn btn-primary">Again</a>
+            <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Analytics</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+    const passage = {{ passage | tojson }};
+    const category = {{ category | tojson }};
+    const focusMode = {{ focus | tojson }};
+    const display = document.getElementById('passage-display');
+    const input = document.getElementById('hidden-input');
+    const timerEl = document.getElementById('timer');
+    const wpmEl = document.getElementById('live-wpm');
+    const accEl = document.getElementById('live-acc');
+    const results = document.getElementById('results-panel');
+    const arena = document.getElementById('typing-arena');
+    const ghostCursor = document.getElementById('ghost-cursor');
+    let startTime = null, ended = false, errors = 0, totalTyped = 0, errorMap = {};
+    let duration = parseInt(document.getElementById('time-select').value);
+    let timeLeft = duration, timerId = null;
+    let ghostInterval = null;
+
+    function render() {
+        display.innerHTML = '';
+        passage.split('').forEach((ch, i) => {
+            const span = document.createElement('span');
+            span.textContent = ch;
+            span.dataset.i = i;
+            span.className = 'char';
+            display.appendChild(span);
+        });
+    }
+    render();
+
+    function updateCaret() {
+        const idx = input.value.length;
+        const spans = display.querySelectorAll('.char');
+        spans.forEach((s, i) => {
+            s.classList.remove('correct','incorrect','current');
+            if (i < idx) {
+                s.classList.add(input.value[i] === passage[i] ? 'correct' : 'incorrect');
+            } else if (i === idx) {
+                s.classList.add('current');
+            }
+        });
+        const cur = display.querySelector('.current');
+        if (cur) {
+            const rect = cur.getBoundingClientRect();
+            const arect = arena.getBoundingClientRect();
+            if (rect.bottom > arect.bottom - 20 || rect.top < arect.top + 20) {
+                cur.scrollIntoView({block: 'center', behavior: 'smooth'});
+            }
+        }
+    }
+
+    function calcStats() {
+        const elapsed = (Date.now() - startTime) / 1000 / 60;
+        const typed = input.value.length;
+        const gross = typed / 5 / Math.max(elapsed, 0.001);
+        const net = Math.max(0, gross - (errors / Math.max(elapsed, 0.001)));
+        const acc = typed > 0 ? ((typed - errors) / typed) * 100 : 100;
+        return {wpm: Math.round(gross), net: Math.round(net), acc: Math.round(acc * 10) / 10};
+    }
+
+    function tick() {
+        timeLeft--;
+        timerEl.textContent = timeLeft + 's';
+        if (timeLeft <= 0) finish();
+    }
+
+    function finish() {
+        if (ended) return;
+        ended = true; clearInterval(timerId); clearInterval(ghostInterval); input.blur();
+        const s = calcStats();
+        document.getElementById('res-wpm').textContent = s.wpm;
+        document.getElementById('res-acc').textContent = s.acc + '%';
+        document.getElementById('res-net').textContent = s.net;
+        document.getElementById('res-errs').textContent = errors;
+        results.style.display = 'block';
+        arena.style.display = 'none';
+        fetch('/submit_score', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({wpm: s.wpm, accuracy: s.acc, errors: errors, net_wpm: s.net, category: category, error_map: errorMap})
+        });
+        fetch('/save_replay', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({passage: passage, keystrokes: input.value.split(''), wpm: s.wpm, accuracy: s.acc})
+        });
+        fetch('/api/check_milestones');
+    }
+
+    input.addEventListener('input', () => {
+        if (ended) return;
+        if (!startTime) { startTime = Date.now(); timerId = setInterval(tick, 1000); }
+        const val = input.value;
+        totalTyped = val.length;
+        errors = 0;
+        for (let i = 0; i < val.length; i++) {
+            if (val[i] !== passage[i]) {
+                errors++;
+                const expected = passage[i] === ' ' ? 'space' : passage[i];
+                errorMap[expected] = (errorMap[expected] || 0) + 1;
+            }
+        }
+        updateCaret();
+        const s = calcStats();
+        wpmEl.textContent = s.wpm + ' WPM';
+        accEl.textContent = s.acc + '%';
+        if (val.length >= passage.length) finish();
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+            e.preventDefault();
+            input.value = input.value.slice(0, -1);
+            input.dispatchEvent(new Event('input'));
+        }
+    });
+
+    document.getElementById('time-select').addEventListener('change', (e) => {
+        duration = parseInt(e.target.value); timeLeft = duration; timerEl.textContent = duration + 's';
+    });
+
+    window.toggleFocus = function() {
+        document.querySelector('.typing-page').classList.toggle('focus-mode');
+    };
+    if (focusMode) document.querySelector('.typing-page').classList.add('focus-mode');
+
+    // Ghost racer
+    function startGhost() {
+        fetch('/api/latest_replay').then(r => r.json()).then(d => {
+            if (!d.keystrokes || !d.keystrokes.length) {
+                ghostCursor.style.display = 'none';
+                return;
+            }
+            ghostCursor.style.display = 'block';
+            const durationMs = ((passage.length / 5) / (d.wpm / 60)) * 1000;
+            const step = durationMs / d.keystrokes.length;
+            let i = 0;
+            ghostInterval = setInterval(() => {
+                if (i >= d.keystrokes.length || ended) { clearInterval(ghostInterval); ghostCursor.style.display = 'none'; return; }
+                const spans = display.querySelectorAll('.char');
+                if (spans[i]) {
+                    const rect = spans[i].getBoundingClientRect();
+                    const parent = arena.getBoundingClientRect();
+                    ghostCursor.style.left = (rect.left - parent.left) + 'px';
+                    ghostCursor.style.top = (rect.top - parent.top) + 'px';
+                }
+                i++;
+            }, Math.max(step, 40));
+        }).catch(() => {});
+    }
+
+    document.getElementById('ghost-toggle').addEventListener('change', (e) => {
+        if (e.target.checked && startTime) startGhost();
+    });
+
+    // Anti-cheat: prevent paste
+    input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        statusEl.textContent = 'Paste blocked — type manually!';
+        setTimeout(() => statusEl.textContent = timeLeft + 's', 1500);
+    });
+    // Anti-cheat: prevent drag/drop
+    input.addEventListener('drop', (e) => e.preventDefault());
+    input.addEventListener('dragover', (e) => e.preventDefault());
+    // Anti-cheat: detect rapid input (bot-like)
+    let lastInputTime = 0;
+    input.addEventListener('input', () => {
+        const now = Date.now();
+        if (now - lastInputTime < 15 && totalTyped > 5) {
+            console.warn('[Anti-cheat] Suspicious input speed detected');
+        }
+        lastInputTime = now;
+    });
+
+    input.focus();
+    document.addEventListener('click', () => { if (!ended) input.focus(); });
+})();
+</script>
+{% endblock %}

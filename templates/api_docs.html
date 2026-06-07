@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}API Documentation - Lumina{% endblock %}
+{% block content %}
+<div class="api-docs">
+    <h1>Lumina REST API v1</h1>
+    <p>Use these endpoints to integrate Lumina with your school portal or dashboards. All endpoints require an API key in the <code>X-API-Key</code> header.</p>
+    <section class="api-endpoint">
+        <h2>GET /api/v1/leaderboard</h2>
+        <p>Returns top 50 users by best Net WPM.</p>
+        <pre>{"username": "alice", "fullname": "Alice Smith", "level": 5, "best_wpm": 72.5, "best_accuracy": 98.2}</pre>
+    </section>
+    <section class="api-endpoint">
+        <h2>GET /api/v1/users/{id}/stats</h2>
+        <p>Returns aggregate stats and game ratings for a user.</p>
+        <pre>{"total_tests": 45, "avg_net_wpm": 62.3, "avg_accuracy": 97.1, "ratings": {"chess": 1450, "checkers": 1320}}</pre>
+    </section>
+    <section class="api-endpoint">
+        <h2>GET /api/v1/classrooms/{code}/students</h2>
+        <p>Returns students in a classroom with average Net WPM.</p>
+        <pre>[{"id": 3, "username": "bob", "fullname": "Bob Jones", "level": 2, "avg_net_wpm": 55.2}]</pre>
+    </section>
+    <section class="api-endpoint">
+        <h2>POST /api/v1/generate_key</h2>
+        <p>Generate an API key from your dashboard. Include it as <code>X-API-Key</code> in all requests.</p>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Parent Portal - Lumina{% endblock %}
+{% block content %}
+<div class="parent-page">
+    {% if error %}
+        <div class="flash flash-error">{{ error }}</div>
+    {% else %}
+        <h1>{{ student.fullname }}'s Progress</h1>
+        <div class="parent-grid">
+            <section class="parent-card">
+                <h2>Overview</h2>
+                <p>Level: <strong>{{ student.level }}</strong></p>
+                <p>XP: <strong>{{ student.xp }}</strong></p>
+                <p>Streak: <strong>{{ student.streak }} days</strong></p>
+            </section>
+            <section class="parent-card">
+                <h2>Recent Scores</h2>
+                {% if scores %}
+                    <div style="overflow-x:auto;">
+                    <table class="data-table">
+                        <thead><tr><th>WPM</th><th>Accuracy</th><th>Net WPM</th><th>Category</th><th>Date</th></tr></thead>
+                        <tbody>
+                            {% for s in scores %}<tr><td>{{ s[0]|round(1) }}</td><td>{{ s[1]|round(1) }}%</td><td>{{ s[2]|round(1) if s[2] else s[0]|round(1) }}</td><td>{{ s[3] or 'general' }}</td><td>{{ s[4] }}</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                {% else %}<p>No scores yet.</p>{% endif %}
+            </section>
+            <section class="parent-card">
+                <h2>Badges</h2>
+                {% if badges %}
+                    <ul>{% for b in badges %}<li><strong>{{ b.name }}</strong> — {{ b.desc }} <small>({{ b.date }})</small></li>{% endfor %}</ul>
+                {% else %}<p>No badges yet.</p>{% endif %}
+            </section>
+            <section class="parent-card">
+                <h2>Game Ratings</h2>
+                {% if ratings %}
+                    <ul>{% for r in ratings %}<li>{{ r[0].capitalize() }}: <strong>{{ r[1] }}</strong> ELO</li>{% endfor %}</ul>
+                {% else %}<p>No rated games yet.</p>{% endif %}
+            </section>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

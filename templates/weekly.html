@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Weekly Challenge - Lumina{% endblock %}
+{% block content %}
+<div class="page">
+    <h1>Weekly Challenge</h1>
+    <p>This week's featured passage: <strong>Einstein on Imagination</strong></p>
+    <a href="{{ url_for('typing_page', category='quotes') }}" class="btn btn-primary">Take the Challenge</a>
+</div>
+{% endblock %}

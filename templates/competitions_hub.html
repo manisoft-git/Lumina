@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Competitions - Lumina{% endblock %}
+{% block content %}
+<div class="comp-hub">
+    <h1>Competition Arena</h1>
+    <p>Choose your game and join or create a room.</p>
+    <div class="game-cards">
+        <div class="game-card">
+            <h2>⌨️ Typing Race</h2>
+            <p>Real-time typing battles. Up to 8 players per room.</p>
+            <div class="room-form">
+                <input type="text" id="typing-room-id" placeholder="Room ID (e.g., CS101-A)" aria-label="Room ID">
+                <button class="btn btn-primary" onclick="joinTyping()">Join / Create Room</button>
+            </div>
+        </div>
+        <div class="game-card">
+            <h2>♟️ Chess</h2>
+            <p>Rated chess matches. Play a friend or the Grandmaster Bot.</p>
+            <div class="room-form">
+                <input type="text" id="chess-room-id" placeholder="Room ID" aria-label="Room ID">
+                <button class="btn btn-primary" onclick="joinChess()">Join / Create Room</button>
+                <button class="btn btn-secondary" onclick="playChessBot()">vs Manisoft_Chess[GM]</button>
+            </div>
+        </div>
+        <div class="game-card">
+            <h2>🔴 Checkers</h2>
+            <p>Classic checkers with FIDE-style ratings.</p>
+            <div class="room-form">
+                <input type="text" id="checkers-room-id" placeholder="Room ID" aria-label="Room ID">
+                <button class="btn btn-primary" onclick="joinCheckers()">Join / Create Room</button>
+                <button class="btn btn-secondary" onclick="playCheckersBot()">vs Manisoft_Checkers[M]</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function joinTyping() { const r = document.getElementById('typing-room-id').value || 'room-' + Math.random().toString(36).slice(2); location.href = '/competitions/typing/' + encodeURIComponent(r); }
+function joinChess() { const r = document.getElementById('chess-room-id').value || 'room-' + Math.random().toString(36).slice(2); location.href = '/chess/' + encodeURIComponent(r); }
+function joinCheckers() { const r = document.getElementById('checkers-room-id').value || 'room-' + Math.random().toString(36).slice(2); location.href = '/checkers/' + encodeURIComponent(r); }
+function playChessBot() { location.href = '/chess/bot-' + Math.random().toString(36).slice(2) + '?bot=1'; }
+function playCheckersBot() { location.href = '/checkers/bot-' + Math.random().toString(36).slice(2) + '?bot=1'; }
+</script>
+{% endblock %}

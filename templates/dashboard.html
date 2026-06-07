@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Lumina{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Welcome, {{ current_user.fullname }}</h1>
+        <div class="level-badge">Lv. {{ current_user.level }} • {{ current_user.xp }} XP • 🔥 {{ current_user.streak }} day streak</div>
+    </div>
+    <div class="dashboard-grid">
+        <section class="dash-card">
+            <h2>Recent Tests</h2>
+            {% if scores %}
+                <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead><tr><th>WPM</th><th>Accuracy</th><th>Net WPM</th><th>Category</th><th>Date</th></tr></thead>
+                    <tbody>
+                        {% for s in scores %}<tr><td>{{ s[0]|round(1) }}</td><td>{{ s[1]|round(1) }}%</td><td>{{ s[2]|round(1) if s[2] else s[0]|round(1) }}</td><td>{{ s[3] or 'general' }}</td><td>{{ s[4] }}</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            {% else %}<div class="empty-state"><div class="empty-state-icon">⌨️</div><p>No tests yet. <a href="{{ url_for('typing_page') }}">Start typing!</a></p></div>{% endif %}
+        </section>
+        <section class="dash-card">
+            <h2>Badges</h2>
+            {% if badges %}
+                <div class="badge-mini-grid">
+                    {% for b in badges %}<div class="badge-mini" title="{{ b.desc }}">{{ b.name }}</div>{% endfor %}
+                </div>
+            {% else %}<div class="empty-state"><div class="empty-state-icon">🏆</div><p>No badges yet. Keep practicing!</p></div>{% endif %}
+        </section>
+        <section class="dash-card">
+            <h2>Game Ratings</h2>
+            {% if ratings %}
+                <ul>{% for r in ratings %}<li>{{ r[0].capitalize() }}: <strong>{{ r[1] }}</strong> ELO</li>{% endfor %}</ul>
+            {% else %}<div class="empty-state"><div class="empty-state-icon">🎮</div><p>No rated games yet.</p></div>{% endif %}
+        </section>
+        <section class="dash-card">
+            <h2>Classrooms</h2>
+            {% if classrooms %}
+                <ul>{% for c in classrooms %}<li>{{ c[1] }} <code>{{ c[2] }}</code></li>{% endfor %}</ul>
+            {% else %}<div class="empty-state"><div class="empty-state-icon">🏫</div><p>Not in any classroom.</p></div>{% endif %}
+            <form method="POST" action="{{ url_for('join_classroom') }}" class="inline-form">
+                <input type="text" name="code" placeholder="Classroom Code" required maxlength="20">
+                <button type="submit" class="btn btn-small">Join</button>
+            </form>
+        </section>
+        <section class="dash-card">
+            <h2>Homework</h2>
+            {% if homework %}
+                <ul>{% for h in homework %}<li>{{ h[1] }} {% if h[5] %}✅ ({{ h[5]|round(1) }} WPM){% else %}⏳ Due {{ h[3] }}{% endif %}</li>{% endfor %}</ul>
+            {% else %}<div class="empty-state"><div class="empty-state-icon">📚</div><p>No active homework.</p></div>{% endif %}
+        </section>
+        <section class="dash-card">
+            <h2>Daily Challenge</h2>
+            {% if daily_challenge %}
+                <p>{{ daily_challenge[2] }} — Target: {{ daily_challenge[3] }} — <strong>{{ daily_challenge[4] }} XP</strong></p>
+                {% if daily_progress and daily_progress[1] %}<p>✅ Completed!</p>{% else %}<a href="{{ url_for('typing_page') }}" class="btn btn-small">Go</a>{% endif %}
+            {% else %}<p>No challenge today.</p>{% endif %}
+        </section>
+    </div>
+    <div class="quick-actions">
+        <a href="{{ url_for('typing_page') }}" class="btn btn-primary">Solo Type</a>
+        <a href="{{ url_for('competitions_hub') }}" class="btn btn-primary">Compete</a>
+        <a href="{{ url_for('games_hub') }}" class="btn btn-primary">Play Games</a>
+        <a href="{{ url_for('tournament_list') }}" class="btn btn-primary">Tournaments</a>
+        <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Analytics</a>
+        <a href="{{ url_for('history') }}" class="btn btn-secondary">History</a>
+        <a href="{{ url_for('certificates') }}" class="btn btn-secondary">Certificates</a>
+        <a href="{{ url_for('replays_page') }}" class="btn btn-secondary">Replays</a>
+    </div>
+    <section class="dash-card" style="margin-top:18px;">
+        <h2>💡 Recommended For You</h2>
+        <div id="recommendations" style="display:flex;flex-wrap:wrap;gap:10px;">
+            <div class="rec-card" style="background:var(--surface2);padding:14px;border-radius:10px;border:1px solid var(--border);flex:1 1 200px;">
+                <strong>🎯 Daily Challenge</strong>
+                <p style="color:var(--muted);font-size:0.85rem;margin-top:6px;">Complete today's typing challenge to earn 50 XP and maintain your streak!</p>
+                <a href="{{ url_for('typing_page') }}" class="btn btn-small" style="margin-top:8px;">Start</a>
+            </div>
+            <div class="rec-card" style="background:var(--surface2);padding:14px;border-radius:10px;border:1px solid var(--border);flex:1 1 200px;">
+                <strong>🏆 Join a Tournament</strong>
+                <p style="color:var(--muted);font-size:0.85rem;margin-top:6px;">Compete against other students and climb the leaderboard.</p>
+                <a href="{{ url_for('tournament_list') }}" class="btn btn-small" style="margin-top:8px;">Browse</a>
+            </div>
+            <div class="rec-card" style="background:var(--surface2);padding:14px;border-radius:10px;border:1px solid var(--border);flex:1 1 200px;">
+                <strong>📊 View Analytics</strong>
+                <p style="color:var(--muted);font-size:0.85rem;margin-top:6px;">Track your progress and identify areas to improve.</p>
+                <a href="{{ url_for('analytics') }}" class="btn btn-small" style="margin-top:8px;">Analyze</a>
+            </div>
+        </div>
+    </section>
+    <section class="dash-card api-section">
+        <h2>API Keys</h2>
+        {% if api_keys %}
+            <ul>{% for k in api_keys %}<li>{{ k[0] }} — {{ k[2] }} requests</li>{% endfor %}</ul>
+        {% endif %}
+        <form method="POST" action="{{ url_for('generate_api_key') }}" class="inline-form">
+            <input type="text" name="name" placeholder="Key name" required>
+            <button type="submit" class="btn btn-small">Generate</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Chess Arena - Lumina{% endblock %}
+{% block content %}
+<div class="game-page">
+    <div class="game-main">
+        <h1>Chess Room: {{ room_id }}</h1>
+        <div id="chess-status" class="status-badge">Waiting for opponent...</div>
+        <div class="chess-board-container"><div id="chess-board" class="chess-board" role="application" aria-label="Chess board"></div></div>
+        <div class="game-controls" style="margin-top:14px;">
+            <button id="resign-btn" class="btn btn-secondary" disabled>Resign</button>
+            <button id="spectate-btn" class="btn btn-small" onclick="joinSpectator()">Spectate</button>
+        </div>
+    </div>
+    <aside class="game-sidebar" role="complementary">
+        <div class="player-card" id="white-card">White: <span id="white-name">—</span></div>
+        <div class="player-card" id="black-card">Black: <span id="black-name">—</span></div>
+        <div class="game-chat">
+            <h3>Room Chat</h3>
+            <div id="chat-log" class="chat-log" role="log"></div>
+            <form id="chat-form" class="chat-form">
+                <input type="text" id="chat-input" placeholder="Chat..." maxlength="500">
+                <button type="submit" class="btn btn-small">Send</button>
+            </form>
+        </div>
+    </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+    const roomId = {{ room_id | tojson }};
+    const isBot = {{ bot | tojson }} === "1";
+    const socket = io({path: '/socket.io', transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: 5, reconnectionDelay: 1000});
+    let myColor = isBot ? 'white' : null;
+    let boardState = {turn: 'white', board: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'};
+    let selected = null;
+    const boardEl = document.getElementById('chess-board');
+    const statusEl = document.getElementById('chess-status');
+    const pieces = {'r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙'};
+
+    function renderFEN(fen) {
+        boardEl.innerHTML = '';
+        if (!fen || fen === 'start') fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        const rows = fen.split(' ')[0].split('/');
+        rows.forEach((row, ri) => {
+            const rowDiv = document.createElement('div'); rowDiv.className = 'chess-row';
+            let ci = 0;
+            for (const ch of row) {
+                if (/\d/.test(ch)) {
+                    for (let i=0;i<parseInt(ch);i++) {
+                        const sq = document.createElement('div');
+                        sq.className = 'chess-square ' + ((ri+ci)%2===0?'light':'dark');
+                        sq.dataset.sq = String.fromCharCode(97+ci) + (8-ri);
+                        sq.addEventListener('click', onSquareClick);
+                        rowDiv.appendChild(sq); ci++;
+                    }
+                } else {
+                    const sq = document.createElement('div');
+                    sq.className = 'chess-square ' + ((ri+ci)%2===0?'light':'dark');
+                    sq.dataset.sq = String.fromCharCode(97+ci) + (8-ri);
+                    sq.textContent = pieces[ch] || '';
+                    sq.dataset.piece = ch;
+                    sq.addEventListener('click', onSquareClick);
+                    rowDiv.appendChild(sq); ci++;
+                }
+            }
+            boardEl.appendChild(rowDiv);
+        });
+    }
+
+    function onSquareClick(e) {
+        const square = e.target.closest('.chess-square');
+        if (!square) { console.log('[Chess] Click missed square'); return; }
+        const sq = square.dataset.sq;
+        console.log('[Chess] Clicked', sq, 'myColor=', myColor, 'boardState.turn=', boardState ? boardState.turn : null, 'selected=', selected);
+        if (!myColor) { statusEl.textContent = 'Waiting for assignment...'; return; }
+        if (!boardState) { statusEl.textContent = 'Waiting for game start...'; return; }
+        const turn = boardState.turn;
+        if (turn !== myColor) { statusEl.textContent = 'Waiting for opponent...'; return; }
+        if (!selected) {
+            const piece = square.dataset.piece;
+            if (!piece) { console.log('[Chess] Empty square, no piece to select'); return; }
+            const isWhite = piece === piece.toUpperCase();
+            if ((myColor === 'white' && !isWhite) || (myColor === 'black' && isWhite)) {
+                console.log('[Chess] Wrong color piece'); return;
+            }
+            selected = sq;
+            square.classList.add('selected');
+            console.log('[Chess] Selected', sq, piece);
+        } else {
+            const move = selected + sq;
+            console.log('[Chess] Sending move', move);
+            if (socket.connected) {
+                socket.emit('chess_move', {room_id: roomId, move: move});
+                statusEl.textContent = 'Move sent...';
+            } else {
+                statusEl.textContent = 'Offline — move not sent';
+            }
+            selected = null;
+            document.querySelectorAll('.selected').forEach(el=>el.classList.remove('selected'));
+        }
+    }
+
+    // Render initial board immediately
+    renderFEN('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    statusEl.textContent = 'Connecting to server...';
+
+    socket.on('disconnect', (reason) => {
+        console.log('[Chess] Socket disconnected:', reason);
+        statusEl.textContent = 'Disconnected — ' + reason;
+    });
+
+    socket.on('reconnect', (attemptNumber) => {
+        console.log('[Chess] Socket reconnected after', attemptNumber, 'attempts');
+        statusEl.textContent = 'Reconnected';
+    });
+
+    socket.on('reconnect_attempt', (attemptNumber) => {
+        console.log('[Chess] Reconnect attempt', attemptNumber);
+        statusEl.textContent = 'Reconnecting... (' + attemptNumber + ')';
+    });
+
+    socket.on('connect', () => {
+        statusEl.textContent = 'Connected. Waiting for opponent...';
+        if (isBot) {
+            socket.emit('start_chess_bot', {room_id: roomId});
+        } else {
+            socket.emit('join_chess_room', {room_id: roomId});
+        }
+        socket.emit('join_room_chat', {room: roomId});
+    });
+
+    socket.on('chess_assigned', (d) => {
+        myColor = d.color;
+        statusEl.textContent = d.color === 'spectator' ? 'Spectating' : 'You are ' + d.color;
+    });
+
+    socket.on('game_start', (d) => {
+        boardState = {turn: d.turn, board: d.board};
+        renderFEN(d.board);
+        statusEl.textContent = 'Game started! ' + d.turn + ' to move';
+        document.getElementById('resign-btn').disabled = false;
+    });
+
+    socket.on('chess_update', (d) => {
+        boardState = {turn: d.turn, board: d.board};
+        renderFEN(d.board);
+        statusEl.textContent = d.result ? 'Result: ' + d.result : d.turn + ' to move';
+        if (d.result) document.getElementById('resign-btn').disabled = true;
+        if (isBot && d.turn === 'black' && !d.result) {
+            setTimeout(() => socket.emit('chess_bot_move', {room_id: roomId}), 600);
+        }
+    });
+
+    socket.on('chess_error', (d) => { statusEl.textContent = 'Error: ' + d.msg; console.error('[Chess] Server error:', d); });
+    socket.on('connect_error', (err) => { console.error("Socket error:", err); statusEl.textContent = "Connection error — refresh page"; });
+
+    socket.on('room_message', (m) => {
+        const div = document.createElement('div'); div.className = 'chat-msg';
+        div.innerHTML = '<strong>' + m.username + ':</strong> ' + m.message;
+        document.getElementById('chat-log').appendChild(div);
+    });
+
+    document.getElementById('chat-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const msg = document.getElementById('chat-input').value.trim();
+        if (msg) { socket.emit('room_message', {room: roomId, message: msg}); document.getElementById('chat-input').value = ''; }
+    });
+
+    document.getElementById('resign-btn').addEventListener('click', () => {
+        if (confirm('Resign?')) socket.emit('chess_move', {room_id: roomId, move: 'resign'});
+    });
+
+    socket.on('spectator_state', (d) => {
+        if (d.board) {
+            boardState = {turn: d.turn || 'white', board: d.board};
+            renderFEN(d.board);
+        }
+        if (d.white) document.getElementById('white-name').textContent = d.white.name || '—';
+        if (d.black) document.getElementById('black-name').textContent = d.black.name || '—';
+        statusEl.textContent = 'Spectating';
+    });
+
+    window.joinSpectator = function() {
+        socket.emit('join_spectator', {room_id: roomId, game_type: 'chess'});
+        statusEl.textContent = 'Spectator mode';
+    };
+})();
+</script>
+{% endblock %}

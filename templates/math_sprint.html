@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Math Sprint - Lumina{% endblock %}
+{% block content %}
+<div class="game-container">
+    <h1>🧮 Math Sprint</h1>
+    <div class="game-meta">
+        <span id="math-timer">60s</span>
+        <span id="math-score">Score: 0</span>
+        <span id="math-streak">Streak: 0</span>
+    </div>
+    <div class="difficulty-select">
+        <label>Difficulty:
+            <select id="math-difficulty">
+                <option value="easy">Easy (+, -)</option>
+                <option value="medium" selected>Medium (+, -, ×)</option>
+                <option value="hard">Hard (+, -, ×, ÷)</option>
+            </select>
+        </label>
+    </div>
+    <div id="math-problem" class="math-problem">Press Start</div>
+    <input type="number" id="math-input" class="math-input" disabled aria-label="Answer">
+    <div class="game-controls">
+        <button id="math-start" class="btn btn-primary">Start</button>
+    </div>
+    <div id="math-results" class="results-panel" style="display:none">
+        <div class="stat-grid">
+            <div class="stat"><div class="stat-value" id="math-final-score">0</div><div class="stat-label">Score</div></div>
+            <div class="stat"><div class="stat-value" id="math-correct">0</div><div class="stat-label">Correct</div></div>
+            <div class="stat"><div class="stat-value" id="math-total">0</div><div class="stat-label">Total</div></div>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    let score = 0, correct = 0, total = 0, streak = 0, timeLeft = 60, timerId = null, active = false;
+    const problemEl = document.getElementById('math-problem');
+    const input = document.getElementById('math-input');
+    const timerEl = document.getElementById('math-timer');
+    const scoreEl = document.getElementById('math-score');
+    const streakEl = document.getElementById('math-streak');
+    let currentAnswer = 0;
+    function rand(n) { return Math.floor(Math.random() * n) + 1; }
+    function genProblem() {
+        const diff = document.getElementById('math-difficulty').value;
+        let a = rand(20), b = rand(20), op = '+';
+        if (diff === 'medium') { const ops = ['+', '-', '×']; op = ops[Math.floor(Math.random() * ops.length)]; }
+        else if (diff === 'hard') { const ops = ['+', '-', '×', '÷']; op = ops[Math.floor(Math.random() * ops.length)]; }
+        else { const ops = ['+', '-']; op = ops[Math.floor(Math.random() * ops.length)]; }
+        if (op === '÷') { a = a * b; currentAnswer = a / b; }
+        else if (op === '×') { currentAnswer = a * b; }
+        else if (op === '-') { currentAnswer = a - b; }
+        else { currentAnswer = a + b; }
+        problemEl.textContent = a + ' ' + op + ' ' + b + ' = ?';
+        input.value = ''; input.focus();
+    }
+    function tick() { timeLeft--; timerEl.textContent = timeLeft + 's'; if (timeLeft <= 0) finish(); }
+    function finish() {
+        active = false; clearInterval(timerId); input.disabled = true;
+        document.getElementById('math-results').style.display = 'block';
+        document.getElementById('math-final-score').textContent = score;
+        document.getElementById('math-correct').textContent = correct;
+        document.getElementById('math-total').textContent = total;
+        fetch('/submit/math', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({score: score, correct: correct, total: total, difficulty: document.getElementById('math-difficulty').value, time_limit: 60})
+        });
+    }
+    document.getElementById('math-start').addEventListener('click', () => {
+        if (active) return;
+        active = true; score = 0; correct = 0; total = 0; streak = 0; timeLeft = 60;
+        input.disabled = false; document.getElementById('math-results').style.display = 'none';
+        timerId = setInterval(tick, 1000); genProblem();
+    });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && active) {
+            total++;
+            if (parseFloat(input.value) === currentAnswer) { correct++; streak++; score += 10 + streak * 2; }
+            else { streak = 0; }
+            scoreEl.textContent = 'Score: ' + score;
+            streakEl.textContent = 'Streak: ' + streak;
+            genProblem();
+        }
+    });
+})();
+</script>
+{% endblock %}

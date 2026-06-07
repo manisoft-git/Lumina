@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Badges - Lumina{% endblock %}
+{% block content %}
+<div class="badges-page">
+    <h1>Badges</h1>
+    <div class="badge-grid">
+        {% for b in badges %}
+        <div class="badge-card {% if b.earned %}earned{% else %}locked{% endif %}">
+            <div class="badge-icon">{% if b.earned %}🏆{% else %}🔒{% endif %}</div>
+            <h3>{{ b.name }}</h3>
+            <p>{{ b.desc }}</p>
+            <small>{{ b.xp }} XP</small>
+            {% if b.earned %}<small>Earned: {{ b.earned }}</small>{% endif %}
+        </div>
+        {% endfor %}
+    {% if not badges %}
+        <div class="empty-state" style="grid-column: 1 / -1;"><div class="empty-state-icon">🔒</div><p>No badges earned yet. Complete tests and games to unlock them!</p></div>
+    {% endif %}
+    </div>
+</div>
+{% endblock %}

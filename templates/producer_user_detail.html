@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}{{ target_user.fullname }} - User Detail{% endblock %}
+{% block head %}
+<style>
+.user-detail-hero {
+    background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(74,222,128,0.06));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.user-detail-avatar {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; font-weight: 800; color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 40px var(--primary-glow);
+}
+.user-detail-info h1 { margin-bottom: 8px; font-size: 1.7rem; }
+.user-detail-meta { color: var(--muted); font-size: 0.92rem; }
+.user-detail-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    margin: 28px 0;
+}
+.user-detail-stat {
+    background: var(--surface);
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+    transition: transform 0.2s;
+}
+.user-detail-stat:hover { transform: translateY(-3px); }
+.user-detail-stat-value { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+.user-detail-stat-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
+.user-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+}
+@media (max-width: 800px) { .user-detail-grid { grid-template-columns: 1fr; } }
+.user-detail-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 24px;
+}
+.user-detail-card h2 { font-size: 1.15rem; margin-bottom: 16px; color: var(--primary); }
+.diag-terminal {
+    background: #070c14;
+    border-radius: 12px;
+    border: 1px solid rgba(56,189,248,0.2);
+    padding: 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.84rem;
+    color: #8ba3c7;
+    min-height: 220px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+.diag-line { margin-bottom: 6px; white-space: pre-wrap; }
+.diag-prompt { color: var(--accent); font-weight: 700; }
+.diag-cmd { color: var(--primary); font-weight: 600; }
+.beam-anim { display: inline-block; animation: beamPulse 1s ease infinite; }
+@keyframes beamPulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.agent-mini {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.agent-mini:hover, .agent-mini.active {
+    border-color: var(--primary);
+    background: rgba(56,189,248,0.08);
+}
+</style>
+{% endblock %}
+{% block content %}
+<div class="user-detail-hero">
+    <div class="user-detail-avatar">{{ target_user.fullname[0] if target_user.fullname else '?' }}</div>
+    <div class="user-detail-info">
+        <h1>{{ target_user.fullname }} <span class="producer-badge badge-{{ target_user.role }}">{{ target_user.role }}</span></h1>
+        <div class="user-detail-meta">
+            @{{ target_user.username }} • {{ target_user.email }} • Member since {{ target_user.created_at }}
+        </div>
+    </div>
+</div>
+<div class="user-detail-stats">
+    <div class="user-detail-stat"><div class="user-detail-stat-value">{{ target_user.level }}</div><div class="user-detail-stat-label">Level</div></div>
+    <div class="user-detail-stat"><div class="user-detail-stat-value">{{ target_user.xp }}</div><div class="user-detail-stat-label">XP</div></div>
+    <div class="user-detail-stat"><div class="user-detail-stat-value">{{ target_user.streak }}</div><div class="user-detail-stat-label">Day Streak</div></div>
+    <div class="user-detail-stat"><div class="user-detail-stat-value">{{ scores|length }}</div><div class="user-detail-stat-label">Tests</div></div>
+    <div class="user-detail-stat"><div class="user-detail-stat-value">{{ badges|length }}</div><div class="user-detail-stat-label">Badges</div></div>
+    <div class="user-detail-stat"><div class="user-detail-stat-value">{{ classrooms|length }}</div><div class="user-detail-stat-label">Classrooms</div></div>
+</div>
+<div class="user-detail-grid">
+    <div class="user-detail-card">
+        <h2>📊 Score History</h2>
+        {% if scores %}
+        <div style="overflow-x:auto;">
+        <table class="data-table" style="font-size:0.86rem;">
+            <thead><tr><th>WPM</th><th>Acc</th><th>Net</th><th>Category</th><th>Date</th></tr></thead>
+            <tbody>
+                {% for s in scores %}
+                <tr><td>{{ s[0]|round(1) }}</td><td>{{ s[1]|round(1) }}%</td><td>{{ s[2]|round(1) if s[2] else s[0]|round(1) }}</td><td>{{ s[4] or 'general' }}</td><td>{{ s[6] }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <div class="empty-state"><div class="empty-state-icon">📊</div><p>No scores yet.</p></div>
+        {% endif %}
+    </div>
+    <div class="user-detail-card">
+        <h2>🏆 Badges</h2>
+        {% if badges %}
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            {% for b in badges %}
+            <div class="badge-mini" title="{{ b.desc }}">{{ b.name }}</div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state"><div class="empty-state-icon">🔒</div><p>No badges yet.</p></div>
+        {% endif %}
+    </div>
+    <div class="user-detail-card">
+        <h2>🎮 Game Ratings</h2>
+        {% if ratings %}
+        <ul>{% for r in ratings %}<li>{{ r[0].capitalize() }}: <strong>{{ r[1] }}</strong> ELO ({{ r[2] }} games)</li>{% endfor %}</ul>
+        {% else %}
+        <div class="empty-state"><div class="empty-state-icon">🎮</div><p>No rated games yet.</p></div>
+        {% endif %}
+    </div>
+    <div class="user-detail-card">
+        <h2>🏫 Classrooms</h2>
+        {% if classrooms %}
+        <ul>{% for c in classrooms %}<li>{{ c[0] }} <code>{{ c[1] }}</code></li>{% endfor %}</ul>
+        {% else %}
+        <div class="empty-state"><div class="empty-state-icon">🏫</div><p>Not in any classroom.</p></div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="user-detail-card" style="margin-top:24px;">
+    <h2>🔗 Connected Agents</h2>
+    {% if agents %}
+        {% for a in agents %}
+        <div class="agent-mini" data-agent="{{ a[0] }}" onclick="selectAgentDetail('{{ a[0] }}')">
+            <strong>{{ a[1] }}</strong> <span style="color:var(--muted);font-size:0.8rem;">{{ a[2] }} • {{ a[4] }}</span>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="color:var(--muted);">No agents linked to this user.</p>
+    {% endif %}
+</div>
+
+<div class="user-detail-card" style="margin-top:24px;">
+    <h2>🔧 Remote Diagnostics Terminal</h2>
+    <div class="diag-terminal" id="diag-terminal">
+        <div class="diag-line"><span class="diag-prompt">[Mani$oft]--[$]></span> Establishing secure connection...</div>
+        <div class="diag-line"><span class="beam-anim">[./]</span> Handshake complete</div>
+        <div class="diag-line">User agent: <span id="diag-ua">Detecting...</span></div>
+        <div class="diag-line">Platform: <span id="diag-platform">Detecting...</span></div>
+        <div class="diag-line">Screen: <span id="diag-screen">Detecting...</span></div>
+        <div class="diag-line">Connection: <span style="color:var(--accent)">ONLINE</span></div>
+        <div class="diag-line">---</div>
+        <div class="diag-line">Select an agent above, then type commands here.</div>
+        <div class="diag-line">Approved: <span class="diag-cmd">ipconfig</span>, <span class="diag-cmd">ping</span>, <span class="diag-cmd">hostname</span>, <span class="diag-cmd">whoami</span>, <span class="diag-cmd">systeminfo</span>, <span class="diag-cmd">netstat</span>, <span class="diag-cmd">tasklist</span></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+        <input type="text" id="diag-input" placeholder="Enter diagnostic command..." style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:'Courier New',monospace;">
+        <button class="btn btn-primary" onclick="sendDiag()">Execute</button>
+    </div>
+</div>
+<a href="{{ url_for('producer_panel') }}" class="btn btn-secondary" style="margin-top:24px;">← Back to Producer Panel</a>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('diag-ua').textContent = navigator.userAgent.substring(0, 60) + '...';
+document.getElementById('diag-platform').textContent = navigator.platform;
+document.getElementById('diag-screen').textContent = screen.width + 'x' + screen.height;
+
+const socket = io();
+let selectedAgentDetail = null;
+const diagTerm = document.getElementById('diag-terminal');
+const diagInput = document.getElementById('diag-input');
+
+function selectAgentDetail(agentId) {
+    selectedAgentDetail = agentId;
+    document.querySelectorAll('.agent-mini').forEach(c => c.classList.remove('active'));
+    document.querySelector('.agent-mini[data-agent="' + agentId + '"]').classList.add('active');
+    addDiagLine('<span class="diag-prompt">[Mani$oft]--[$]></span> Selected agent: ' + agentId);
+    socket.emit('producer_subscribe', {agent_id: agentId});
+}
+
+function addDiagLine(html) {
+    const div = document.createElement('div');
+    div.className = 'diag-line';
+    div.innerHTML = html;
+    diagTerm.appendChild(div);
+    diagTerm.scrollTop = diagTerm.scrollHeight;
+}
+
+function sendDiag() {
+    const cmd = diagInput.value.trim();
+    diagInput.value = '';
+    if (!cmd) return;
+    if (!selectedAgentDetail) {
+        addDiagLine('<span style="color:var(--danger)">No agent selected. Click an agent card above.</span>');
+        return;
+    }
+    addDiagLine('<span class="diag-prompt">[Mani$oft]--[$]></span> ' + cmd);
+    socket.emit('producer_command', {agent_id: selectedAgentDetail, command: cmd});
+}
+
+socket.on('producer_output', (data) => {
+    addDiagLine('<span class="diag-prompt">[./]</span> Output from ' + data.agent_id.slice(0,12) + ':');
+    const out = document.createElement('div');
+    out.className = 'diag-line';
+    out.style.whiteSpace = 'pre-wrap';
+    out.style.color = '#a0b8d7';
+    out.textContent = data.output;
+    diagTerm.appendChild(out);
+    diagTerm.scrollTop = diagTerm.scrollHeight;
+});
+
+socket.on('producer_error', (data) => {
+    addDiagLine('<span style="color:var(--danger)">ERROR: ' + data.msg + '</span>');
+});
+
+diagInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendDiag(); });
+</script>
+{% endblock %}

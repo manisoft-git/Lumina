@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Certificates - Lumina{% endblock %}
+{% block content %}
+<div class="certificates-page">
+    <h1>🏆 Your Certificates</h1>
+    {% if certificates %}
+        <div class="cert-grid">
+            {% for c in certificates %}
+            <div class="cert-card">
+                <div class="cert-icon">🏅</div>
+                <h3>{{ c[0].replace('_', ' ').title() }}</h3>
+                <p>Milestone: {{ c[1] }}</p>
+                <small>Awarded: {{ c[2] }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state"><div class="empty-state-icon">🏅</div><p>No certificates yet. Keep practicing to earn milestones!</p></div>
+        <div class="cert-hints">
+            <p>💡 Earn certificates by reaching:</p>
+            <ul>
+                <li>50 WPM typing speed</li>
+                <li>100 WPM typing speed</li>
+                <li>1500 Chess ELO rating</li>
+            </ul>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

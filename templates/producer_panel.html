@@ -1,0 +1,1024 @@
+{% extends "base.html" %}
+{% block title %}🔧 Producer Panel — Lumina{% endblock %}
+{% block head %}
+<style>
+/* === LUMINA PRODUCER PANEL v5.1 — Cyberpunk Terminal === */
+:root {
+    --term-bg: #070c14;
+    --term-grid: rgba(56,189,248,0.03);
+    --term-glow: rgba(56,189,248,0.15);
+    --term-accent: #4ade80;
+    --term-danger: #f87171;
+    --term-warn: #facc15;
+    --term-primary: #38bdf8;
+    --term-muted: #475569;
+    --term-font: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* CRT Scanline Effect */
+.crt-overlay {
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    pointer-events: none; z-index: 9999; opacity: 0.04;
+    background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px
+    );
+}
+
+/* Ambient Grid Background */
+.ambient-grid {
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    pointer-events: none; z-index: -1; opacity: 0.4;
+    background-image: 
+        linear-gradient(var(--term-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--term-grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridPulse 8s ease-in-out infinite;
+}
+@keyframes gridPulse { 0%,100%{opacity:0.4} 50%{opacity:0.6} }
+
+/* Producer Hero */
+.producer-hero {
+    background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(74,222,128,0.04));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.producer-hero::before {
+    content: ''; position: absolute; top:0; left:0; right:0; height: 2px;
+    background: linear-gradient(90deg, var(--term-primary), var(--term-accent), var(--term-primary));
+    animation: scanLine 3s linear infinite;
+}
+@keyframes scanLine { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+
+/* Live Stats — Animated Counters */
+.producer-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.producer-stat {
+    background: var(--surface);
+    padding: 20px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+.producer-stat:hover {
+    transform: translateY(-3px);
+    border-color: var(--term-primary);
+    box-shadow: 0 0 20px var(--term-glow);
+}
+.producer-stat-value {
+    font-size: 2.4rem;
+    font-weight: 800;
+    font-family: var(--term-font);
+    background: linear-gradient(135deg, var(--term-primary), var(--term-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: all 0.3s ease;
+}
+.producer-stat-value.updating {
+    animation: valueGlitch 0.4s ease;
+}
+@keyframes valueGlitch {
+    0%,100%{transform:translateX(0)} 20%{transform:translateX(-2px)} 40%{transform:translateX(2px)} 60%{transform:translateX(-1px)} 80%{transform:translateX(1px)}
+}
+.producer-stat-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 6px;
+    font-family: var(--term-font);
+}
+.producer-stat-pulse {
+    position: absolute; top:8px; right:8px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--term-accent);
+    box-shadow: 0 0 10px var(--term-accent);
+    animation: statPulse 2s ease infinite;
+}
+@keyframes statPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+/* Main Grid */
+.producer-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 24px;
+}
+@media (max-width: 1100px) { .producer-grid { grid-template-columns: 1fr; } }
+
+/* User Directory — Holographic Cards */
+.producer-users {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+.producer-users-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.producer-user-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 70px 80px 100px;
+    gap: 12px;
+    padding: 12px 20px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    transition: all 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+.producer-user-row:hover {
+    background: rgba(56,189,248,0.06);
+    border-left: 3px solid var(--term-primary);
+}
+.producer-user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--term-primary), var(--term-accent));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.8rem; color: #fff;
+    font-family: var(--term-font);
+}
+.producer-user-name { font-weight: 700; font-size: 0.92rem; }
+.producer-user-meta { font-size: 0.78rem; color: var(--muted); font-family: var(--term-font); }
+.producer-user-level {
+    background: var(--surface2);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+    font-family: var(--term-font);
+    color: var(--term-primary);
+    border: 1px solid var(--border);
+}
+.producer-user-xp {
+    font-size: 0.85rem;
+    color: var(--term-accent);
+    font-weight: 700;
+    font-family: var(--term-font);
+}
+.producer-user-status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.78rem; font-family: var(--term-font);
+}
+.status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--term-muted);
+    position: relative;
+}
+.status-dot.online {
+    background: var(--term-accent);
+    box-shadow: 0 0 12px var(--term-accent);
+    animation: statusPulse 2s ease infinite;
+}
+@keyframes statusPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* Agent Cards — Holographic */
+.agent-section { margin-top: 24px; }
+.agent-section h3 {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px; font-size: 1rem;
+}
+.agent-live-indicator {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--term-accent);
+    box-shadow: 0 0 10px var(--term-accent);
+    animation: liveBlink 1.5s ease infinite;
+}
+@keyframes liveBlink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.agent-card {
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.agent-card::before {
+    content: ''; position: absolute; top:0; left:0; right:0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--term-primary), transparent);
+    opacity: 0; transition: opacity 0.3s;
+}
+.agent-card:hover::before, .agent-card.active::before { opacity: 1; }
+.agent-card:hover {
+    border-color: var(--term-primary);
+    transform: translateX(6px);
+    box-shadow: -4px 0 20px rgba(56,189,248,0.1);
+}
+.agent-card.active {
+    border-color: var(--term-accent);
+    background: rgba(74,222,128,0.04);
+    transform: translateX(6px);
+}
+.agent-status {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--term-muted);
+    margin-right: 8px;
+}
+.agent-status.online {
+    background: var(--term-accent);
+    box-shadow: 0 0 8px var(--term-accent);
+    animation: agentPulse 1.5s ease infinite;
+}
+@keyframes agentPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.agent-ekg {
+    display: inline-block; width: 40px; height: 16px;
+    margin-left: 8px; vertical-align: middle;
+}
+.agent-ekg svg { width: 100%; height: 100%; }
+.agent-ekg path {
+    stroke: var(--term-accent); stroke-width: 1.5;
+    fill: none; stroke-linecap: round;
+    animation: ekgDraw 2s ease infinite;
+}
+@keyframes ekgDraw {
+    0%{stroke-dasharray:0,200;stroke-dashoffset:0}
+    50%{stroke-dasharray:100,200;stroke-dashoffset:-50}
+    100%{stroke-dasharray:0,200;stroke-dashoffset:-200}
+}
+
+/* Terminal — The Star of the Show */
+.producer-terminal {
+    background: var(--term-bg);
+    border-radius: var(--radius);
+    border: 1px solid rgba(56,189,248,0.2);
+    overflow: hidden;
+    font-family: var(--term-font);
+    box-shadow: 0 0 40px rgba(56,189,248,0.06), inset 0 0 60px rgba(56,189,248,0.02);
+    position: relative;
+}
+.producer-terminal::after {
+    content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 0%, rgba(56,189,248,0.08) 0%, transparent 50%);
+}
+.producer-terminal-header {
+    background: rgba(56,189,248,0.08);
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    color: var(--term-primary);
+    border-bottom: 1px solid rgba(56,189,248,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    position: relative; z-index: 2;
+}
+.producer-terminal-header .term-dots {
+    display: flex; gap: 6px;
+    margin-right: auto;
+}
+.term-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.term-dot.red { background: var(--term-danger); }
+.term-dot.yellow { background: var(--term-warn); }
+.term-dot.green { background: var(--term-accent); }
+
+.producer-terminal-body {
+    padding: 16px;
+    height: 360px;
+    overflow-y: auto;
+    font-size: 0.84rem;
+    line-height: 1.7;
+    color: #8ba3c7;
+    position: relative; z-index: 2;
+}
+.producer-terminal-body::-webkit-scrollbar { width: 6px; }
+.producer-terminal-body::-webkit-scrollbar-thumb { background: var(--term-muted); border-radius: 3px; }
+.producer-terminal-line {
+    margin-bottom: 4px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    animation: lineAppear 0.2s ease;
+}
+@keyframes lineAppear { from { opacity:0; transform:translateX(-8px) } to { opacity:1; transform:translateX(0) } }
+.producer-terminal-prompt { color: var(--term-accent); font-weight: 700; }
+.producer-terminal-cmd { color: var(--term-primary); font-weight: 600; }
+.producer-terminal-error { color: var(--term-danger); }
+.producer-terminal-success { color: var(--term-accent); }
+.producer-terminal-warn { color: var(--term-warn); }
+.producer-beam {
+    display: inline-block;
+    animation: beamPulse 1.2s ease infinite;
+    color: var(--term-primary);
+    font-weight: 800;
+}
+@keyframes beamPulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+.producer-terminal-input {
+    display: flex; gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(56,189,248,0.15);
+    background: rgba(56,189,248,0.03);
+    position: relative; z-index: 2;
+}
+.producer-terminal-input input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #a0b8d8;
+    font-family: inherit;
+    font-size: 0.85rem;
+    outline: none;
+    caret-color: var(--term-primary);
+}
+.producer-terminal-input input::placeholder {
+    color: var(--term-muted);
+    font-style: italic;
+}
+
+/* Recent Activity — Timeline */
+.producer-recent {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-top: 20px;
+}
+.producer-recent-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+    transition: all 0.2s;
+}
+.producer-recent-item:hover {
+    background: rgba(56,189,248,0.03);
+    margin: 0 -10px;
+    padding: 10px;
+    border-radius: 8px;
+}
+.producer-recent-item:last-child { border-bottom: none; }
+.recent-time {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: var(--term-font);
+}
+.recent-wpm {
+    color: var(--term-primary);
+    font-weight: 700;
+    font-family: var(--term-font);
+}
+
+/* Command Palette Overlay */
+.cmd-palette {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(7,12,20,0.85);
+    backdrop-filter: blur(12px);
+    z-index: 10000;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15vh;
+}
+.cmd-palette.open { display: flex; }
+.cmd-palette-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 560px;
+    max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    overflow: hidden;
+}
+.cmd-palette-input {
+    width: 100%; padding: 16px 20px;
+    background: transparent; border: none;
+    color: var(--text); font-size: 1.1rem;
+    font-family: var(--term-font);
+    outline: none;
+    border-bottom: 1px solid var(--border);
+}
+.cmd-palette-input::placeholder { color: var(--muted); }
+.cmd-palette-list {
+    max-height: 320px; overflow-y: auto;
+    padding: 8px 0;
+}
+.cmd-palette-item {
+    padding: 10px 20px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: all 0.15s;
+    font-family: var(--term-font);
+    font-size: 0.9rem;
+}
+.cmd-palette-item:hover, .cmd-palette-item.active {
+    background: rgba(56,189,248,0.1);
+}
+.cmd-palette-item kbd {
+    margin-left: auto;
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+}
+
+/* Live Chart Container */
+.live-chart-container {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-top: 20px;
+    height: 220px;
+    position: relative;
+}
+.live-chart-container h3 {
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    color: var(--term-primary);
+    font-family: var(--term-font);
+    display: flex; align-items: center; gap: 8px;
+}
+
+/* Badge for roles */
+.producer-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: var(--term-font);
+}
+.badge-admin { background: rgba(239,68,68,0.15); color: var(--term-danger); border: 1px solid rgba(239,68,68,0.3); }
+.badge-teacher { background: rgba(56,189,248,0.15); color: var(--term-primary); border: 1px solid rgba(56,189,248,0.3); }
+.badge-student { background: rgba(74,222,128,0.15); color: var(--term-accent); border: 1px solid rgba(74,222,128,0.3); }
+
+/* Toast notifications */
+.toast-container {
+    position: fixed; bottom: 24px; right: 24px;
+    z-index: 10001;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.toast {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    min-width: 280px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    animation: toastSlide 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    font-family: var(--term-font);
+    font-size: 0.85rem;
+    display: flex; align-items: center; gap: 10px;
+}
+.toast.success { border-left: 3px solid var(--term-accent); }
+.toast.error { border-left: 3px solid var(--term-danger); }
+.toast.info { border-left: 3px solid var(--term-primary); }
+@keyframes toastSlide {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+.toast-exit {
+    animation: toastExit 0.3s ease forwards;
+}
+@keyframes toastExit {
+    to { transform: translateX(120%); opacity: 0; }
+}
+
+/* Search glow effect */
+#user-search:focus {
+    box-shadow: 0 0 0 3px var(--term-glow), 0 0 20px var(--term-glow);
+    border-color: var(--term-primary);
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+    .producer-user-row { grid-template-columns: 40px 1fr 60px 70px; }
+    .producer-user-status { display: none; }
+}
+@media (max-width: 600px) {
+    .producer-user-row { grid-template-columns: 40px 1fr 60px; }
+    .producer-user-xp { display: none; }
+    .producer-terminal-body { height: 260px; }
+    .cmd-palette-box { width: 95vw; }
+}
+</style>
+{% endblock %}
+{% block content %}
+<div class="crt-overlay"></div>
+<div class="ambient-grid"></div>
+
+<div class="producer-hero">
+    <h1>🔧 Producer Panel <span style="font-size:0.9rem;color:var(--muted);font-family:var(--term-font);">v5.1</span></h1>
+    <p style="color:var(--muted);font-size:0.9rem;">System oversight, user diagnostics, and remote support terminal.</p>
+</div>
+
+<div class="producer-stats" id="live-stats">
+    <div class="producer-stat" data-stat="users" onclick="showToast('Total registered users across all roles', 'info')">
+        <div class="producer-stat-pulse"></div>
+        <div class="producer-stat-value" id="stat-users">{{ totals[0] or 0 }}</div>
+        <div class="producer-stat-label">Total Users</div>
+    </div>
+    <div class="producer-stat" data-stat="active" onclick="showToast('Users who have submitted at least one score', 'info')">
+        <div class="producer-stat-pulse"></div>
+        <div class="producer-stat-value" id="stat-active">{{ totals[1] or 0 }}</div>
+        <div class="producer-stat-label">Active Typists</div>
+    </div>
+    <div class="producer-stat" data-stat="best" onclick="showToast('Highest Net WPM recorded globally', 'info')">
+        <div class="producer-stat-pulse"></div>
+        <div class="producer-stat-value" id="stat-best">{{ "%.1f"|format(totals[2] or 0) }}</div>
+        <div class="producer-stat-label">Global Best WPM</div>
+    </div>
+    <div class="producer-stat" data-stat="avg" onclick="showToast('Average Net WPM across all tests', 'info')">
+        <div class="producer-stat-pulse"></div>
+        <div class="producer-stat-value" id="stat-avg">{{ "%.1f"|format(totals[3] or 0) }}</div>
+        <div class="producer-stat-label">Global Avg WPM</div>
+    </div>
+</div>
+
+<div class="producer-grid">
+    <div>
+        <div class="producer-users">
+            <div class="producer-users-header">
+                <h3>👥 User Directory</h3>
+                <input type="text" id="user-search" placeholder="Search users..." 
+                    style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.88rem;transition:all 0.3s;">
+                <button class="btn btn-small" onclick="refreshUsers()" title="Refresh (Ctrl+R)">🔄</button>
+            </div>
+            <div id="user-list">
+                {% for u in users %}
+                <a href="{{ url_for('producer_user_detail', user_id=u[0]) }}" class="producer-user-row" data-name="{{ u[1] }} {{ u[2] }}">
+                    <div class="producer-user-avatar">{{ u[2][0] if u[2] else '?' }}</div>
+                    <div class="producer-user-info">
+                        <div class="producer-user-name">{{ u[2] or u[1] }} <span class="producer-badge badge-{{ u[4] }}">{{ u[4] }}</span></div>
+                        <div class="producer-user-meta">@{{ u[1] }} • {{ u[9] }}</div>
+                    </div>
+                    <div class="producer-user-level">Lv.{{ u[5] }}</div>
+                    <div class="producer-user-xp">{{ u[6] }} XP</div>
+                    <div class="producer-user-status">
+                        <span class="status-dot {% if u[8] %}online{% endif %}"></span>
+                        {{ u[7] or 0 }} 🔥
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="agent-section">
+            <h3><span class="agent-live-indicator"></span> Connected Agents</h3>
+            <div id="agent-list">
+                {% for a in agents %}
+                <div class="agent-card" data-agent="{{ a[0] }}" onclick="selectAgent('{{ a[0] }}')">
+                    <span class="agent-status online"></span>
+                    <strong>{{ a[1] or a[0] }}</strong>
+                    <span class="agent-ekg" aria-hidden="true">
+                        <svg viewBox="0 0 40 16"><path d="M0,8 L8,8 L10,4 L12,12 L14,8 L18,8 L20,2 L22,14 L24,8 L40,8"/></svg>
+                    </span>
+                    <span style="color:var(--muted);font-size:0.8rem;margin-left:8px;">{{ a[3] }} • {{ a[2] }}</span>
+                </div>
+                {% else %}
+                <div class="empty-state" style="padding:20px;">
+                    <div class="empty-state-icon">📡</div>
+                    <p style="color:var(--muted);font-size:0.9rem;">No agents currently online.</p>
+                    <p style="color:var(--muted);font-size:0.8rem;margin-top:6px;">Run <code>Lumina.py</code> on student machines.</p>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="btn btn-small" onclick="refreshAgents()" style="margin-top:10px;">Refresh Agents</button>
+        </div>
+
+        <div class="live-chart-container">
+            <h3>📈 Live Activity</h3>
+            <canvas id="live-activity-chart"></canvas>
+        </div>
+    </div>
+
+    <div>
+        <div class="producer-terminal">
+            <div class="producer-terminal-header">
+                <div class="term-dots">
+                    <span class="term-dot red"></span>
+                    <span class="term-dot yellow"></span>
+                    <span class="term-dot green"></span>
+                </div>
+                <span class="producer-beam">[./]</span> Remote Diagnostics Terminal
+                <span style="margin-left:auto;font-size:0.75rem;color:var(--muted);">v5.1</span>
+            </div>
+            <div class="producer-terminal-body" id="terminal-body">
+                <div class="producer-terminal-line"><span class="producer-terminal-prompt">[Mani$oft]--[$]></span> init diagnostics</div>
+                <div class="producer-terminal-line">Loading system modules... <span class="producer-beam">[./]</span></div>
+                <div class="producer-terminal-line">Connected to Lumina v5.1 kernel</div>
+                <div class="producer-terminal-line">Type <span class="producer-terminal-cmd">help</span> for available commands</div>
+                <div class="producer-terminal-line">Type <span class="producer-terminal-cmd">scan</span> to refresh user directory</div>
+                <div class="producer-terminal-line">Type <span class="producer-terminal-cmd">agents</span> to list connected agents</div>
+                <div class="producer-terminal-line">---</div>
+                <div class="producer-terminal-line"><span class="producer-terminal-success">INSTRUCTION:</span> Click any agent card on the left, then type commands here.</div>
+                <div class="producer-terminal-line">Approved: <span class="producer-terminal-cmd">ipconfig</span>, <span class="producer-terminal-cmd">ping</span>, <span class="producer-terminal-cmd">hostname</span>, <span class="producer-terminal-cmd">whoami</span>, <span class="producer-terminal-cmd">systeminfo</span>, <span class="producer-terminal-cmd">netstat</span>, <span class="producer-terminal-cmd">tasklist</span></div>
+            </div>
+            <div class="producer-terminal-input">
+                <span class="producer-terminal-prompt" id="terminal-prompt">[Mani$oft]--[$]></span>
+                <input type="text" id="terminal-input" placeholder="Enter command... (Ctrl+K for palette)" autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+
+        <div class="producer-recent">
+            <h3>⚡ Recent Activity</h3>
+            {% for r in recent %}
+            <div class="producer-recent-item">
+                <span><strong>{{ r[1] or r[0] }}</strong> — {{ r[4] or 'typing' }}</span>
+                <span class="recent-wpm">{{ "%.1f"|format(r[2] or 0) }} WPM</span>
+                <span class="recent-time">{{ r[5] }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Command Palette -->
+<div class="cmd-palette" id="cmd-palette">
+    <div class="cmd-palette-box">
+        <input type="text" class="cmd-palette-input" id="cmd-palette-input" placeholder="Type a command...">
+        <div class="cmd-palette-list" id="cmd-palette-list"></div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const socket = io();
+let selectedAgent = null;
+
+const terminalBody = document.getElementById('terminal-body');
+const terminalInput = document.getElementById('terminal-input');
+const terminalPrompt = document.getElementById('terminal-prompt');
+const toastContainer = document.getElementById('toast-container');
+const cmdPalette = document.getElementById('cmd-palette');
+const cmdPaletteInput = document.getElementById('cmd-palette-input');
+const cmdPaletteList = document.getElementById('cmd-palette-list');
+
+// === Toast System ===
+function showToast(msg, type='info', duration=3000) {
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.innerHTML = '<span>' + (type==='success'?'✅':type==='error'?'❌':'ℹ️') + '</span> ' + msg;
+    toastContainer.appendChild(toast);
+    if (LuminaAudio) LuminaAudio.notification();
+    setTimeout(() => {
+        toast.classList.add('toast-exit');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+// === Terminal ===
+function addLine(text, isPrompt=true) {
+    const div = document.createElement('div');
+    div.className = 'producer-terminal-line';
+    if (isPrompt) {
+        div.innerHTML = '<span class="producer-terminal-prompt">[Mani$oft]--[$]></span> ' + text;
+    } else {
+        div.innerHTML = text;
+    }
+    terminalBody.appendChild(div);
+    terminalBody.scrollTop = terminalBody.scrollHeight;
+}
+
+function addBeamLine(text) {
+    const div = document.createElement('div');
+    div.className = 'producer-terminal-line';
+    div.innerHTML = text + ' <span class="producer-beam">[./]</span>';
+    terminalBody.appendChild(div);
+    terminalBody.scrollTop = terminalBody.scrollHeight;
+}
+
+function addOutput(text) {
+    const div = document.createElement('div');
+    div.className = 'producer-terminal-line';
+    div.style.color = '#a0b8d8';
+    div.textContent = text;
+    terminalBody.appendChild(div);
+    terminalBody.scrollTop = terminalBody.scrollHeight;
+}
+
+function addError(text) {
+    const div = document.createElement('div');
+    div.className = 'producer-terminal-line producer-terminal-error';
+    div.textContent = text;
+    terminalBody.appendChild(div);
+    terminalBody.scrollTop = terminalBody.scrollHeight;
+}
+
+function addSuccess(text) {
+    const div = document.createElement('div');
+    div.className = 'producer-terminal-line producer-terminal-success';
+    div.textContent = text;
+    terminalBody.appendChild(div);
+    terminalBody.scrollTop = terminalBody.scrollHeight;
+}
+
+// === Agent Selection ===
+function selectAgent(agentId) {
+    selectedAgent = agentId;
+    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+    const card = document.querySelector('.agent-card[data-agent="' + agentId + '"]');
+    if (card) card.classList.add('active');
+    terminalPrompt.textContent = '[Mani$oft]--[' + agentId.slice(0,12) + ']> ';
+    addLine('Selected agent: ' + agentId, false);
+    addSuccess('Subscribed to agent output stream.');
+    addLine('Type a command (e.g. ipconfig, ping, hostname) and press Enter.', false);
+    socket.emit('producer_subscribe', {agent_id: agentId});
+    showToast('Agent ' + agentId.slice(0,12) + ' selected', 'success');
+}
+
+// === Socket Events ===
+socket.on('producer_output', (data) => {
+    addLine('[' + data.agent_id.slice(0,12) + '] $ ' + data.command, false);
+    addOutput(data.output);
+    showToast('Output received from ' + data.agent_id.slice(0,12), 'success');
+});
+
+socket.on('producer_error', (data) => {
+    addError('ERROR: ' + data.msg);
+    showToast(data.msg, 'error');
+});
+
+socket.on('producer_ack', (data) => {
+    addBeamLine('Sent ' + data.command + ' to ' + data.agent_id.slice(0,12));
+});
+
+socket.on('agent_online', (data) => {
+    addSuccess('Agent online: ' + (data.hostname || data.agent_id));
+    showToast('Agent ' + (data.hostname || data.agent_id) + ' connected', 'success');
+    refreshAgents();
+});
+
+socket.on('agent_offline', (data) => {
+    addError('Agent offline: ' + data.agent_id);
+    showToast('Agent ' + data.agent_id + ' disconnected', 'error');
+    refreshAgents();
+});
+
+// === Terminal Input ===
+terminalInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const raw = terminalInput.value.trim();
+        terminalInput.value = '';
+        if (!raw) return;
+        addLine(raw, true);
+        const cmd = raw.toLowerCase();
+        if (cmd === 'help') {
+            addLine('Available commands:', false);
+            addLine('  <span class="producer-terminal-cmd">scan</span>    — Refresh user directory', false);
+            addLine('  <span class="producer-terminal-cmd">status</span>  — Server health check', false);
+            addLine('  <span class="producer-terminal-cmd">users</span>   — Count registered users', false);
+            addLine('  <span class="producer-terminal-cmd">agents</span>  — List connected agents', false);
+            addLine('  <span class="producer-terminal-cmd">clear</span>   — Clear terminal', false);
+            addLine('  <span class="producer-terminal-cmd">ping</span>    — Test server latency', false);
+            addLine('  <span class="producer-terminal-cmd">sysinfo</span> — Client browser info', false);
+            addLine('  Or select an agent and run: ipconfig, ping, hostname, whoami...', false);
+        } else if (cmd === 'scan') {
+            addBeamLine('Scanning user directory...');
+            setTimeout(() => {
+                fetch('/producer/api/users').then(r => r.json()).then(data => {
+                    addSuccess('Found ' + data.length + ' registered users');
+                    showToast(data.length + ' users found', 'info');
+                });
+            }, 600);
+        } else if (cmd === 'status') {
+            addBeamLine('Checking server health...');
+            setTimeout(() => {
+                fetch('/health').then(r => r.json()).then(d => {
+                    addSuccess('Database: CONNECTED');
+                    addSuccess('SocketIO: ACTIVE');
+                    addSuccess('Memory: OK');
+                    addLine('Version: ' + d.version, false);
+                    showToast('Server is healthy', 'success');
+                });
+            }, 800);
+        } else if (cmd === 'users') {
+            addBeamLine('Fetching user registry...');
+            setTimeout(() => {
+                const rows = document.querySelectorAll('.producer-user-row');
+                addSuccess('Active entries: ' + rows.length);
+            }, 500);
+        } else if (cmd === 'agents') {
+            addBeamLine('Fetching agent registry...');
+            fetch('/producer/api/agents').then(r => r.json()).then(data => {
+                addSuccess('Connected agents: ' + data.length);
+                data.forEach(a => {
+                    addLine('  • ' + (a.hostname || a.agent_id) + ' [' + a.status + ']', false);
+                });
+            });
+        } else if (cmd === 'clear') {
+            terminalBody.innerHTML = '';
+            addLine('Terminal cleared. Ready.', false);
+        } else if (cmd === 'ping') {
+            addBeamLine('Sending ICMP echo request...');
+            setTimeout(() => {
+                const start = Date.now();
+                fetch('/health').then(() => {
+                    const ms = Date.now() - start;
+                    addSuccess('Reply from server: time=' + ms + 'ms');
+                });
+            }, 400);
+        } else if (cmd === 'sysinfo') {
+            addLine('Client System Information:', false);
+            addLine('  User Agent: ' + navigator.userAgent.substring(0, 55) + '...', false);
+            addLine('  Platform: ' + navigator.platform, false);
+            addLine('  Screen: ' + screen.width + 'x' + screen.height, false);
+            addLine('  Language: ' + navigator.language, false);
+            addLine('  Online: ' + (navigator.onLine ? 'YES' : 'NO'), false);
+        } else if (selectedAgent) {
+            socket.emit('producer_command', {agent_id: selectedAgent, command: raw});
+        } else {
+            addError('No agent selected. Click an agent above or type help.');
+            showToast('No agent selected', 'error');
+        }
+    }
+});
+
+// === Command Palette ===
+const COMMANDS = [
+    { label: 'Help', desc: 'Show available commands', cmd: 'help', shortcut: 'Ctrl+H' },
+    { label: 'Scan Users', desc: 'Refresh user directory', cmd: 'scan', shortcut: 'Ctrl+R' },
+    { label: 'Server Status', desc: 'Check server health', cmd: 'status', shortcut: 'Ctrl+S' },
+    { label: 'List Agents', desc: 'Show connected agents', cmd: 'agents', shortcut: 'Ctrl+A' },
+    { label: 'Clear Terminal', desc: 'Clear terminal output', cmd: 'clear', shortcut: 'Ctrl+L' },
+    { label: 'Ping Server', desc: 'Test server latency', cmd: 'ping', shortcut: 'Ctrl+P' },
+    { label: 'System Info', desc: 'Show browser info', cmd: 'sysinfo', shortcut: 'Ctrl+I' },
+];
+
+function openPalette() {
+    cmdPalette.classList.add('open');
+    cmdPaletteInput.value = '';
+    cmdPaletteInput.focus();
+    renderPalette('');
+}
+function closePalette() { cmdPalette.classList.remove('open'); terminalInput.focus(); }
+
+function renderPalette(query) {
+    const filtered = COMMANDS.filter(c => c.label.toLowerCase().includes(query.toLowerCase()) || c.cmd.includes(query.toLowerCase()));
+    cmdPaletteList.innerHTML = '';
+    filtered.forEach((c, i) => {
+        const div = document.createElement('div');
+        div.className = 'cmd-palette-item' + (i === 0 ? ' active' : '');
+        div.innerHTML = '<span>' + c.label + '</span><span style="color:var(--muted);font-size:0.8rem;">' + c.desc + '</span><kbd>' + c.shortcut + '</kbd>';
+        div.onclick = () => { closePalette(); terminalInput.value = c.cmd; terminalInput.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter'})); };
+        cmdPaletteList.appendChild(div);
+    });
+}
+
+cmdPaletteInput.addEventListener('input', (e) => renderPalette(e.target.value));
+cmdPaletteInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closePalette(); }
+    else if (e.key === 'Enter') {
+        const active = cmdPaletteList.querySelector('.active');
+        if (active) active.click();
+    }
+});
+cmdPalette.addEventListener('click', (e) => { if (e.target === cmdPalette) closePalette(); });
+
+// === Keyboard Shortcuts ===
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        openPalette();
+    }
+    if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        refreshAgents();
+        showToast('Agents refreshed', 'info');
+    }
+});
+
+// === User Search ===
+const searchInput = document.getElementById('user-search');
+searchInput.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('.producer-user-row').forEach(row => {
+        const name = row.dataset.name.toLowerCase();
+        row.style.display = name.includes(term) ? '' : 'none';
+    });
+});
+
+// === Refresh Functions ===
+function refreshAgents() {
+    addBeamLine('Refreshing agent registry...');
+    fetch('/producer/api/agents').then(r => r.json()).then(data => {
+        const list = document.getElementById('agent-list');
+        if (data.length === 0) {
+            list.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="empty-state-icon">📡</div><p style="color:var(--muted);font-size:0.9rem;">No agents currently online.</p></div>';
+        } else {
+            list.innerHTML = '';
+            data.forEach(a => {
+                const div = document.createElement('div');
+                div.className = 'agent-card';
+                div.dataset.agent = a.agent_id;
+                div.onclick = function() { selectAgent(a.agent_id); };
+                div.innerHTML = '<span class="agent-status online"></span> <strong>' + (a.hostname || a.agent_id) + '</strong> <span class="agent-ekg"><svg viewBox="0 0 40 16"><path d="M0,8 L8,8 L10,4 L12,12 L14,8 L18,8 L20,2 L22,14 L24,8 L40,8"/></svg></span> <span style="color:var(--muted);font-size:0.8rem;margin-left:8px;">' + a.platform + ' • ' + a.ip + '</span>';
+                list.appendChild(div);
+            });
+        }
+        addSuccess('Found ' + data.length + ' online agent(s)');
+    }).catch(err => {
+        addError('Failed to refresh: ' + err.message);
+    });
+}
+
+function refreshUsers() {
+    addBeamLine('Refreshing user directory...');
+    fetch('/producer/api/users').then(r => r.json()).then(data => {
+        addSuccess('Found ' + data.length + ' registered users');
+        showToast(data.length + ' users in directory', 'info');
+    });
+}
+
+// === Live Activity Chart ===
+const liveCtx = document.getElementById('live-activity-chart');
+if (liveCtx) {
+    const liveChart = new Chart(liveCtx, {
+        type: 'line',
+        data: {
+            labels: Array(20).fill(''),
+            datasets: [{
+                label: 'Tests/min',
+                data: Array(20).fill(0),
+                borderColor: '#38bdf8',
+                backgroundColor: 'rgba(56,189,248,0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false },
+                y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.1)' }, ticks: { color: 'var(--muted)', font: { size: 10 } } }
+            }
+        }
+    });
+    // Simulate live data
+    setInterval(() => {
+        const data = liveChart.data.datasets[0].data;
+        data.shift();
+        data.push(Math.floor(Math.random() * 8) + 1);
+        liveChart.update('none');
+    }, 2000);
+}
+
+// === Live Stat Animation ===
+function animateValue(el, start, end, duration) {
+    const range = end - start;
+    const startTime = performance.now();
+    function update(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        el.textContent = (start + range * ease).toFixed(1);
+        if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+}
+
+// Animate stats on load
+document.querySelectorAll('.producer-stat-value').forEach(el => {
+    const target = parseFloat(el.textContent) || 0;
+    el.textContent = '0';
+    setTimeout(() => {
+        el.classList.add('updating');
+        animateValue(el, 0, target, 1500);
+        setTimeout(() => el.classList.remove('updating'), 1500);
+    }, 300);
+});
+
+// Auto-refresh agents every 30s
+setInterval(refreshAgents, 30000);
+
+terminalInput.focus();
+showToast('Producer Panel loaded. Press Ctrl+K for command palette.', 'info', 4000);
+</script>
+{% endblock %}

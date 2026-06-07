@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard - Lumina{% endblock %}
+{% block content %}
+<div class="leaderboard-page">
+    <h1>Leaderboard</h1>
+    <form method="GET" action="{{ url_for('leaderboard') }}" class="filter-bar">
+        <select name="period" aria-label="Time period">
+            <option value="all" {% if period == 'all' %}selected{% endif %}>All Time</option>
+            <option value="weekly" {% if period == 'weekly' %}selected{% endif %}>This Week</option>
+            <option value="today" {% if period == 'today' %}selected{% endif %}>Today</option>
+        </select>
+        <button type="submit" class="btn btn-small">Filter</button>
+    </form>
+    <div style="overflow-x:auto;">
+    <table class="data-table leaderboard-table">
+        <thead><tr><th>Rank</th><th>User</th><th>Level</th><th>Best Net WPM</th><th>Accuracy</th><th>Category</th><th>Date</th></tr></thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td><a href="{{ url_for('profile', user_id=r[0]) }}">{{ r[2] or r[1] }}</a></td>
+                <td>{{ r[3] }}</td>
+                <td>{{ r[7]|round(1) if r[7] else r[5]|round(1) }}</td>
+                <td>{{ r[6]|round(1) }}%</td>
+                <td>{{ r[8] or 'general' }}</td>
+                <td>{{ r[9] }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📊</div>No scores yet. Be the first to type!</div></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

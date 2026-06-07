@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Checkers Arena - Lumina{% endblock %}
+{% block content %}
+<div class="game-page">
+    <div class="game-main">
+        <h1>Checkers Room: {{ room_id }}</h1>
+        <div id="checkers-status" class="status-badge">Waiting...</div>
+        <div class="checkers-board-container"><div id="checkers-board" class="checkers-board" role="application" aria-label="Checkers board"></div></div>
+        <div class="game-controls" style="margin-top:14px;">
+            <button id="spectate-btn" class="btn btn-small" onclick="joinSpectator()">Spectate</button>
+        </div>
+    </div>
+    <aside class="game-sidebar" role="complementary">
+        <div class="player-card" id="red-card">Red: <span id="red-name">—</span></div>
+        <div class="player-card" id="black-card">Black: <span id="black-name">—</span></div>
+        <div class="game-chat">
+            <h3>Room Chat</h3>
+            <div id="chat-log" class="chat-log" role="log"></div>
+            <form id="chat-form" class="chat-form">
+                <input type="text" id="chat-input" placeholder="Chat..." maxlength="500">
+                <button type="submit" class="btn btn-small">Send</button>
+            </form>
+        </div>
+    </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+    const roomId = {{ room_id | tojson }};
+    const isBot = {{ bot | tojson }} === "1";
+    const socket = io({path: '/socket.io', transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: 5, reconnectionDelay: 1000});
+    let myColor = isBot ? 'red' : null;
+    let board = [
+        [0, -1, 0, -1, 0, -1, 0, -1],
+        [-1, 0, -1, 0, -1, 0, -1, 0],
+        [0, -1, 0, -1, 0, -1, 0, -1],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 0, 1, 0, 1, 0, 1, 0],
+        [0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 0]
+    ];
+    let selected = null;
+    const boardEl = document.getElementById('checkers-board');
+    const statusEl = document.getElementById('checkers-status');
+
+    function render(b) {
+        boardEl.innerHTML = '';
+        for (let r=0;r<8;r++) {
+            const rowDiv = document.createElement('div'); rowDiv.className = 'checkers-row';
+            for (let c=0;c<8;c++) {
+                const sq = document.createElement('div');
+                sq.className = 'checkers-square ' + ((r+c)%2===0?'light':'dark');
+                sq.dataset.r = r; sq.dataset.c = c;
+                const p = b[r][c];
+                if (p !== 0) {
+                    const piece = document.createElement('div');
+                    piece.className = 'checkers-piece ' + (p > 0 ? 'red' : 'black') + ' ' + (Math.abs(p)===2 ? 'king' : '');
+                    sq.appendChild(piece);
+                }
+                sq.addEventListener('click', onClick);
+                rowDiv.appendChild(sq);
+            }
+            boardEl.appendChild(rowDiv);
+        }
+    }
+
+    function onClick(e) {
+        const target = e.target.closest('.checkers-square');
+        if (!target) { console.log('[Checkers] Click missed square'); return; }
+        const r = parseInt(target.dataset.r);
+        const c = parseInt(target.dataset.c);
+        console.log('[Checkers] Clicked', r, c, 'myColor=', myColor, 'turn=', board ? 'red' : 'none', 'selected=', selected);
+        if (!myColor) { statusEl.textContent = 'Waiting for assignment...'; return; }
+        if (!board) { statusEl.textContent = 'Waiting for game start...'; return; }
+        if (!selected) {
+            const p = board[r][c];
+            if (p === 0) { console.log('[Checkers] Empty square'); return; }
+            const isRed = p > 0;
+            if ((myColor === 'red' && !isRed) || (myColor === 'black' && isRed)) {
+                console.log('[Checkers] Wrong color piece'); return;
+            }
+            selected = [r, c];
+            target.classList.add('selected');
+            console.log('[Checkers] Selected', r, c, 'piece=', p);
+        } else {
+            console.log('[Checkers] Sending move', selected, '->', [r, c]);
+            if (socket.connected) {
+                socket.emit('checkers_move', {room_id: roomId, move: {from: selected, to: [r, c]}});
+                statusEl.textContent = 'Move sent...';
+            } else {
+                statusEl.textContent = 'Offline — move not sent';
+            }
+            selected = null;
+            document.querySelectorAll('.selected').forEach(el=>el.classList.remove('selected'));
+        }
+    }
+
+    // Render initial board immediately
+    const initialBoard = [
+        [0, -1, 0, -1, 0, -1, 0, -1],
+        [-1, 0, -1, 0, -1, 0, -1, 0],
+        [0, -1, 0, -1, 0, -1, 0, -1],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 0, 1, 0, 1, 0, 1, 0],
+        [0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 0]
+    ];
+    render(initialBoard);
+    statusEl.textContent = 'Connecting to server...';
+
+    socket.on('disconnect', (reason) => {
+        console.log('[Checkers] Socket disconnected:', reason);
+        statusEl.textContent = 'Disconnected — ' + reason;
+    });
+
+    socket.on('reconnect', (attemptNumber) => {
+        console.log('[Checkers] Socket reconnected after', attemptNumber, 'attempts');
+        statusEl.textContent = 'Reconnected';
+    });
+
+    socket.on('reconnect_attempt', (attemptNumber) => {
+        console.log('[Checkers] Reconnect attempt', attemptNumber);
+        statusEl.textContent = 'Reconnecting... (' + attemptNumber + ')';
+    });
+
+    socket.on('connect', () => {
+        statusEl.textContent = 'Connected. Waiting for opponent...';
+        if (isBot) {
+            socket.emit('start_checkers_bot', {room_id: roomId});
+        } else {
+            socket.emit('join_checkers_room', {room_id: roomId});
+        }
+        socket.emit('join_room_chat', {room: roomId});
+    });
+
+    socket.on('checkers_assigned', (d) => {
+        myColor = d.color;
+        statusEl.textContent = d.color === 'spectator' ? 'Spectating' : 'You are ' + d.color;
+    });
+
+    socket.on('checkers_start', (d) => {
+        board = d.board; render(board);
+        statusEl.textContent = 'Game started! Red moves';
+    });
+
+    socket.on('checkers_update', (d) => {
+        board = d.board; render(board);
+        statusEl.textContent = d.result ? 'Winner: ' + d.result : d.turn + ' to move';
+        if (isBot && d.turn === 'black' && !d.result) {
+            setTimeout(() => socket.emit('checkers_bot_move', {room_id: roomId}), 700);
+        }
+    });
+
+    socket.on('checkers_error', (d) => { statusEl.textContent = 'Error: ' + d.msg; console.error('[Checkers] Server error:', d); });
+    socket.on('connect_error', (err) => { console.error("Socket error:", err); statusEl.textContent = "Connection error — refresh page"; });
+
+    socket.on('room_message', (m) => {
+        const div = document.createElement('div'); div.className = 'chat-msg';
+        div.innerHTML = '<strong>' + m.username + ':</strong> ' + m.message;
+        document.getElementById('chat-log').appendChild(div);
+    });
+
+    document.getElementById('chat-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const msg = document.getElementById('chat-input').value.trim();
+        if (msg) { socket.emit('room_message', {room: roomId, message: msg}); document.getElementById('chat-input').value = ''; }
+    });
+
+    socket.on('spectator_state', (d) => {
+        if (d.board) {
+            board = d.board;
+            render(board);
+        }
+        if (d.red) document.getElementById('red-name').textContent = d.red.name || '—';
+        if (d.black) document.getElementById('black-name').textContent = d.black.name || '—';
+        statusEl.textContent = 'Spectating';
+    });
+
+    window.joinSpectator = function() {
+        socket.emit('join_spectator', {room_id: roomId, game_type: 'checkers'});
+        statusEl.textContent = 'Spectator mode';
+    };
+})();
+</script>
+{% endblock %}

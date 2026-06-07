@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Replay - Lumina{% endblock %}
+{% block content %}
+<div class="page">
+    <h1>🎬 Typing Replay</h1>
+    <div class="typing-meta" style="margin-bottom:18px;">
+        <span id="replay-wpm">0 WPM</span>
+        <span id="replay-progress">0%</span>
+    </div>
+    <div id="replay-display" class="passage-display" style="font-size:1.4rem;line-height:1.9;min-height:120px;"></div>
+    <div class="results-actions" style="margin-top:18px;">
+        <button id="replay-play" class="btn btn-primary">▶ Play</button>
+        <button id="replay-pause" class="btn btn-secondary">⏸ Pause</button>
+        <a href="{{ url_for('replays_page') }}" class="btn btn-secondary">← Back</a>
+    </div>
+</div>
+<script>
+(function(){
+    const replayId = window.location.pathname.split('/').pop();
+    const display = document.getElementById('replay-display');
+    const wpmEl = document.getElementById('replay-wpm');
+    const progEl = document.getElementById('replay-progress');
+    let keystrokes = [], passage = '', interval = null, idx = 0;
+
+    fetch('/api/replay/' + replayId).then(r => r.json()).then(d => {
+        if (d.error) { display.textContent = 'Replay not found.'; return; }
+        passage = d.passage;
+        keystrokes = d.keystrokes;
+        display.innerHTML = '';
+        passage.split('').forEach(ch => {
+            const s = document.createElement('span');
+            s.textContent = ch;
+            s.className = 'char';
+            display.appendChild(s);
+        });
+        wpmEl.textContent = d.wpm + ' WPM';
+    });
+
+    function play() {
+        if (interval) return;
+        const step = (60 / (parseFloat(wpmEl.textContent) / 5)) * 1000 / keystrokes.length;
+        interval = setInterval(() => {
+            if (idx >= keystrokes.length) { clearInterval(interval); interval = null; return; }
+            const spans = display.querySelectorAll('.char');
+            if (spans[idx]) {
+                spans[idx].classList.add('correct');
+                spans[idx].scrollIntoView({block: 'nearest', behavior: 'smooth'});
+            }
+            idx++;
+            progEl.textContent = Math.round((idx / passage.length) * 100) + '%';
+        }, Math.max(step, 30));
+    }
+
+    function pause() {
+        clearInterval(interval); interval = null;
+    }
+
+    document.getElementById('replay-play').addEventListener('click', play);
+    document.getElementById('replay-pause').addEventListener('click', pause);
+})();
+</script>
+{% endblock %}

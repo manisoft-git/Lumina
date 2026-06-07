@@ -1,0 +1,9 @@
+run = "python app.py"
+entrypoint = "app.py"
+modules = ["python-3.11"]
+hidden = [".config", "venv"]
+[nix]
+channel = "stable-22_11"
+[deployment]
+run = ["sh", "-c", "python app.py"]
+deploymentTarget = "cloudrun"

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Analytics - Lumina{% endblock %}
+{% block content %}
+<div class="analytics-page">
+    <h1>Your Analytics</h1>
+    <section class="analytics-section">
+        <h2>Progress Over Time</h2>
+        <div style="position:relative;height:300px;">
+            <canvas id="progress-chart"></canvas>
+        </div>
+    </section>
+    <section class="analytics-section">
+        <h2>Keyboard Error Heatmap</h2>
+        <div class="heatmap-container" role="img" aria-label="Keyboard heatmap">
+            {% set keys = [
+                ['`','1','2','3','4','5','6','7','8','9','0','-','='],
+                ['q','w','e','r','t','y','u','i','o','p','[',']','\\'],
+                ['a','s','d','f','g','h','j','k','l',';',\'],
+                ['z','x','c','v','b','n','m',',','.','/']
+            ] %}
+            <div class="keyboard">
+                {% for row in keys %}
+                <div class="kb-row">
+                    {% for k in row %}
+                    {% set val = heatmap.get(k, 0) %}
+                    <div class="kb-key {% if val > 20 %}heat-high{% elif val > 5 %}heat-med{% elif val > 0 %}heat-low{% endif %}" title="{{ k }}: {{ val }} errors">{{ k }}</div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+                <div class="kb-row"><div class="kb-key kb-space {% if heatmap.get('space',0) > 20 %}heat-high{% elif heatmap.get('space',0) > 5 %}heat-med{% elif heatmap.get('space',0) > 0 %}heat-low{% endif %}">space</div></div>
+            </div>
+        </div>
+    </section>
+    <section class="analytics-section">
+        <h2>Game High Scores</h2>
+        <div class="stat-grid">
+            <div class="stat"><div class="stat-value">{{ math_best }}</div><div class="stat-label">Math Best</div></div>
+            <div class="stat"><div class="stat-value">{{ memory_best }}</div><div class="stat-label">Memory Level</div></div>
+            <div class="stat"><div class="stat-value">{{ reaction_best }}ms</div><div class="stat-label">Reaction Best</div></div>
+            <div class="stat"><div class="stat-value">{{ pattern_best }}</div><div class="stat-label">Patterns Solved</div></div>
+            <div class="stat"><div class="stat-value">{{ word_best }}</div><div class="stat-label">Word Blitz Best</div></div>
+        </div>
+    </section>
+</div>
+<script>
+const ctx = document.getElementById('progress-chart');
+const rawData = {{ progress | tojson }} || [];
+if (rawData.length === 0) {
+    ctx.parentElement.innerHTML = '<div class="empty-state" style="padding:60px 20px;"><div class="empty-state-icon">📈</div><p>No typing data yet. Complete some tests to see your progress!</p></div>';
+} else {
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: rawData.map(d => d[0]),
+            datasets: [
+                {label: 'Avg Net WPM', data: rawData.map(d => d[1] ? Math.round(d[1]*10)/10 : 0), borderColor: '#38bdf8', tension: 0.3, fill: false, pointBackgroundColor: '#38bdf8'},
+                {label: 'Avg Accuracy', data: rawData.map(d => d[2] ? Math.round(d[2]*10)/10 : 0), borderColor: '#4ade80', tension: 0.3, fill: false, pointBackgroundColor: '#4ade80'}
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: {color: 'rgba(148,163,184,0.1)'}, ticks: {color: 'var(--muted)'} },
+                x: { grid: {display: false}, ticks: {color: 'var(--muted)'} }
+            },
+            plugins: {
+                legend: { labels: { color: 'var(--text)' } }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

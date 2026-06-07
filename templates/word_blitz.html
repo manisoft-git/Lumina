@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Word Blitz - Lumina{% endblock %}
+{% block content %}
+<div class="game-container">
+    <h1>🔤 Word Blitz</h1>
+    <div class="game-meta"><span id="word-timer">60s</span><span id="word-score">Score: 0</span></div>
+    <div id="word-letters" class="word-letters"></div>
+    <input type="text" id="word-input" class="word-input" placeholder="Type words..." disabled aria-label="Word input">
+    <div id="word-found" class="word-found"></div>
+    <div class="game-controls">
+        <button id="word-start" class="btn btn-primary">Start</button>
+    </div>
+    <div id="word-results" class="results-panel" style="display:none">
+        <div class="stat-grid">
+            <div class="stat"><div class="stat-value" id="word-final-score">0</div><div class="stat-label">Score</div></div>
+            <div class="stat"><div class="stat-value" id="word-count">0</div><div class="stat-label">Words</div></div>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    let score = 0, found = [], timeLeft = 60, timerId = null, active = false;
+    const lettersEl = document.getElementById('word-letters');
+    const input = document.getElementById('word-input');
+    const scoreEl = document.getElementById('word-score');
+    const foundEl = document.getElementById('word-found');
+    const vowels = 'AEIOU'; const consonants = 'BCDFGHJKLMNPQRSTVWXYZ';
+    let currentLetters = [];
+    function genLetters() {
+        currentLetters = [];
+        for (let i = 0; i < 3; i++) currentLetters.push(vowels[Math.floor(Math.random()*vowels.length)]);
+        for (let i = 0; i < 3; i++) currentLetters.push(consonants[Math.floor(Math.random()*consonants.length)]);
+        currentLetters.sort(() => Math.random() - 0.5);
+        lettersEl.innerHTML = currentLetters.map(l => '<span class="word-letter">' + l + '</span>').join('');
+    }
+    function canForm(word) {
+        const pool = currentLetters.slice();
+        for (const ch of word.toUpperCase()) {
+            const idx = pool.indexOf(ch);
+            if (idx === -1) return false;
+            pool.splice(idx, 1);
+        }
+        return true;
+    }
+    function tick() { timeLeft--; document.getElementById('word-timer').textContent = timeLeft + 's'; if (timeLeft <= 0) finish(); }
+    function finish() {
+        active = false; clearInterval(timerId); input.disabled = true;
+        document.getElementById('word-results').style.display = 'block';
+        document.getElementById('word-final-score').textContent = score;
+        document.getElementById('word-count').textContent = found.length;
+        fetch('/submit/word', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({score: score, words: found, time_limit: 60})
+        });
+    }
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && active) {
+            const w = input.value.trim().toUpperCase();
+            if (w.length >= 3 && canForm(w) && !found.includes(w)) {
+                found.push(w);
+                score += w.length;
+                scoreEl.textContent = 'Score: ' + score;
+                const span = document.createElement('span');
+                span.className = 'word-tag'; span.textContent = w;
+                foundEl.appendChild(span);
+            }
+            input.value = '';
+        }
+    });
+    document.getElementById('word-start').addEventListener('click', () => {
+        score = 0; found = []; timeLeft = 60; active = true;
+        foundEl.innerHTML = ''; document.getElementById('word-results').style.display = 'none';
+        genLetters(); input.disabled = false; input.focus();
+        timerId = setInterval(tick, 1000);
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Live Monitor - Lumina{% endblock %}
+{% block content %}
+<div class="monitor-page">
+    <h1>Live Monitor: {{ classroom[1] }}</h1>
+    <p>Code: <code>{{ code }}</code> | Students appear here when active in competitions.</p>
+    <div id="monitor-grid" class="monitor-grid" role="region" aria-live="polite" aria-label="Student activity grid">
+        <div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">📡</div><p>Waiting for student activity...</p></div>
+    </div>
+</div>
+<script>
+const socket = io();
+const grid = document.getElementById('monitor-grid');
+const students = {};
+socket.emit('teacher_subscribe', {classroom_code: {{ code | tojson }}});
+socket.on('monitor_update', (d) => {
+    if (!students[d.user_id]) {
+        const card = document.createElement('div'); card.className = 'monitor-card'; card.id = 'stu-' + d.user_id;
+        card.innerHTML = '<h4>' + d.username + '</h4><div class="monitor-wpm">' + Math.round(d.wpm || 0) + ' WPM</div><div class="monitor-acc">' + Math.round(d.accuracy || 0) + '% ACC</div><div class="monitor-room">' + (d.room || 'idle') + '</div>';
+        if (grid.querySelector('.empty-state')) grid.innerHTML = '';
+        grid.appendChild(card);
+        students[d.user_id] = card;
+    }
+    students[d.user_id].querySelector('.monitor-wpm').textContent = Math.round(d.wpm || 0) + ' WPM';
+    students[d.user_id].querySelector('.monitor-acc').textContent = Math.round(d.accuracy || 0) + '% ACC';
+    students[d.user_id].querySelector('.monitor-room').textContent = d.room || 'idle';
+    students[d.user_id].classList.add('pulse');
+    setTimeout(() => students[d.user_id].classList.remove('pulse'), 1000);
+});
+</script>
+{% endblock %}
