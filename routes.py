@@ -471,6 +471,16 @@ def register_routes(app):
         verified = 1 if anti_cheat["verified"] else 0
         integrity = anti_cheat["integrity_score"]
 
+        if not verified:
+            reasons_str = "; ".join(anti_cheat.get("flags", []))
+            try:
+                db_execute(
+                    "INSERT INTO anti_cheat_logs (user_id, wpm, confidence, reasons) VALUES (?, ?, ?, ?)",
+                    (current_user.id, wpm, integrity, reasons_str)
+                )
+            except Exception:
+                pass
+
         db_execute(
             "INSERT INTO scores (user_id, wpm, accuracy, errors, net_wpm, passage_category, room_id, error_map, verified, integrity_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (current_user.id, wpm, acc, errs, net_wpm, cat, room_id, error_map, verified, integrity)
@@ -990,6 +1000,140 @@ def register_routes(app):
         return jsonify([{
             "agent_id": a[0], "hostname": a[1], "ip": a[2], "platform": a[3], "status": a[4], "last_seen": a[5]
         } for a in agents])
+
+    @app.route("/producer/api/vitals")
+    @login_required
+    def producer_api_vitals():
+        if not session.get("producer_unlocked") and current_user.role != "admin":
+            return jsonify({"error": "Unauthorized"}), 403
+
+        import shutil, resource
+        from config import get_db_path
+
+        # 1. Disk
+        try:
+            du = shutil.disk_usage("/")
+            disk_info = {
+                "total_gb": round(du.total / (1024**3), 2),
+                "free_gb": round(du.free / (1024**3), 2),
+                "used_gb": round(du.used / (1024**3), 2),
+                "percent": round((du.used / du.total) * 100, 1)
+            }
+        except Exception:
+            disk_info = {"total_gb": 0, "free_gb": 0, "used_gb": 0, "percent": 0}
+
+        # 2. Memory
+        mem_info = {"total_mb": 0, "avail_mb": 0, "used_mb": 0, "percent": 0}
+        try:
+            with open("/proc/meminfo") as f:
+                raw_mem = {}
+                for line in f:
+                    parts = line.split(":")
+                    if len(parts) == 2:
+                        raw_mem[parts[0].strip()] = parts[1].strip().split()[0]
+                total = int(raw_mem.get("MemTotal", 0)) // 1024
+                avail = int(raw_mem.get("MemAvailable", 0)) // 1024
+                used = max(0, total - avail)
+                mem_info = {
+                    "total_mb": total,
+                    "avail_mb": avail,
+                    "used_mb": used,
+                    "percent": round((used / total * 100), 1) if total > 0 else 0
+                }
+        except Exception:
+            pass
+
+        # 3. CPU Load
+        load = [0.0, 0.0, 0.0]
+        try:
+            with open("/proc/loadavg") as f:
+                parts = f.read().split()
+                load = [float(parts[0]), float(parts[1]), float(parts[2])]
+        except Exception:
+            pass
+
+        # 4. DB Stats
+        db_path = get_db_path()
+        db_size_kb = round(os.path.getsize(db_path) / 1024, 1) if os.path.exists(db_path) else 0
+
+        # 5. Counts
+        users_cnt = (db_fetchone("SELECT COUNT(*) FROM users") or [0])[0]
+        scores_cnt = (db_fetchone("SELECT COUNT(*) FROM scores") or [0])[0]
+        replays_cnt = (db_fetchone("SELECT COUNT(*) FROM typing_replays") or [0])[0]
+        online_agents = (db_fetchone("SELECT COUNT(*) FROM client_agents WHERE status='online'") or [0])[0]
+        flagged_security = (db_fetchone("SELECT COUNT(*) FROM anti_cheat_logs") or [0])[0]
+
+        return jsonify({
+            "status": "healthy",
+            "uptime_str": "Operational",
+            "disk": disk_info,
+            "memory": mem_info,
+            "cpu_load": load,
+            "db_size_kb": db_size_kb,
+            "users_count": users_cnt,
+            "scores_count": scores_cnt,
+            "replays_count": replays_cnt,
+            "online_agents": online_agents,
+            "flagged_security": flagged_security,
+            "python_rss_mb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1)
+        })
+
+    @app.route("/producer/api/security")
+    @login_required
+    def producer_api_security():
+        if not session.get("producer_unlocked") and current_user.role != "admin":
+            return jsonify({"error": "Unauthorized"}), 403
+
+        logs = db_fetchall("""
+            SELECT a.id, u.username, u.fullname, a.wpm, a.confidence, a.reasons, a.created_at
+            FROM anti_cheat_logs a
+            LEFT JOIN users u ON a.user_id = u.id
+            ORDER BY a.created_at DESC
+            LIMIT 30
+        """)
+        return jsonify([{
+            "id": l[0], "username": l[1] or "Unknown", "fullname": l[2] or "Anonymous",
+            "wpm": l[3], "confidence": l[4], "reasons": l[5], "created_at": l[6]
+        } for l in logs])
+
+    @app.route("/producer/api/set_role", methods=["POST"])
+    @login_required
+    def producer_api_set_role():
+        if not session.get("producer_unlocked") and current_user.role != "admin":
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.get_json() or {}
+        uid = data.get("user_id")
+        new_role = data.get("role")
+        if not uid or new_role not in ("student", "teacher", "admin"):
+            return jsonify({"error": "Invalid user_id or role"}), 400
+
+        db_execute("UPDATE users SET role=? WHERE id=?", (new_role, uid))
+        return jsonify({"status": "ok", "user_id": uid, "new_role": new_role})
+
+    @app.route("/producer/api/broadcast", methods=["POST"])
+    @login_required
+    def producer_api_broadcast():
+        if not session.get("producer_unlocked") and current_user.role != "admin":
+            return jsonify({"error": "Unauthorized"}), 403
+
+        from extensions import socketio
+        data = request.get_json() or {}
+        msg = data.get("message", "").strip()
+        level = data.get("level", "info")
+        title = data.get("title", "⚡ SYSTEM BROADCAST")
+        if not msg:
+            return jsonify({"error": "Message is required"}), 400
+
+        socketio.emit("system_broadcast", {
+            "title": title,
+            "message": msg,
+            "level": level,
+            "sender": current_user.username,
+            "timestamp": datetime.utcnow().strftime("%H:%M:%S")
+        }, broadcast=True, namespace="/")
+
+        return jsonify({"status": "broadcast_dispatched", "message": msg})
 
     @app.route("/api_docs")
     def api_docs():

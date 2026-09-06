@@ -326,6 +326,10 @@ def init_db():
             output TEXT, status TEXT DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, completed_at TIMESTAMP
         )""",
+        f"""CREATE TABLE IF NOT EXISTS anti_cheat_logs (
+            {pk}, user_id INTEGER, wpm REAL, confidence REAL,
+            reasons TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
     ]
 
     for sql in tables:

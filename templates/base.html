@@ -93,5 +93,40 @@
         });
     }
     </script>
+    <!-- Global System Broadcast Banner -->
+    <div id="system-broadcast-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:99999; background:linear-gradient(90deg, #0ea5e9, #6366f1); color:#fff; padding:12px 20px; font-family:monospace; box-shadow:0 4px 20px rgba(0,0,0,0.4); text-align:center; animation:slideDown 0.4s ease;">
+        <span id="broadcast-icon" style="margin-right:8px; font-size:1.2rem;">⚡</span>
+        <strong id="broadcast-title" style="letter-spacing:1px; text-transform:uppercase;">SYSTEM BROADCAST:</strong>
+        <span id="broadcast-text" style="margin-left:8px; font-size:1rem;"></span>
+        <span id="broadcast-time" style="opacity:0.75; font-size:0.8rem; margin-left:12px;"></span>
+        <button onclick="document.getElementById('system-broadcast-banner').style.display='none'" style="background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer; margin-left:16px; vertical-align:middle;" aria-label="Close notification">✖</button>
+    </div>
+    <script>
+    if (typeof io !== 'undefined') {
+        try {
+            const _globalSocket = io();
+            _globalSocket.on('system_broadcast', function(data) {
+                const b = document.getElementById('system-broadcast-banner');
+                const txt = document.getElementById('broadcast-text');
+                const tit = document.getElementById('broadcast-title');
+                const tim = document.getElementById('broadcast-time');
+                if (b && txt) {
+                    tit.textContent = data.title || 'SYSTEM BROADCAST';
+                    txt.textContent = data.message || '';
+                    tim.textContent = '[' + (data.timestamp || '') + ']';
+                    if (data.level === 'urgent' || data.level === 'warning') {
+                        b.style.background = 'linear-gradient(90deg, #ef4444, #f59e0b)';
+                    } else {
+                        b.style.background = 'linear-gradient(90deg, #0ea5e9, #6366f1)';
+                    }
+                    b.style.display = 'block';
+                    if (typeof LuminaAudio !== 'undefined' && LuminaAudio.notification) {
+                        LuminaAudio.notification();
+                    }
+                }
+            });
+        } catch(e) { console.log('[Broadcast] Socket init error:', e); }
+    }
+    </script>
 </body>
 </html>

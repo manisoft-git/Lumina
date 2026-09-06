@@ -527,8 +527,55 @@
 <div class="ambient-grid"></div>
 
 <div class="producer-hero">
-    <h1>🔧 Producer Panel <span style="font-size:0.9rem;color:var(--muted);font-family:var(--term-font);">v5.1</span></h1>
-    <p style="color:var(--muted);font-size:0.9rem;">System oversight, user diagnostics, and remote support terminal.</p>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h1>🔧 Producer Panel <span style="font-size:0.9rem;color:var(--term-primary);font-family:var(--term-font);">v5.2 IT Command Center</span></h1>
+            <p style="color:var(--muted);font-size:0.9rem;">Fleet orchestration, system vitals, forensic anti-cheat diagnostics & campus announcements.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span class="status-pill online" style="padding:6px 14px; border-radius:20px; background:rgba(74,222,128,0.12); border:1px solid var(--term-accent); color:var(--term-accent); font-family:var(--term-font); font-size:0.82rem; font-weight:700;">
+                <span class="status-dot online" style="display:inline-block; margin-right:6px;"></span>KERNEL ONLINE
+            </span>
+            <button class="btn btn-small" onclick="promptBroadcast()" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5; font-weight:700;">📢 Broadcast Alert</button>
+        </div>
+    </div>
+    <div class="producer-quick-chips" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;">
+        <button class="btn btn-small" onclick="triggerCommand('vitals')">📊 Server Vitals</button>
+        <button class="btn btn-small" onclick="triggerCommand('security')">🛡️ Anti-Cheat Audit</button>
+        <button class="btn btn-small" onclick="triggerCommand('dbstat')">💾 DB Statistics</button>
+        <button class="btn btn-small" onclick="triggerCommand('agents')">📡 Active Agents</button>
+        <button class="btn btn-small" onclick="triggerCommand('ping')">⚡ Ping Latency</button>
+        <button class="btn btn-small" onclick="triggerCommand('help')">❓ Command Manual</button>
+        <button class="btn btn-small" onclick="triggerCommand('clear')">🧹 Clear</button>
+    </div>
+</div>
+
+<!-- System Telemetry HUD -->
+<div class="producer-vitals-hud" id="vitals-hud" style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 24px; margin-bottom:24px; display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px;">
+    <div>
+        <div style="font-size:0.75rem; color:var(--muted); font-family:var(--term-font); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">CPU Load (1m / 5m / 15m)</div>
+        <div id="vitals-cpu" style="font-size:1.3rem; font-weight:800; font-family:var(--term-font); color:var(--term-primary);">-- / -- / --</div>
+        <div style="font-size:0.72rem; color:var(--muted); font-family:var(--term-font); margin-top:4px;">Multi-core load average</div>
+    </div>
+    <div>
+        <div style="font-size:0.75rem; color:var(--muted); font-family:var(--term-font); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">RAM Usage</div>
+        <div id="vitals-ram" style="font-size:1.3rem; font-weight:800; font-family:var(--term-font); color:var(--term-accent);">-- MB / -- MB</div>
+        <div style="height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; margin-top:6px;">
+            <div id="vitals-ram-bar" style="width:0%; height:100%; background:var(--term-accent); transition:width 0.5s;"></div>
+        </div>
+    </div>
+    <div>
+        <div style="font-size:0.75rem; color:var(--muted); font-family:var(--term-font); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Disk Storage</div>
+        <div id="vitals-disk" style="font-size:1.3rem; font-weight:800; font-family:var(--term-font); color:var(--term-primary);">-- GB / -- GB</div>
+        <div style="height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; margin-top:6px;">
+            <div id="vitals-disk-bar" style="width:0%; height:100%; background:var(--term-primary); transition:width 0.5s;"></div>
+        </div>
+    </div>
+    <div>
+        <div style="font-size:0.75rem; color:var(--muted); font-family:var(--term-font); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Database & Fleet</div>
+        <div id="vitals-db" style="font-size:1.3rem; font-weight:800; font-family:var(--term-font); color:var(--term-warn);">SQLite WAL: -- KB</div>
+        <div id="vitals-fleet" style="font-size:0.72rem; color:var(--muted); font-family:var(--term-font); margin-top:4px;">Online Nodes: 0 • Security Flags: 0</div>
+    </div>
 </div>
 
 <div class="producer-stats" id="live-stats">
@@ -568,14 +615,14 @@
                 <a href="{{ url_for('producer_user_detail', user_id=u[0]) }}" class="producer-user-row" data-name="{{ u[1] }} {{ u[2] }}">
                     <div class="producer-user-avatar">{{ u[2][0] if u[2] else '?' }}</div>
                     <div class="producer-user-info">
-                        <div class="producer-user-name">{{ u[2] or u[1] }} <span class="producer-badge badge-{{ u[4] }}">{{ u[4] }}</span></div>
+                        <div class="producer-user-name">{{ u[2] or u[1] }} <span class="producer-badge badge-{{ u[4] }}" id="badge-role-{{ u[0] }}">{{ u[4] }}</span></div>
                         <div class="producer-user-meta">@{{ u[1] }} • {{ u[9] }}</div>
                     </div>
                     <div class="producer-user-level">Lv.{{ u[5] }}</div>
                     <div class="producer-user-xp">{{ u[6] }} XP</div>
-                    <div class="producer-user-status">
+                    <div class="producer-user-status" style="display:flex; align-items:center; gap:8px;">
+                        <button class="btn btn-small" onclick="event.preventDefault(); event.stopPropagation(); cycleRole({{ u[0] }}, '{{ u[4] }}', '{{ u[1] }}')" title="Change Role: student -> teacher -> admin" style="padding:2px 8px; font-size:0.72rem; font-family:var(--term-font);">⚡ Role</button>
                         <span class="status-dot {% if u[8] %}online{% endif %}"></span>
-                        {{ u[7] or 0 }} 🔥
                     </div>
                 </a>
                 {% endfor %}
@@ -605,7 +652,21 @@
             <button class="btn btn-small" onclick="refreshAgents()" style="margin-top:10px;">Refresh Agents</button>
         </div>
 
-        <div class="live-chart-container">
+        <!-- Forensic Anti-Cheat Audit Stream -->
+        <div class="security-audit-section" style="background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:20px; margin-top:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0; font-size:0.95rem; color:var(--term-danger); display:flex; align-items:center; gap:8px;">
+                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--term-danger);"></span>
+                    🛡️ Forensic Anti-Cheat Audit Stream
+                </h3>
+                <button class="btn btn-small" onclick="loadSecurityLogs()" style="font-size:0.75rem;">Refresh</button>
+            </div>
+            <div id="security-log-list" style="max-height:220px; overflow-y:auto; font-family:var(--term-font); font-size:0.8rem;">
+                <div style="color:var(--muted); text-align:center; padding:12px;">Checking security incidents...</div>
+            </div>
+        </div>
+
+        <div class="live-chart-container" style="margin-top:20px;">
             <h3>📈 Live Activity</h3>
             <canvas id="live-activity-chart"></canvas>
         </div>
@@ -784,17 +845,107 @@ terminalInput.addEventListener('keydown', (e) => {
         terminalInput.value = '';
         if (!raw) return;
         addLine(raw, true);
-        const cmd = raw.toLowerCase();
+        const parts = raw.split(/\s+/);
+        const cmd = parts[0].toLowerCase();
+        const arg = parts.slice(1).join(' ');
+
         if (cmd === 'help') {
-            addLine('Available commands:', false);
-            addLine('  <span class="producer-terminal-cmd">scan</span>    — Refresh user directory', false);
-            addLine('  <span class="producer-terminal-cmd">status</span>  — Server health check', false);
-            addLine('  <span class="producer-terminal-cmd">users</span>   — Count registered users', false);
-            addLine('  <span class="producer-terminal-cmd">agents</span>  — List connected agents', false);
-            addLine('  <span class="producer-terminal-cmd">clear</span>   — Clear terminal', false);
-            addLine('  <span class="producer-terminal-cmd">ping</span>    — Test server latency', false);
-            addLine('  <span class="producer-terminal-cmd">sysinfo</span> — Client browser info', false);
-            addLine('  Or select an agent and run: ipconfig, ping, hostname, whoami...', false);
+            addLine('═══ LUMINA IT COMMAND MANUAL ═══', false);
+            addLine('  <span class="producer-terminal-cmd">vitals</span>             — Live CPU, RAM, Disk & SQLite telemetry', false);
+            addLine('  <span class="producer-terminal-cmd">security</span>           — Anti-Cheat forensic audit stream', false);
+            addLine('  <span class="producer-terminal-cmd">broadcast &lt;msg&gt;</span>     — Push school-wide announcement to all screens', false);
+            addLine('  <span class="producer-terminal-cmd">setrole &lt;uid&gt; &lt;role&gt;</span> — Change user role (student, teacher, admin)', false);
+            addLine('  <span class="producer-terminal-cmd">dbstat</span>             — SQLite tables and record breakdown', false);
+            addLine('  <span class="producer-terminal-cmd">scan</span>               — Refresh and audit user directory', false);
+            addLine('  <span class="producer-terminal-cmd">status</span>             — Server health & kernel diagnostics', false);
+            addLine('  <span class="producer-terminal-cmd">ping</span>               — Measure server roundtrip latency', false);
+            addLine('  <span class="producer-terminal-cmd">agents</span>             — List online student diagnostic agents', false);
+            addLine('  <span class="producer-terminal-cmd">clear</span>              — Clear terminal output', false);
+            addLine('  <span class="producer-terminal-cmd">sysinfo</span>            — Client browser environment info', false);
+            addLine('  ────────────────────────────────────────────────────────', false);
+            addLine('  Remote Fleet Commands (Select an agent card on left first):', false);
+            addLine('  ipconfig, ifconfig, ping &lt;host&gt;, hostname, whoami, systeminfo, netstat, tasklist, uname, uptime', false);
+        } else if (cmd === 'vitals') {
+            addBeamLine('Querying kernel telemetry...');
+            fetch('/producer/api/vitals').then(r => r.json()).then(d => {
+                addSuccess('⚡ SERVER TELEMETRY REPORT:');
+                addLine('  CPU Load: ' + d.cpu_load.join(' / ') + ' (1m/5m/15m)', false);
+                addLine('  RAM: ' + d.memory.used_mb + 'MB / ' + d.memory.total_mb + 'MB (' + d.memory.percent + '%)', false);
+                addLine('  Disk: ' + d.disk.used_gb + 'GB / ' + d.disk.total_gb + 'GB (' + d.disk.percent + '%)', false);
+                addLine('  Database Size: ' + d.db_size_kb + ' KB (WAL Mode)', false);
+                addLine('  Python Process RSS: ' + d.python_rss_mb + ' MB', false);
+                addLine('  Registry: ' + d.users_count + ' users, ' + d.scores_count + ' scores, ' + d.replays_count + ' replays', false);
+                addLine('  Online Nodes: ' + d.online_agents + ' agents connected', false);
+                updateVitalsHUD(d);
+            }).catch(e => addError('Failed to fetch vitals: ' + e));
+        } else if (cmd === 'security') {
+            addBeamLine('Inspecting anti-cheat forensic log...');
+            fetch('/producer/api/security').then(r => r.json()).then(logs => {
+                if (!logs || logs.length === 0) {
+                    addSuccess('All submissions verified. No forensic violations on record.');
+                } else {
+                    addError('FLAGGED ANOMALIES (' + logs.length + ' incident(s)):');
+                    logs.forEach(l => {
+                        addLine('  • @' + l.username + ' (' + l.fullname + ') — ' + l.wpm + ' WPM [Flag: ' + (l.reasons || 'Anomaly') + '] (' + l.created_at + ')', false);
+                    });
+                }
+                renderSecurityLogs(logs);
+            }).catch(e => addError('Failed to fetch security logs: ' + e));
+        } else if (cmd === 'broadcast') {
+            if (!arg) {
+                addError('Usage: broadcast <announcement message>');
+                return;
+            }
+            addBeamLine('Dispatching campus-wide broadcast...');
+            fetch('/producer/api/broadcast', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: arg, level: 'warning', title: '📢 CAMPUS ANNOUNCEMENT'})
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'broadcast_dispatched') {
+                    addSuccess('⚡ Broadcast sent to all connected screens: "' + arg + '"');
+                    showToast('Broadcast dispatched!', 'success');
+                } else {
+                    addError('Broadcast error: ' + (d.error || 'Failed'));
+                }
+            }).catch(e => addError('Broadcast failed: ' + e));
+        } else if (cmd === 'dbstat') {
+            addBeamLine('Inspecting SQLite database schema & storage...');
+            fetch('/producer/api/vitals').then(r => r.json()).then(d => {
+                addSuccess('SQLite Database Status:');
+                addLine('  Storage: ' + d.db_size_kb + ' KB', false);
+                addLine('  Registered Accounts: ' + d.users_count, false);
+                addLine('  Archived Typing Runs: ' + d.scores_count, false);
+                addLine('  Biometric Replays: ' + d.replays_count, false);
+                addLine('  Flagged Anti-Cheat Events: ' + d.flagged_security, false);
+            }).catch(e => addError('DB stat error: ' + e));
+        } else if (cmd === 'setrole') {
+            const roleArgs = arg.split(/\s+/);
+            if (roleArgs.length < 2) {
+                addError('Usage: setrole <user_id> <student|teacher|admin>');
+                return;
+            }
+            const uid = parseInt(roleArgs[0]);
+            const targetRole = roleArgs[1].toLowerCase();
+            if (!['student', 'teacher', 'admin'].includes(targetRole)) {
+                addError('Role must be one of: student, teacher, admin');
+                return;
+            }
+            addBeamLine('Updating user ' + uid + ' permissions...');
+            fetch('/producer/api/set_role', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: uid, role: targetRole})
+            }).then(r => r.json()).then(res => {
+                if (res.status === 'ok') {
+                    addSuccess('User ' + uid + ' elevated to ' + targetRole.toUpperCase());
+                    showToast('Role updated to ' + targetRole, 'success');
+                    const b = document.getElementById('badge-role-' + uid);
+                    if (b) { b.textContent = targetRole; b.className = 'producer-badge badge-' + targetRole; }
+                } else {
+                    addError('Set role error: ' + (res.error || 'Failed'));
+                }
+            }).catch(e => addError('Set role error: ' + e));
         } else if (cmd === 'scan') {
             addBeamLine('Scanning user directory...');
             setTimeout(() => {
@@ -807,8 +958,8 @@ terminalInput.addEventListener('keydown', (e) => {
             addBeamLine('Checking server health...');
             setTimeout(() => {
                 fetch('/health').then(r => r.json()).then(d => {
-                    addSuccess('Database: CONNECTED');
-                    addSuccess('SocketIO: ACTIVE');
+                    addSuccess('Database: CONNECTED (WAL)');
+                    addSuccess('SocketIO: ACTIVE (Eventlet/Threading)');
                     addSuccess('Memory: OK');
                     addLine('Version: ' + d.version, false);
                     showToast('Server is healthy', 'success');
@@ -825,7 +976,7 @@ terminalInput.addEventListener('keydown', (e) => {
             fetch('/producer/api/agents').then(r => r.json()).then(data => {
                 addSuccess('Connected agents: ' + data.length);
                 data.forEach(a => {
-                    addLine('  • ' + (a.hostname || a.agent_id) + ' [' + a.status + ']', false);
+                    addLine('  • ' + (a.hostname || a.agent_id) + ' [' + a.status + '] (' + a.platform + ' • ' + a.ip + ')', false);
                 });
             });
         } else if (cmd === 'clear') {
@@ -850,8 +1001,9 @@ terminalInput.addEventListener('keydown', (e) => {
         } else if (selectedAgent) {
             socket.emit('producer_command', {agent_id: selectedAgent, command: raw});
         } else {
-            addError('No agent selected. Click an agent above or type help.');
-            showToast('No agent selected', 'error');
+            addError('Command \'' + raw + '\' unrecognized or no agent selected.');
+            addLine('Type <span class="producer-terminal-cmd">help</span> for available server commands, or click an agent on the left.', false);
+            showToast('Unrecognized command: ' + cmd, 'error');
         }
     }
 });
@@ -1015,10 +1167,94 @@ document.querySelectorAll('.producer-stat-value').forEach(el => {
     }, 300);
 });
 
+// === IT Fleet & Command Center Helpers ===
+function triggerCommand(cmd) {
+    terminalInput.value = cmd;
+    terminalInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
+}
+
+function promptBroadcast() {
+    const msg = prompt('📢 CAMPUS BROADCAST ALERT:\nEnter announcement to push live to all connected screens:');
+    if (msg && msg.trim()) {
+        triggerCommand('broadcast ' + msg.trim());
+    }
+}
+
+function cycleRole(userId, currentRole, username) {
+    const roles = ['student', 'teacher', 'admin'];
+    const nextRole = roles[(roles.indexOf(currentRole) + 1) % roles.length];
+    if (confirm('Change @' + username + ' role from [' + currentRole + '] to [' + nextRole + ']?')) {
+        triggerCommand('setrole ' + userId + ' ' + nextRole);
+    }
+}
+
+function updateVitalsHUD(d) {
+    if (!d) return;
+    const cpuEl = document.getElementById('vitals-cpu');
+    if (cpuEl && d.cpu_load) cpuEl.textContent = d.cpu_load.join(' / ');
+
+    const ramEl = document.getElementById('vitals-ram');
+    const ramBar = document.getElementById('vitals-ram-bar');
+    if (ramEl && d.memory) {
+        ramEl.textContent = d.memory.used_mb + 'MB / ' + d.memory.total_mb + 'MB (' + d.memory.percent + '%)';
+        if (ramBar) ramBar.style.width = d.memory.percent + '%';
+    }
+
+    const diskEl = document.getElementById('vitals-disk');
+    const diskBar = document.getElementById('vitals-disk-bar');
+    if (diskEl && d.disk) {
+        diskEl.textContent = d.disk.used_gb + 'GB / ' + d.disk.total_gb + 'GB (' + d.disk.percent + '%)';
+        if (diskBar) diskBar.style.width = d.disk.percent + '%';
+    }
+
+    const dbEl = document.getElementById('vitals-db');
+    const fleetEl = document.getElementById('vitals-fleet');
+    if (dbEl) dbEl.textContent = 'SQLite WAL: ' + (d.db_size_kb || 0) + ' KB';
+    if (fleetEl) fleetEl.textContent = 'Online Nodes: ' + (d.online_agents || 0) + ' • Security Flags: ' + (d.flagged_security || 0);
+}
+
+function loadVitals() {
+    fetch('/producer/api/vitals').then(r => r.json()).then(d => {
+        updateVitalsHUD(d);
+    }).catch(err => console.log('[Vitals] HUD load error:', err));
+}
+
+function renderSecurityLogs(logs) {
+    const list = document.getElementById('security-log-list');
+    if (!list) return;
+    if (!logs || logs.length === 0) {
+        list.innerHTML = '<div style="color:var(--term-accent); text-align:center; padding:16px;">[✓] All submissions verified. No biometric anomalies detected.</div>';
+        return;
+    }
+    list.innerHTML = '';
+    logs.forEach(l => {
+        const item = document.createElement('div');
+        item.style.padding = '8px 10px';
+        item.style.borderBottom = '1px solid var(--border)';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+        item.innerHTML = '<div><strong style="color:var(--term-danger);">@' + l.username + '</strong> <span style="color:var(--muted);">' + (l.reasons || 'Anomaly detected') + '</span></div><div style="color:var(--term-warn); font-size:0.75rem;">' + l.wpm + ' WPM • ' + (l.created_at || '').slice(11, 19) + '</div>';
+        list.appendChild(item);
+    });
+}
+
+function loadSecurityLogs() {
+    fetch('/producer/api/security').then(r => r.json()).then(logs => {
+        renderSecurityLogs(logs);
+    }).catch(err => console.log('[Security] Log load error:', err));
+}
+
+// Auto-poll vitals & security
+loadVitals();
+loadSecurityLogs();
+setInterval(loadVitals, 15000);
+setInterval(loadSecurityLogs, 25000);
+
 // Auto-refresh agents every 30s
 setInterval(refreshAgents, 30000);
 
 terminalInput.focus();
-showToast('Producer Panel loaded. Press Ctrl+K for command palette.', 'info', 4000);
+showToast('Producer Panel v5.2 loaded. System online.', 'info', 4000);
 </script>
 {% endblock %}

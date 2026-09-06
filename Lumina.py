@@ -24,10 +24,11 @@ except ImportError:
     sys.exit(1)
 
 SAFE_COMMANDS = {
-    'ipconfig', 'ping', 'hostname', 'whoami', 'systeminfo',
-    'netstat', 'tasklist', 'ver', 'date', 'time', 'dir',
-    'echo', 'cls', 'path', 'vol', 'driverquery', 'getmac',
-    'nslookup', 'tracert', 'route', 'arp', 'net', 'wmic'
+    'ipconfig', 'ifconfig', 'ping', 'hostname', 'whoami', 'systeminfo',
+    'netstat', 'tasklist', 'ver', 'date', 'time', 'dir', 'ls', 'pwd',
+    'echo', 'cls', 'clear', 'path', 'vol', 'driverquery', 'getmac',
+    'nslookup', 'tracert', 'traceroute', 'route', 'arp', 'net', 'wmic',
+    'uname', 'uptime', 'ps', 'df', 'free'
 }
 
 def get_ip():

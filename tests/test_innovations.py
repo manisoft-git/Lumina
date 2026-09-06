@@ -65,6 +65,17 @@ class TestGlobalInnovations(unittest.TestCase):
         self.assertIn(b"432Hz Soundscape", resp.data)
         self.assertIn(b"Attentional Stamina Ratio", resp.data)
 
+    def test_chess_bot_engine(self):
+        """Verify the Chess Bot plays legal tactical moves without unpacking errors."""
+        from sockets import SimpleChessBot
+        import chess
+        bot = SimpleChessBot(depth=2)
+        board = chess.Board()
+        board.push_san("e4")
+        move = bot.best_move(board.fen(), False)
+        self.assertIsNotNone(move)
+        self.assertIn(move, board.legal_moves)
+
 if __name__ == "__main__":
     unittest.main()
     import os; os._exit(0)

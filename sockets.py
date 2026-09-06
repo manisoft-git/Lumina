@@ -21,13 +21,93 @@ AGENTS = {}  # agent_id -> {sid, user_id, hostname, platform, last_seen}
 PRODUCER_ROOMS = {}  # agent_id -> producer_sid
 RELAY_ROOMS = {}  # room_id -> {state, teams, winner}
 
-# Safe command whitelist for remote diagnostics
+# Safe command whitelist for remote diagnostics (Windows, macOS, Linux, Chromebooks)
 SAFE_COMMANDS = {
-    'ipconfig', 'ping', 'hostname', 'whoami', 'systeminfo',
-    'netstat', 'tasklist', 'ver', 'date', 'time', 'dir',
-    'echo', 'cls', 'path', 'vol', 'driverquery', 'getmac',
-    'nslookup', 'tracert', 'route', 'arp', 'net', 'wmic'
+    'ipconfig', 'ifconfig', 'ping', 'hostname', 'whoami', 'systeminfo',
+    'netstat', 'tasklist', 'ver', 'date', 'time', 'dir', 'ls', 'pwd',
+    'echo', 'cls', 'clear', 'path', 'vol', 'driverquery', 'getmac',
+    'nslookup', 'tracert', 'traceroute', 'route', 'arp', 'net', 'wmic',
+    'uname', 'uptime', 'ps', 'df', 'free'
 }
+
+try:
+    import chess as chess_lib
+    CHESS_AVAILABLE = True
+except Exception:
+    CHESS_AVAILABLE = False
+
+class SimpleChessBot:
+    def __init__(self, depth=2):
+        self.depth = depth
+
+    def best_move(self, board_fen, maximizing=False):
+        if not CHESS_AVAILABLE:
+            return None
+        try:
+            b = chess_lib.Board(board_fen)
+            if b.is_game_over() or not list(b.legal_moves):
+                return None
+            _, move = self._minimax(b, self.depth, -99999, 99999, maximizing)
+            if not move and list(b.legal_moves):
+                move = random.choice(list(b.legal_moves))
+            return move
+        except Exception as e:
+            print(f"[./] Chess bot error: {e}")
+            return None
+
+    def _minimax(self, board, depth, alpha, beta, maximizing):
+        if depth == 0 or board.is_game_over():
+            return self._eval(board), None
+        legal = list(board.legal_moves)
+        if not legal:
+            return self._eval(board), None
+
+        legal.sort(key=lambda m: (board.is_capture(m), board.gives_check(m)), reverse=True)
+        best_move = legal[0]
+
+        if maximizing:
+            max_eval = -99999
+            for move in legal:
+                board.push(move)
+                ev, _ = self._minimax(board, depth - 1, alpha, beta, False)
+                board.pop()
+                if ev > max_eval:
+                    max_eval = ev
+                    best_move = move
+                alpha = max(alpha, ev)
+                if beta <= alpha:
+                    break
+            return max_eval, best_move
+        else:
+            min_eval = 99999
+            for move in legal:
+                board.push(move)
+                ev, _ = self._minimax(board, depth - 1, alpha, beta, True)
+                board.pop()
+                if ev < min_eval:
+                    min_eval = ev
+                    best_move = move
+                beta = min(beta, ev)
+                if beta <= alpha:
+                    break
+            return min_eval, best_move
+
+    def _eval(self, board):
+        if board.is_checkmate():
+            return -10000 if board.turn else 10000
+        if board.is_stalemate() or board.is_insufficient_material():
+            return 0
+        vals = {chess_lib.PAWN: 100, chess_lib.KNIGHT: 320, chess_lib.BISHOP: 330, chess_lib.ROOK: 500, chess_lib.QUEEN: 900, chess_lib.KING: 0}
+        score = 0
+        center = {chess_lib.D4, chess_lib.D5, chess_lib.E4, chess_lib.E5}
+        for sq, piece in board.piece_map().items():
+            v = vals.get(piece.piece_type, 0)
+            if sq in center:
+                v += 15
+            score += v if piece.color == chess_lib.WHITE else -v
+        return score
+
+CHESS_BOT = SimpleChessBot(depth=2)
 
 def get_username():
     return current_user.username if current_user.is_authenticated else "Guest"
@@ -412,53 +492,6 @@ def register_sockets(socketio):
                 break
 
     # ---------- Chess ----------
-    try:
-        import chess as chess_lib
-        CHESS_AVAILABLE = True
-    except Exception:
-        CHESS_AVAILABLE = False
-
-    class SimpleChessBot:
-        def __init__(self, depth=2):
-            self.depth = depth
-        def best_move(self, board_fen, maximizing=True):
-            if not CHESS_AVAILABLE:
-                return None
-            b = chess_lib.Board(board_fen)
-            return self._minimax(b, self.depth, maximizing)[1]
-        def _minimax(self, board, depth, maximizing):
-            if depth == 0 or board.is_game_over():
-                return self._eval(board), None
-            best_move = None
-            if maximizing:
-                max_eval = -9999
-                for move in board.legal_moves:
-                    board.push(move)
-                    ev, _ = self._minimax(board, depth - 1, False)
-                    board.pop()
-                    if ev > max_eval:
-                        max_eval = ev; best_move = move
-                return max_eval, best_move
-            else:
-                min_eval = 9999
-                for move in board.legal_moves:
-                    board.push(move)
-                    ev, _ = self._minimax(board, depth - 1, True)
-                    board.pop()
-                    if ev < min_eval:
-                        min_eval = ev; best_move = move
-                return min_eval, best_move
-        def _eval(self, board):
-            if board.is_checkmate():
-                return -1000 if board.turn else 1000
-            vals = {chess_lib.PAWN: 1, chess_lib.KNIGHT: 3, chess_lib.BISHOP: 3, chess_lib.ROOK: 5, chess_lib.QUEEN: 9, chess_lib.KING: 0}
-            score = 0
-            for sq, piece in board.piece_map().items():
-                v = vals.get(piece.piece_type, 0)
-                score += v if piece.color == chess_lib.WHITE else -v
-            return score
-
-    CHESS_BOT = SimpleChessBot(depth=2)
 
     @socketio.on("join_chess_room")
     def handle_join_chess_room(data):
@@ -617,17 +650,48 @@ def register_sockets(socketio):
             if room["turn"] == "black" and room["black"] and room["black"].get("uid") == -1:
                 try:
                     board = chess_lib.Board(room["board"])
-                    _, best = CHESS_BOT.best_move(room["board"], False)
+                    best = CHESS_BOT.best_move(room["board"], False)
+                    if not best and list(board.legal_moves):
+                        best = random.choice(list(board.legal_moves))
                     if best:
                         board.push(best)
                         room["board"] = board.fen()
                         room["turn"] = "white"
                         room["history"].append(best.uci())
-                        emit("chess_update", {"board": room["board"], "turn": "white", "last_move": best.uci(), "history": room["history"]}, room=room_id)
-                        emit("chess_update", {"board": room["board"], "turn": "white", "last_move": best.uci(), "history": room["history"]}, room=f"spec_{room_id}")
+                        result = None
+                        if board.is_game_over():
+                            room["status"] = "complete"
+                            if board.is_checkmate():
+                                result = "0-1"
+                                room["result"] = result
+                                if room["white"] and room["white"].get("uid"):
+                                    update_elo(room["white"]["uid"], "chess", 0)
+                            else:
+                                result = "1/2-1/2"
+                                room["result"] = result
+                                if room["white"] and room["white"].get("uid"):
+                                    update_elo(room["white"]["uid"], "chess", 0.5)
+
+                        emit("chess_update", {
+                            "board": room["board"],
+                            "turn": room["turn"],
+                            "last_move": best.uci(),
+                            "history": room["history"],
+                            "result": result
+                        }, room=room_id)
+                        emit("chess_update", {
+                            "board": room["board"],
+                            "turn": room["turn"],
+                            "last_move": best.uci(),
+                            "history": room["history"],
+                            "result": result
+                        }, room=f"spec_{room_id}")
                     else:
                         emit("chess_error", {"msg": "Bot has no legal moves"}, room=room_id)
                 except Exception as e:
+                    print(f"[./] Bot move error: {e}")
+                    import traceback
+                    traceback.print_exc()
                     emit("chess_error", {"msg": f"Bot error: {str(e)}"}, room=room_id)
 
         except Exception as e:

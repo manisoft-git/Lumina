@@ -88,7 +88,15 @@
             square.classList.add('selected');
             console.log('[Chess] Selected', sq, piece);
         } else {
-            const move = selected + sq;
+            let move = selected + sq;
+            // Handle pawn promotion to queen automatically
+            const srcSquare = document.querySelector(`.chess-square[data-sq="${selected}"]`);
+            const p = srcSquare ? srcSquare.dataset.piece : '';
+            if (p && p.toLowerCase() === 'p') {
+                if ((p === 'P' && sq[1] === '8') || (p === 'p' && sq[1] === '1')) {
+                    move += 'q';
+                }
+            }
             console.log('[Chess] Sending move', move);
             if (socket.connected) {
                 socket.emit('chess_move', {room_id: roomId, move: move});
@@ -133,6 +141,10 @@
     socket.on('chess_assigned', (d) => {
         myColor = d.color;
         statusEl.textContent = d.color === 'spectator' ? 'Spectating' : 'You are ' + d.color;
+        if (isBot) {
+            document.getElementById('white-name').textContent = 'You (White)';
+            document.getElementById('black-name').textContent = 'Manisoft_Chess [GM] ♟️';
+        }
     });
 
     socket.on('game_start', (d) => {
@@ -140,6 +152,10 @@
         renderFEN(d.board);
         statusEl.textContent = 'Game started! ' + d.turn + ' to move';
         document.getElementById('resign-btn').disabled = false;
+        if (isBot) {
+            document.getElementById('white-name').textContent = 'You (White)';
+            document.getElementById('black-name').textContent = 'Manisoft_Chess [GM] ♟️';
+        }
     });
 
     socket.on('chess_update', (d) => {
