@@ -1,20 +1,239 @@
 {% extends "base.html" %}
-{% block title %}Analytics - Lumina{% endblock %}
+{% block title %}Analytics & Cognitive Milestones — Lumina{% endblock %}
+{% block head %}
+<style>
+.analytics-hero {
+    background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(139,92,246,0.1));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.analytics-hero h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0 0 6px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.analytics-hero p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+/* Cognitive Talent Radar Summary Card */
+.cognitive-summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.cognitive-summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary), #a855f7, var(--accent));
+}
+.lti-hud {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.lti-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+}
+.lti-val {
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: monospace;
+    color: var(--primary);
+}
+.lti-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
+
+/* Domains Pill Grid */
+.domains-pill-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+.domain-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    color: var(--text);
+}
+
+/* Share to Showcase Action Grid */
+.showcase-share-banner {
+    background: linear-gradient(135deg, rgba(236,72,153,0.12), rgba(99,102,241,0.12));
+    border: 1px solid rgba(236,72,153,0.3);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.showcase-share-banner h3 {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    color: #fbcfe8;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.showcase-share-banner p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+.quick-share-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.btn-share-record {
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-share-record:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(236,72,153,0.4);
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="analytics-page">
-    <h1>Your Analytics</h1>
+    
+    <!-- Hero Header -->
+    <div class="analytics-hero">
+        <div>
+            <h1>📊 Performance & Cognitive Analytics</h1>
+            <p>Comprehensive telemetry of motor cadence, error distribution, and multi-domain cognitive agility.</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <a href="{{ url_for('talent_profile_page') }}" class="btn btn-primary" style="font-weight:700;">🎯 7-Axis Talent Profile</a>
+            <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary">🌟 Parent Showcase</a>
+        </div>
+    </div>
+
+    <!-- Quick Milestone Share to Showcase -->
+    <div class="showcase-share-banner">
+        <div>
+            <h3>✨ Celebrate Records on the Parent Showcase</h3>
+            <p>Publish your high-water marks so parents, families, and mentors can view and cheer your milestones.</p>
+        </div>
+        <div class="quick-share-buttons">
+            <button class="btn-share-record" onclick="quickShareShowcase('typing_record', 'Broke {{ best_wpm }} WPM Personal Record! ⚡', '{{ best_wpm }} WPM • {{ best_acc }}% Acc', 'Dedicated daily drill sprint with zero-distraction focus.')">
+                ⚡ Share {{ best_wpm }} WPM
+            </button>
+            {% if talent_profile and talent_profile.archetype %}
+            <button class="btn-share-record" style="background:linear-gradient(135deg, #38bdf8, #6366f1);" onclick="quickShareShowcase('cognitive_talent', 'Cognitive Milestone: {{ talent_profile.archetype.title }} 🏛️', 'LTI: {{ talent_profile.lti }} • Top {{ 100 - talent_profile.overall_percentile }}%', 'Synthesized 7 cognitive axes across arithmetic, sequence logic, and motor cadence.')">
+                🧠 Share LTI {{ talent_profile.lti }}
+            </button>
+            {% endif %}
+            {% if chess_best and chess_best > 1200 %}
+            <button class="btn-share-record" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="quickShareShowcase('chess_win', 'Tactical Chess Breakthrough: {{ chess_best }} ELO! ♟️', '{{ chess_best }} Peak ELO', 'Defeated positional tactical engine through calculated endgame pawn promotion.')">
+                ♟️ Share {{ chess_best }} ELO
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Cognitive Talent Radar Summary Card -->
+    {% if talent_profile %}
+    <div class="cognitive-summary-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+            <div>
+                <h3 style="margin:0; font-size:1.2rem;">🧠 Lumina Cognitive Talent Index (LTI)</h3>
+                <span style="font-size:0.82rem; color:var(--muted);">Synthesized across 7 neural performance domains</span>
+            </div>
+            <a href="{{ url_for('talent_profile_page') }}" style="font-size:0.85rem; font-weight:700; color:var(--primary);">
+                Full Radar & Career Pathway &rarr;
+            </a>
+        </div>
+
+        <div class="lti-hud">
+            <div class="lti-box">
+                <div class="lti-val">{{ talent_profile.lti }}</div>
+                <div class="lti-sub">Cognitive LTI Index (200-1000)</div>
+            </div>
+            <div class="lti-box">
+                <div class="lti-val" style="color:var(--accent);">Top {{ 100 - talent_profile.overall_percentile }}%</div>
+                <div class="lti-sub">Global Percentile</div>
+            </div>
+            <div class="lti-box">
+                <div class="lti-val" style="font-size:1.4rem; color:#a855f7;">{{ talent_profile.archetype.badge }} {{ talent_profile.archetype.title }}</div>
+                <div class="lti-sub">Archetype Classification</div>
+            </div>
+        </div>
+
+        <div style="font-size:0.78rem; color:var(--muted); text-transform:uppercase; font-weight:700;">Domain Breakdown:</div>
+        <div class="domains-pill-grid">
+            {% for d in talent_profile.domains %}
+            <div class="domain-chip">
+                <span>{{ d.icon }}</span>
+                <strong>{{ d.name }}:</strong>
+                <span>{{ d.metric_label }}</span>
+                <span style="color:var(--primary); font-size:0.75rem;">({{ d.score }} pts)</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Progress Over Time -->
     <section class="analytics-section">
-        <h2>Progress Over Time</h2>
+        <h2>📈 Typing Cadence & Accuracy History</h2>
         <div style="position:relative;height:300px;">
             <canvas id="progress-chart"></canvas>
         </div>
     </section>
+
+    <!-- Keyboard Error Heatmap -->
     <section class="analytics-section">
-        <h2>Keyboard Error Heatmap</h2>
+        <h2>⌨️ Keyboard Error Biometric Heatmap</h2>
         <div class="heatmap-container" role="img" aria-label="Keyboard heatmap">
             {% set keys = [
                 ['`','1','2','3','4','5','6','7','8','9','0','-','='],
-                ['q','w','e','r','t','y','u','i','o','p','[',']','\\\\'],
+                ['q','w','e','r','t','y','u','i','o','p','[',']','\\'],
                 ['a','s','d','f','g','h','j','k','l',';',"'"],
                 ['z','x','c','v','b','n','m',',','.','/']
             ] %}
@@ -31,22 +250,27 @@
             </div>
         </div>
     </section>
+
+    <!-- Game High Scores -->
     <section class="analytics-section">
-        <h2>Game High Scores</h2>
+        <h2>🎮 Multi-Discipline High Scores</h2>
         <div class="stat-grid">
-            <div class="stat"><div class="stat-value">{{ math_best }}</div><div class="stat-label">Math Best</div></div>
+            <div class="stat"><div class="stat-value">{{ best_wpm }}</div><div class="stat-label">Best Net WPM</div></div>
+            <div class="stat"><div class="stat-value">{{ math_best }}</div><div class="stat-label">Math Sprint Best</div></div>
             <div class="stat"><div class="stat-value">{{ memory_best }}</div><div class="stat-label">Memory Level</div></div>
             <div class="stat"><div class="stat-value">{{ reaction_best }}ms</div><div class="stat-label">Reaction Best</div></div>
             <div class="stat"><div class="stat-value">{{ pattern_best }}</div><div class="stat-label">Patterns Solved</div></div>
             <div class="stat"><div class="stat-value">{{ word_best }}</div><div class="stat-label">Word Blitz Best</div></div>
+            <div class="stat"><div class="stat-value">{{ chess_best }}</div><div class="stat-label">Chess Peak ELO</div></div>
         </div>
     </section>
 </div>
+
 <script>
 const ctx = document.getElementById('progress-chart');
 const rawData = {{ progress | tojson }} || [];
 if (rawData.length === 0) {
-    ctx.parentElement.innerHTML = '<div class="empty-state" style="padding:60px 20px;"><div class="empty-state-icon">📈</div><p>No typing data yet. Complete some tests to see your progress!</p></div>';
+    ctx.parentElement.innerHTML = '<div class="empty-state" style="padding:60px 20px;"><div class="empty-state-icon">📈</div><p>No typing data recorded yet. Complete some typing drills to unlock cadence graphs!</p></div>';
 } else {
     new Chart(ctx, {
         type: 'line',
@@ -69,6 +293,33 @@ if (rawData.length === 0) {
             }
         }
     });
+}
+
+function quickShareShowcase(category, title, stat, story) {
+    if (!confirm('Publish milestone to Parent & Community Showcase?\n\n"' + title + '" (' + stat + ')')) return;
+
+    fetch('/showcase/post', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            title: title,
+            achievement_type: category,
+            stat_highlight: stat,
+            content: story,
+            media_type: 'image',
+            media_url: ''
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            alert('🎉 Published! Your milestone is now live on the Parent Showcase.');
+            window.location.href = '/showcase';
+        } else {
+            alert(d.error || 'Failed to post to showcase.');
+        }
+    })
+    .catch(e => alert('Error publishing milestone: ' + e));
 }
 </script>
 {% endblock %}

@@ -27,9 +27,12 @@
         </div>
         <ul class="nav-links" id="nav-links">
             <li><a href="{{ url_for('home') }}">Home</a></li>
+            <li><a href="{{ url_for('showcase_feed') }}" style="color:#ec4899; font-weight:700;">🌟 Showcase</a></li>
             {% if current_user.is_authenticated %}
                 <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
                 <li><a href="{{ url_for('talent_profile_page') }}" style="color:var(--primary); font-weight:700;">🎯 Talent</a></li>
+                <li><a href="{{ url_for('analytics') }}">📊 Analytics</a></li>
+                <li><a href="{{ url_for('inbox_page') }}">💌 Inbox</a></li>
                 <li><a href="{{ url_for('typing_page') }}">Solo Type</a></li>
                 <li><a href="{{ url_for('competitions_hub') }}">Compete</a></li>
                 <li><a href="{{ url_for('relay_lobby') }}" style="color:#f59e0b; font-weight:700;">🤝 Relay</a></li>
@@ -46,6 +49,7 @@
                 {% endif %}
                 <li><a href="{{ url_for('logout') }}">Logout ({{ current_user.username }})</a></li>
             {% else %}
+                <li><a href="{{ url_for('leaderboard') }}">Leaderboard</a></li>
                 <li><a href="{{ url_for('login') }}">Login</a></li>
                 <li><a href="{{ url_for('register') }}">Register</a></li>
             {% endif %}

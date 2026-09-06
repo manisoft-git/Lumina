@@ -542,9 +542,11 @@
     <div class="producer-quick-chips" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;">
         <button class="btn btn-small" onclick="triggerCommand('vitals')">📊 Server Vitals</button>
         <button class="btn btn-small" onclick="triggerCommand('security')">🛡️ Anti-Cheat Audit</button>
+        <button class="btn btn-small" onclick="triggerCommand('parents')">👨‍👩‍👧 Parent Messages</button>
         <button class="btn btn-small" onclick="triggerCommand('dbstat')">💾 DB Statistics</button>
         <button class="btn btn-small" onclick="triggerCommand('agents')">📡 Active Agents</button>
         <button class="btn btn-small" onclick="triggerCommand('ping')">⚡ Ping Latency</button>
+        <a href="{{ url_for('showcase_feed') }}" target="_blank" class="btn btn-small" style="background:rgba(236,72,153,0.2); border-color:#ec4899; color:#fbcfe8;">🌟 Showcase Feed</a>
         <button class="btn btn-small" onclick="triggerCommand('help')">❓ Command Manual</button>
         <button class="btn btn-small" onclick="triggerCommand('clear')">🧹 Clear</button>
     </div>
@@ -663,6 +665,20 @@
             </div>
             <div id="security-log-list" style="max-height:220px; overflow-y:auto; font-family:var(--term-font); font-size:0.8rem;">
                 <div style="color:var(--muted); text-align:center; padding:12px;">Checking security incidents...</div>
+            </div>
+        </div>
+
+        <!-- Parent-Student Communications Audit Stream -->
+        <div class="security-audit-section" style="background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:20px; margin-top:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0; font-size:0.95rem; color:#ec4899; display:flex; align-items:center; gap:8px;">
+                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#ec4899;"></span>
+                    👨‍👩‍👧 Parent Communications Audit Stream
+                </h3>
+                <button class="btn btn-small" onclick="loadParentMessages()" style="font-size:0.75rem;">Refresh</button>
+            </div>
+            <div id="parent-msg-list" style="max-height:220px; overflow-y:auto; font-family:var(--term-font); font-size:0.8rem;">
+                <div style="color:var(--muted); text-align:center; padding:12px;">Loading parent messages...</div>
             </div>
         </div>
 
@@ -853,6 +869,7 @@ terminalInput.addEventListener('keydown', (e) => {
             addLine('═══ LUMINA IT COMMAND MANUAL ═══', false);
             addLine('  <span class="producer-terminal-cmd">vitals</span>             — Live CPU, RAM, Disk & SQLite telemetry', false);
             addLine('  <span class="producer-terminal-cmd">security</span>           — Anti-Cheat forensic audit stream', false);
+            addLine('  <span class="producer-terminal-cmd">parents</span>            — Inspect parent-student messages & audit trail', false);
             addLine('  <span class="producer-terminal-cmd">broadcast &lt;msg&gt;</span>     — Push school-wide announcement to all screens', false);
             addLine('  <span class="producer-terminal-cmd">setrole &lt;uid&gt; &lt;role&gt;</span> — Change user role (student, teacher, admin)', false);
             addLine('  <span class="producer-terminal-cmd">dbstat</span>             — SQLite tables and record breakdown', false);
@@ -891,6 +908,23 @@ terminalInput.addEventListener('keydown', (e) => {
                 }
                 renderSecurityLogs(logs);
             }).catch(e => addError('Failed to fetch security logs: ' + e));
+        } else if (cmd === 'parents' || cmd === 'messages') {
+            addBeamLine('Querying parent communications audit registry...');
+            fetch('/producer/api/parent_messages').then(r => r.json()).then(res => {
+                const msgs = Array.isArray(res) ? res : (res.messages || []);
+                if (!msgs || msgs.length === 0) {
+                    addSuccess('No parent messages recorded on audit log yet.');
+                } else {
+                    addSuccess('PARENT-STUDENT MESSAGES (' + msgs.length + ' logged):');
+                    msgs.forEach(m => {
+                        const anonTag = m.is_anonymous ? '<span style="color:#f59e0b">[ANON ALIAS: ' + m.parent_alias + ']</span>' : '<span style="color:#38bdf8">[PUBLIC]</span>';
+                        addLine('  • [' + m.created_at + '] From: ' + m.parent_fullname + ' (@' + m.parent_username + ') ' + anonTag, false);
+                        addLine('    -> Student: @' + m.student_username + ' on "' + (m.post_title || 'Post') + '"', false);
+                        addLine('    -> Note: "' + m.message + '"', false);
+                    });
+                }
+                renderParentMessages(msgs);
+            }).catch(e => addError('Failed to fetch parent messages: ' + e));
         } else if (cmd === 'broadcast') {
             if (!arg) {
                 addError('Usage: broadcast <announcement message>');
@@ -1245,11 +1279,62 @@ function loadSecurityLogs() {
     }).catch(err => console.log('[Security] Log load error:', err));
 }
 
-// Auto-poll vitals & security
+function renderParentMessages(messages) {
+    const list = document.getElementById('parent-msg-list');
+    if (!list) return;
+    const msgs = Array.isArray(messages) ? messages : (messages.messages || []);
+    if (!msgs || msgs.length === 0) {
+        list.innerHTML = '<div style="color:var(--muted); text-align:center; padding:16px;">No parent messages sent yet.</div>';
+        return;
+    }
+    list.innerHTML = '';
+    msgs.forEach(m => {
+        const item = document.createElement('div');
+        item.style.padding = '8px 10px';
+        item.style.borderBottom = '1px solid var(--border)';
+        item.style.fontSize = '0.78rem';
+        const anonBadge = m.is_anonymous
+            ? '<span style="color:#f59e0b; background:rgba(245,158,11,0.15); padding:1px 6px; border-radius:6px; font-size:0.7rem;">🔒 ANON ALIAS: ' + (m.parent_alias || 'Proud Parent') + '</span>'
+            : '<span style="color:#38bdf8; background:rgba(56,189,248,0.15); padding:1px 6px; border-radius:6px; font-size:0.7rem;">PUBLIC</span>';
+        
+        item.innerHTML = '<div style="display:flex; justify-content:space-between; align-items:center;">'
+            + '<div><strong style="color:#ec4899;">' + (m.parent_fullname || m.parent_username) + '</strong> <span style="color:var(--muted); font-size:0.72rem;">(@' + m.parent_username + ' • ' + (m.parent_email || '') + ')</span> ' + anonBadge + '</div>'
+            + '<div style="color:var(--muted); font-size:0.7rem;">' + (m.created_at || '').slice(0, 19) + '</div>'
+            + '</div>'
+            + '<div style="color:var(--text); margin-top:3px;"><strong>&rarr; To @' + m.student_username + ':</strong> "' + m.message + '"</div>'
+            + '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px;">'
+            + '<span style="color:var(--muted); font-size:0.7rem;">Post: ' + (m.post_title || 'Showcase') + '</span>'
+            + '<button onclick="deleteParentMsg(' + m.id + ')" class="btn btn-small" style="padding:1px 6px; font-size:0.68rem; color:#f87171; border-color:rgba(248,113,113,0.3);">Delete</button>'
+            + '</div>';
+        list.appendChild(item);
+    });
+}
+
+function loadParentMessages() {
+    fetch('/producer/api/parent_messages').then(r => r.json()).then(data => {
+        renderParentMessages(data);
+    }).catch(err => console.log('[Parents] Log load error:', err));
+}
+
+function deleteParentMsg(msgId) {
+    if (!confirm('Remove this message from student inbox and audit log?')) return;
+    fetch('/producer/api/delete_parent_message/' + msgId, {method: 'POST'})
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'ok') {
+                showToast('Parent message deleted', 'info');
+                loadParentMessages();
+            }
+        });
+}
+
+// Auto-poll vitals, security & parent messages
 loadVitals();
 loadSecurityLogs();
+loadParentMessages();
 setInterval(loadVitals, 15000);
 setInterval(loadSecurityLogs, 25000);
+setInterval(loadParentMessages, 25000);
 
 // Auto-refresh agents every 30s
 setInterval(refreshAgents, 30000);

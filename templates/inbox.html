@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}💌 Encouragement Inbox — Lumina{% endblock %}
+{% block head %}
+<style>
+.inbox-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+}
+.inbox-header {
+    background: linear-gradient(135deg, rgba(236,72,153,0.1), rgba(56,189,248,0.1));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.inbox-header h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin: 0 0 6px;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.inbox-header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.message-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 16px;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+.message-card:hover {
+    transform: translateY(-2px);
+    border-color: #ec4899;
+    box-shadow: 0 8px 24px rgba(236,72,153,0.15);
+}
+.message-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.message-sender {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.sender-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #ec4899);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #fff;
+    font-size: 0.95rem;
+}
+.sender-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sender-time {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+.message-post-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: #ec4899;
+    background: rgba(236,72,153,0.1);
+    border: 1px solid rgba(236,72,153,0.25);
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    text-decoration: none;
+}
+.message-post-link:hover {
+    text-decoration: underline;
+}
+
+.message-bubble {
+    background: var(--surface2);
+    border-left: 3px solid #ec4899;
+    border-radius: 4px 12px 12px 4px;
+    padding: 14px 18px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 12px;
+}
+
+.message-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.btn-react {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+.btn-react:hover {
+    background: rgba(236,72,153,0.2);
+    border-color: #ec4899;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inbox-container">
+    <div class="inbox-header">
+        <div>
+            <h1>💌 Encouragement Inbox</h1>
+            <p>Direct compliments and notes from proud parents, mentors, and community supporters.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary" style="font-size:0.85rem;">🌟 View Showcase Feed</a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for m in messages %}
+        <div class="message-card">
+            <div class="message-top">
+                <div class="message-sender">
+                    <div class="sender-avatar">
+                        {% if m[4] %}🔒{% else %}{{ (m[10] or m[9])[0] if (m[10] or m[9]) else 'P' }}{% endif %}
+                    </div>
+                    <div>
+                        <div class="sender-name">
+                            {% if m[4] %}
+                                <span>{{ m[5] or 'Proud Parent' }}</span>
+                                <span style="font-size:0.72rem; padding:1px 8px; border-radius:10px; background:rgba(245,158,11,0.2); color:#f59e0b; border:1px solid rgba(245,158,11,0.4);">
+                                    🔒 Anonymous Supporter
+                                </span>
+                            {% else %}
+                                <span>{{ m[10] or m[9] }}</span>
+                                <span style="font-size:0.72rem; padding:1px 8px; border-radius:10px; background:rgba(56,189,248,0.2); color:#38bdf8; border:1px solid rgba(56,189,248,0.4);">
+                                    👨‍👩‍👧 Parent Supporter
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="sender-time">{{ m[6] }}</div>
+                    </div>
+                </div>
+                <div>
+                    <span style="font-size:0.75rem; color:var(--muted);">Status: Read</span>
+                </div>
+            </div>
+
+            {% if m[8] %}
+                <div>
+                    <a href="{{ url_for('showcase_feed') }}#reel-post-{{ m[1] }}" class="message-post-link">
+                        🎯 Post: {{ m[8] }}
+                    </a>
+                </div>
+            {% endif %}
+
+            <div class="message-bubble">
+                "{{ m[3] }}"
+            </div>
+
+            <div class="message-actions">
+                <button class="btn-react" onclick="sendThanks(this)">❤️ Send Thanks</button>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="text-align:center; padding:80px 20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);">
+            <div style="font-size:3.2rem; margin-bottom:12px;">📬</div>
+            <h3>No parent messages yet</h3>
+            <p style="color:var(--muted); max-width:440px; margin:8px auto 20px;">
+                Keep publishing your high scores, typing personal bests, and chess checkmates to the Showcase Feed to receive encouraging notes!
+            </p>
+            <a href="{{ url_for('showcase_feed') }}" class="btn btn-primary" style="background:linear-gradient(135deg, #ec4899, #8b5cf6); border:none; color:#fff;">
+                🌟 Go to Showcase Feed
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function sendThanks(btn) {
+    btn.innerHTML = '❤️ Thanks Sent!';
+    btn.style.background = 'rgba(236,72,153,0.3)';
+    btn.style.borderColor = '#ec4899';
+    btn.disabled = true;
+}
+</script>
+{% endblock %}

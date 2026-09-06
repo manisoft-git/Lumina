@@ -1,0 +1,993 @@
+{% extends "base.html" %}
+{% block title %}🌟 Student Showcase & Parent Portal — Lumina{% endblock %}
+{% block head %}
+<style>
+/* === TIKTOK/REELS VERTICAL SHOWCASE FEED === */
+.showcase-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 10px 16px 40px;
+    position: relative;
+}
+
+/* Header & Filter Bar */
+.showcase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(12px);
+}
+.showcase-brand h1 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.showcase-brand p {
+    margin: 2px 0 0;
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
+.showcase-actions-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-pills {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+}
+.filter-pills::-webkit-scrollbar { display: none; }
+.filter-pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.filter-pill:hover, .filter-pill.active {
+    background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(56,189,248,0.2));
+    border-color: #ec4899;
+    color: var(--text);
+    text-decoration: none;
+}
+
+/* Feed Scroller */
+.reel-viewport {
+    height: calc(100vh - 210px);
+    min-height: 560px;
+    max-height: 780px;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    background: #050811;
+    position: relative;
+}
+
+/* Single Reel Card */
+.reel-card {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    background: #000;
+}
+
+/* Media Background */
+.reel-media-wrap {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    overflow: hidden;
+    z-index: 1;
+}
+.reel-media-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: brightness(0.72) contrast(1.05);
+    transition: transform 12s ease-out;
+}
+.reel-card:hover .reel-media-img {
+    transform: scale(1.05);
+}
+.reel-media-video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: brightness(0.75);
+}
+
+/* Card Gradient Insignia Background */
+.reel-card-insignia {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 40%, rgba(99,102,241,0.25) 0%, rgba(15,23,42,0.95) 75%);
+    z-index: 1;
+}
+.insignia-symbol {
+    font-size: 8rem;
+    opacity: 0.18;
+    user-select: none;
+    animation: floatInsignia 6s ease-in-out infinite;
+}
+@keyframes floatInsignia { 0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-15px) scale(1.06);} }
+
+/* Dark Gradient Vignette */
+.reel-overlay-gradient {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 65%;
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.65) 50%, transparent 100%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Post Content Overlay (Left & Bottom) */
+.reel-content-bottom {
+    position: relative;
+    z-index: 3;
+    padding: 24px 85px 28px 24px;
+    color: #fff;
+}
+.reel-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.author-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ec4899, #38bdf8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.8);
+    box-shadow: 0 0 12px rgba(236,72,153,0.5);
+}
+.author-meta h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.author-meta span {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.7);
+}
+
+.reel-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    line-height: 1.35;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+.reel-story {
+    font-size: 0.92rem;
+    color: rgba(255,255,255,0.88);
+    line-height: 1.5;
+    margin-bottom: 12px;
+    max-height: 80px;
+    overflow-y: auto;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+
+.reel-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(236,72,153,0.3), rgba(56,189,248,0.3));
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    backdrop-filter: blur(8px);
+}
+.category-pill {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* === RIGHT-SIDE VERTICAL FLOATING ACTION BAR (TIKTOK STYLE) === */
+.reel-actions-bar {
+    position: absolute;
+    right: 14px;
+    bottom: 28px;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+.action-btn-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.action-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    outline: none;
+}
+.action-btn:hover {
+    transform: scale(1.15);
+    background: rgba(236,72,153,0.3);
+    border-color: #ec4899;
+}
+.action-btn:active {
+    transform: scale(0.95);
+}
+.action-btn.liked {
+    background: rgba(236,72,153,0.85);
+    border-color: #ec4899;
+    color: #fff;
+    animation: heartPop 0.35s ease-in-out;
+}
+@keyframes heartPop { 0%{transform:scale(0.8);} 50%{transform:scale(1.35);} 100%{transform:scale(1);} }
+
+.action-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+/* Video Mute Toggle */
+.video-audio-toggle {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 5;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+/* === MESSAGE SLIDE-OVER DRAWER MODAL === */
+.drawer-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+}
+@media (min-width: 768px) {
+    .drawer-overlay {
+        align-items: center;
+    }
+}
+.drawer-modal {
+    background: var(--surface-solid);
+    border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-width: 580px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 24px;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (min-width: 768px) {
+    .drawer-modal {
+        border-radius: 24px;
+        animation: popModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+}
+@keyframes slideUp { from{transform:translateY(100%);} to{transform:translateY(0);} }
+@keyframes popModal { from{transform:scale(0.9); opacity:0;} to{transform:scale(1); opacity:1;} }
+
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 14px;
+}
+.drawer-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.drawer-header p {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+.drawer-close {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+}
+.drawer-close:hover { color: var(--text); }
+
+.inspiration-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.inspiration-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.78rem;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.inspiration-chip:hover {
+    border-color: #ec4899;
+    background: rgba(236,72,153,0.15);
+}
+
+.anonymous-toggle-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 14px 0;
+    padding: 12px 14px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--radius);
+}
+.anonymous-toggle-box input[type=checkbox] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: #f59e0b;
+    cursor: pointer;
+}
+.anonymous-toggle-label strong {
+    display: block;
+    font-size: 0.88rem;
+    color: #f59e0b;
+}
+.anonymous-toggle-label span {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.4;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Post Milestone Modal */
+.modal-form-group {
+    margin-bottom: 14px;
+}
+.modal-form-group label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.modal-form-group input, .modal-form-group textarea, .modal-form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 0.92rem;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+.modal-form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Toast Notification */
+.showcase-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ec4899, #6366f1);
+    color: #fff;
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+}
+.showcase-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="showcase-container">
+
+    <!-- Top Showcase Header -->
+    <div class="showcase-header">
+        <div class="showcase-brand">
+            <h1>🌟 Student Achievement Showcase</h1>
+            <p>TikTok-style vertical milestone feed • Free public access for parents & supporters</p>
+        </div>
+        <div class="showcase-actions-top">
+            {% if current_user.is_authenticated %}
+                <button class="btn btn-primary" onclick="openPostModal()" style="font-weight:700; background:linear-gradient(135deg, #ec4899, #8b5cf6); border:none; color:#fff;">
+                    ✨ Post Achievement
+                </button>
+                <a href="{{ url_for('inbox_page') }}" class="btn btn-secondary" style="position:relative; font-size:0.85rem;">
+                    💌 My Inbox
+                    {% if unread_messages > 0 %}
+                        <span style="position:absolute; top:-6px; right:-6px; background:#ef4444; color:#fff; border-radius:50%; font-size:0.7rem; font-weight:800; padding:2px 6px;">{{ unread_messages }}</span>
+                    {% endif %}
+                </a>
+            {% else %}
+                <div style="font-size:0.82rem; color:var(--muted); background:rgba(255,255,255,0.06); padding:6px 14px; border-radius:20px; border:1px solid var(--border);">
+                    👨‍👩‍👧 Public Visitor Mode (No login needed to scroll)
+                </div>
+                <a href="{{ url_for('login') }}" class="btn btn-small" style="font-size:0.8rem;">Login</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Category Filter Pills -->
+    <div class="filter-pills">
+        <a href="{{ url_for('showcase_feed', filter='all') }}" class="filter-pill {% if current_filter == 'all' %}active{% endif %}">🔥 All Achievements</a>
+        <a href="{{ url_for('showcase_feed', filter='typing_record') }}" class="filter-pill {% if current_filter == 'typing_record' %}active{% endif %}">⚡ Typing Records</a>
+        <a href="{{ url_for('showcase_feed', filter='cognitive_talent') }}" class="filter-pill {% if current_filter == 'cognitive_talent' %}active{% endif %}">🧠 Cognitive & Talent</a>
+        <a href="{{ url_for('showcase_feed', filter='chess_win') }}" class="filter-pill {% if current_filter == 'chess_win' %}active{% endif %}">♟️ Chess & Strategy</a>
+        <a href="{{ url_for('showcase_feed', filter='certificate') }}" class="filter-pill {% if current_filter == 'certificate' %}active{% endif %}">📜 Certificates</a>
+    </div>
+
+    <!-- TikTok-Style Vertical Viewport -->
+    <div class="reel-viewport" id="reel-viewport">
+        {% for p in posts %}
+        <div class="reel-card" id="reel-post-{{ p[0] }}" data-post-id="{{ p[0] }}">
+            
+            <!-- Media Layer -->
+            <div class="reel-media-wrap">
+                {% if p[5] and (p[5].endswith('.mp4') or p[5].endswith('.webm') or p[4] == 'video') %}
+                    <video class="reel-media-video" src="{{ p[5] }}" loop muted playsinline></video>
+                    <button class="video-audio-toggle" onclick="toggleAudio(this)" title="Toggle Audio">🔇</button>
+                {% elif p[5] %}
+                    <img class="reel-media-img" src="{{ p[5] }}" alt="{{ p[2] }}" loading="lazy">
+                {% else %}
+                    <div class="reel-card-insignia">
+                        <div class="insignia-symbol">
+                            {% if p[6] == 'typing_record' %}⚡
+                            {% elif p[6] == 'chess_win' %}♟️
+                            {% elif p[6] == 'cognitive_talent' %}🧠
+                            {% else %}🏆{% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Gradient Vignette -->
+            <div class="reel-overlay-gradient"></div>
+
+            <!-- Post Details Overlay -->
+            <div class="reel-content-bottom">
+                <div class="reel-author">
+                    <div class="author-avatar">{{ (p[11] or p[10])[0] if (p[11] or p[10]) else '?' }}</div>
+                    <div class="author-meta">
+                        <h4>{{ p[11] or p[10] }} <span style="font-size:0.75rem; background:rgba(236,72,153,0.3); border:1px solid #ec4899; color:#fbcfe8; padding:1px 6px; border-radius:10px;">Lv.{{ p[13] or 1 }}</span></h4>
+                        <span>@{{ p[10] }} • {{ p[9] }}</span>
+                    </div>
+                </div>
+
+                <div class="reel-title">{{ p[2] }}</div>
+                {% if p[3] %}
+                    <div class="reel-story">{{ p[3] }}</div>
+                {% endif %}
+
+                <div class="reel-badges">
+                    {% if p[7] %}
+                        <div class="stat-pill">✨ {{ p[7] }}</div>
+                    {% endif %}
+                    <span class="category-pill">{{ p[6]|replace('_', ' ') }}</span>
+                </div>
+            </div>
+
+            <!-- Right-Side Floating Action Bar (TikTok Style) -->
+            <div class="reel-actions-bar">
+                
+                <!-- Student Talent Profile Link -->
+                <div class="action-btn-wrap">
+                    <a href="{{ url_for('student_talent_profile', user_id=p[1]) }}" class="action-btn" title="View 7-Axis Talent Radar" style="background:linear-gradient(135deg, #38bdf8, #8b5cf6);">
+                        🎯
+                    </a>
+                    <span class="action-label">Talent</span>
+                </div>
+
+                <!-- Like / Heart Button -->
+                <div class="action-btn-wrap">
+                    <button class="action-btn" id="like-btn-{{ p[0] }}" onclick="likePost({{ p[0] }})" title="Cheer for this achievement">
+                        ❤️
+                    </button>
+                    <span class="action-label" id="likes-count-{{ p[0] }}">{{ p[8] or 0 }}</span>
+                </div>
+
+                <!-- Message Box Icon (Direct Chat with Student on this post) -->
+                <div class="action-btn-wrap">
+                    <button class="action-btn" onclick="openMessageDrawer({{ p[0] }}, '{{ p[10] }}', '{{ p[11] or p[10] }}', '{{ p[2]|replace('\'', '\'') }}')" title="Message Student" style="background:linear-gradient(135deg, rgba(236,72,153,0.7), rgba(99,102,241,0.7));">
+                        💬
+                    </button>
+                    <span class="action-label">Message</span>
+                </div>
+
+                <!-- Share Link Button -->
+                <div class="action-btn-wrap">
+                    <button class="action-btn" onclick="sharePost({{ p[0] }}, '{{ p[2]|replace('\'', '\'') }}')" title="Share link">
+                        🔗
+                    </button>
+                    <span class="action-label">Share</span>
+                </div>
+            </div>
+
+        </div>
+        {% else %}
+        <div style="padding:100px 20px; text-align:center; color:var(--muted);">
+            <div style="font-size:3rem; margin-bottom:12px;">🏆</div>
+            <h3>No achievements posted yet in this category!</h3>
+            <p>Students can be the first to publish their record.</p>
+            {% if current_user.is_authenticated %}
+                <button class="btn btn-primary" onclick="openPostModal()" style="margin-top:16px;">✨ Post an Achievement</button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- === MESSAGE DRAWER MODAL (TikTok Slide-Over) === -->
+<div class="drawer-overlay" id="message-drawer" onclick="if(event.target===this) closeMessageDrawer()">
+    <div class="drawer-modal">
+        <div class="drawer-header">
+            <div>
+                <h3>💌 Send Encouragement</h3>
+                <p>To: <strong id="drawer-student-name" style="color:#ec4899;">Student</strong> • Post: "<span id="drawer-post-title">Milestone</span>"</p>
+            </div>
+            <button class="drawer-close" onclick="closeMessageDrawer()">✕</button>
+        </div>
+
+        <!-- Quick Inspiration Chips -->
+        <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; margin-bottom:6px; font-weight:700;">Quick Encouragements:</div>
+        <div class="inspiration-chips">
+            <span class="inspiration-chip" onclick="insertNote('🌟 So proud of your outstanding dedication and hard work!')">🌟 So proud of your hard work!</span>
+            <span class="inspiration-chip" onclick="insertNote('⚡ Incredible speed and focus! Keep pushing boundaries!')">⚡ Incredible speed & focus!</span>
+            <span class="inspiration-chip" onclick="insertNote('♟️ Brilliant strategic mastery! True grandmaster thinking!')">♟️ Masterful strategy!</span>
+            <span class="inspiration-chip" onclick="insertNote('🚀 You inspire our entire school community! Keep shining!')">🚀 You inspire all of us!</span>
+        </div>
+
+        <form id="drawer-message-form" onsubmit="submitParentMessage(event)">
+            <input type="hidden" id="drawer-post-id" name="post_id" value="">
+
+            <div class="modal-form-group">
+                <label for="drawer-message-text">Your Personal Message</label>
+                <textarea id="drawer-message-text" placeholder="Write an encouraging note for this student's milestone..." rows="4" required></textarea>
+            </div>
+
+            <!-- Anonymous Parent Mode Toggle -->
+            <div class="anonymous-toggle-box">
+                <input type="checkbox" id="drawer-anonymous" name="is_anonymous" onchange="toggleAnonAlias(this.checked)">
+                <div class="anonymous-toggle-label">
+                    <strong>🔒 Send as Anonymous Supporter / Proud Parent</strong>
+                    <span>Your identity will appear to the student as "Proud Parent" or your chosen alias. Producers & school administrators retain forensic identity logs for safety.</span>
+                </div>
+            </div>
+
+            <div class="modal-form-group" id="alias-group" style="display:none;">
+                <label for="drawer-alias">Anonymous Alias Displayed to Student</label>
+                <input type="text" id="drawer-alias" value="Proud Parent" placeholder="e.g. Proud Parent, Community Supporter, Aunt Maria">
+            </div>
+
+            <!-- Parent Guest Identification (If Not Logged In) -->
+            {% if not current_user.is_authenticated %}
+            <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin:14px 0;">
+                <div style="font-size:0.85rem; font-weight:700; color:var(--text); margin-bottom:4px;">👨‍👩‍👧 Parent / Supporter Verification</div>
+                <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">No account needed to browse. Please provide your name and email so mentors know who sent this encouragement.</div>
+                
+                <div class="modal-form-group">
+                    <label for="guest-parent-name">Your Name</label>
+                    <input type="text" id="guest-parent-name" placeholder="e.g. Dr. Sarah Adams" required>
+                </div>
+                <div class="modal-form-group">
+                    <label for="guest-parent-email">Your Email</label>
+                    <input type="email" id="guest-parent-email" placeholder="e.g. sarah.adams@example.com" required>
+                </div>
+            </div>
+            {% else %}
+            <div style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">
+                Sending as: <strong style="color:var(--text);">{{ current_user.fullname or current_user.username }}</strong> ({{ current_user.role|capitalize }})
+            </div>
+            {% endif %}
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+                <button type="button" class="btn btn-secondary" onclick="closeMessageDrawer()">Cancel</button>
+                <button type="submit" id="drawer-submit-btn" class="btn btn-primary" style="background:linear-gradient(135deg, #ec4899, #6366f1); border:none; font-weight:700; color:#fff;">
+                    💌 Send Encouragement
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- === POST ACHIEVEMENT MODAL (For Students) === -->
+{% if current_user.is_authenticated %}
+<div class="drawer-overlay" id="post-modal" onclick="if(event.target===this) closePostModal()">
+    <div class="drawer-modal">
+        <div class="drawer-header">
+            <div>
+                <h3>✨ Publish Milestone to Showcase</h3>
+                <p>Share your typing record, cognitive rank, or chess victory with parents & community</p>
+            </div>
+            <button class="drawer-close" onclick="closePostModal()">✕</button>
+        </div>
+
+        <form id="create-post-form" onsubmit="submitShowcasePost(event)">
+            <div class="modal-form-group">
+                <label for="post-title">Headline / Title *</label>
+                <input type="text" id="post-title" placeholder="e.g. Broke 130 WPM on Python Code Sprint! ⚡" required>
+            </div>
+
+            <div class="modal-form-group">
+                <label for="post-category">Category</label>
+                <select id="post-category" onchange="adjustHighlightDefault(this.value)">
+                    <option value="typing_record">⚡ Typing Speed & Accuracy Record</option>
+                    <option value="cognitive_talent">🧠 7-Axis Cognitive Talent / LTI Milestone</option>
+                    <option value="chess_win">♟️ Chess / Checkers Tactical Victory</option>
+                    <option value="certificate">📜 Certified Diplomas & Badges</option>
+                </select>
+            </div>
+
+            <div class="modal-form-group">
+                <label for="post-stat">Highlight Statistic</label>
+                <input type="text" id="post-stat" value="{% if user_stats and user_stats.best_wpm %}{{ user_stats.best_wpm }} WPM Record{% else %}Personal Best{% endif %}" placeholder="e.g. 130 WPM • 99.4% Acc or LTI: 920 • Top 1%">
+            </div>
+
+            <div class="modal-form-group">
+                <label for="post-story">Story / Reflection</label>
+                <textarea id="post-story" placeholder="Share what technique or drill helped you reach this breakthrough..."></textarea>
+            </div>
+
+            <div class="modal-form-group">
+                <label for="post-media-url">Visual Media URL (Image or Video)</label>
+                <input type="url" id="post-media-url" placeholder="Paste image or mp4 video link (leave empty for custom badge graphic)">
+                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">
+                    Presets: 
+                    <a href="javascript:void(0)" onclick="setMediaUrl('https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80')">Coding Desk</a> •
+                    <a href="javascript:void(0)" onclick="setMediaUrl('https://images.unsplash.com/photo-1529699211952-734e80c4d42b?w=800&q=80')">Chess Arena</a> •
+                    <a href="javascript:void(0)" onclick="setMediaUrl('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80')">Cognitive AI</a>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+                <button type="button" class="btn btn-secondary" onclick="closePostModal()">Cancel</button>
+                <button type="submit" id="post-submit-btn" class="btn btn-primary" style="background:linear-gradient(135deg, #ec4899, #8b5cf6); border:none; font-weight:700; color:#fff;">
+                    🚀 Publish Milestone
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Toast Container -->
+<div class="showcase-toast" id="showcase-toast">Note delivered!</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// === TOAST HELPER ===
+function showShowcaseToast(msg) {
+    const t = document.getElementById('showcase-toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// === LIKE INTERACTION ===
+function likePost(postId) {
+    const btn = document.getElementById('like-btn-' + postId);
+    const countEl = document.getElementById('likes-count-' + postId);
+    
+    fetch('/showcase/like/' + postId, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (countEl) countEl.textContent = data.likes_count;
+                if (btn) btn.classList.add('liked');
+                showShowcaseToast('❤️ Cheered for this achievement!');
+            }
+        })
+        .catch(err => console.error('Like error:', err));
+}
+
+// === SHARE HELPER ===
+function sharePost(postId, title) {
+    const shareUrl = window.location.origin + '/showcase#reel-post-' + postId;
+    if (navigator.share) {
+        navigator.share({
+            title: title + ' — Lumina Showcase',
+            url: shareUrl
+        }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            showShowcaseToast('🔗 Link copied to clipboard!');
+        });
+    }
+}
+
+// === VIDEO PLAYBACK & AUDIO CONTROLS ===
+function toggleAudio(btn) {
+    const card = btn.closest('.reel-card');
+    const video = card.querySelector('video');
+    if (!video) return;
+    if (video.muted) {
+        video.muted = false;
+        btn.textContent = '🔊';
+    } else {
+        video.muted = true;
+        btn.textContent = '🔇';
+    }
+}
+
+// Auto play videos on visible scroll
+const reelObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        const video = entry.target.querySelector('video');
+        if (video) {
+            if (entry.isIntersecting) {
+                video.play().catch(() => {});
+            } else {
+                video.pause();
+            }
+        }
+    });
+}, { threshold: 0.6 });
+
+document.querySelectorAll('.reel-card').forEach(card => {
+    reelObserver.observe(card);
+});
+
+// === MESSAGE DRAWER CONTROLS ===
+function openMessageDrawer(postId, username, fullname, postTitle) {
+    document.getElementById('drawer-post-id').value = postId;
+    document.getElementById('drawer-student-name').textContent = fullname || username;
+    document.getElementById('drawer-post-title').textContent = postTitle;
+    document.getElementById('drawer-message-text').value = '';
+    document.getElementById('message-drawer').style.display = 'flex';
+    document.getElementById('drawer-message-text').focus();
+}
+
+function closeMessageDrawer() {
+    document.getElementById('message-drawer').style.display = 'none';
+}
+
+function insertNote(text) {
+    const txt = document.getElementById('drawer-message-text');
+    txt.value = text;
+    txt.focus();
+}
+
+function toggleAnonAlias(checked) {
+    const grp = document.getElementById('alias-group');
+    if (grp) grp.style.display = checked ? 'block' : 'none';
+}
+
+function submitParentMessage(e) {
+    e.preventDefault();
+    const postId = document.getElementById('drawer-post-id').value;
+    const msg = document.getElementById('drawer-message-text').value.trim();
+    const isAnon = document.getElementById('drawer-anonymous').checked ? 1 : 0;
+    const alias = (document.getElementById('drawer-alias') ? document.getElementById('drawer-alias').value : '') || 'Proud Parent';
+    const guestName = document.getElementById('guest-parent-name') ? document.getElementById('guest-parent-name').value.trim() : '';
+    const guestEmail = document.getElementById('guest-parent-email') ? document.getElementById('guest-parent-email').value.trim() : '';
+
+    const payload = {
+        message: msg,
+        is_anonymous: isAnon,
+        parent_alias: alias,
+        fullname: guestName,
+        email: guestEmail
+    };
+
+    const submitBtn = document.getElementById('drawer-submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+
+    fetch('/showcase/message/' + postId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '💌 Send Encouragement';
+        if (data.success) {
+            closeMessageDrawer();
+            showShowcaseToast('🎉 Note delivered to student inbox!');
+        } else {
+            alert(data.error || 'Failed to send note.');
+        }
+    })
+    .catch(err => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '💌 Send Encouragement';
+        alert('Communication error: ' + err);
+    });
+}
+
+// === POST MODAL CONTROLS (STUDENT) ===
+function openPostModal() {
+    const m = document.getElementById('post-modal');
+    if (m) m.style.display = 'flex';
+}
+function closePostModal() {
+    const m = document.getElementById('post-modal');
+    if (m) m.style.display = 'none';
+}
+function setMediaUrl(url) {
+    const input = document.getElementById('post-media-url');
+    if (input) input.value = url;
+}
+function adjustHighlightDefault(cat) {
+    const statInput = document.getElementById('post-stat');
+    if (!statInput) return;
+    if (cat === 'chess_win') statInput.value = 'Checkmate Victory • ELO Boost';
+    else if (cat === 'cognitive_talent') statInput.value = 'Top 1% Cognitive Agility';
+    else if (cat === 'certificate') statInput.value = 'Certified Scholar';
+    else statInput.value = 'New WPM Record';
+}
+
+function submitShowcasePost(e) {
+    e.preventDefault();
+    const title = document.getElementById('post-title').value.trim();
+    const category = document.getElementById('post-category').value;
+    const stat = document.getElementById('post-stat').value.trim();
+    const story = document.getElementById('post-story').value.trim();
+    const mediaUrl = document.getElementById('post-media-url').value.trim();
+
+    const payload = {
+        title: title,
+        achievement_type: category,
+        stat_highlight: stat,
+        content: story,
+        media_url: mediaUrl,
+        media_type: (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm')) ? 'video' : 'image'
+    };
+
+    const submitBtn = document.getElementById('post-submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Publishing...';
+
+    fetch('/showcase/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🚀 Publish Milestone';
+        if (data.success) {
+            closePostModal();
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to post milestone.');
+        }
+    })
+    .catch(err => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🚀 Publish Milestone';
+        alert('Failed to publish post: ' + err);
+    });
+}
+
+// Keyboard navigation
+window.addEventListener('keydown', (e) => {
+    if (['ArrowDown', 'ArrowUp'].includes(e.key) && !['TEXTAREA', 'INPUT'].includes(document.activeElement.tagName)) {
+        const vp = document.getElementById('reel-viewport');
+        if (!vp) return;
+        const cardHeight = vp.clientHeight;
+        if (e.key === 'ArrowDown') {
+            vp.scrollBy({ top: cardHeight, behavior: 'smooth' });
+        } else {
+            vp.scrollBy({ top: -cardHeight, behavior: 'smooth' });
+        }
+    }
+});
+</script>
+{% endblock %}

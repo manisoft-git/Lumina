@@ -330,6 +330,23 @@ def init_db():
             {pk}, user_id INTEGER, wpm REAL, confidence REAL,
             reasons TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""",
+        f"""CREATE TABLE IF NOT EXISTS showcase_posts (
+            {pk}, student_id INTEGER NOT NULL, title TEXT NOT NULL,
+            content TEXT, media_type TEXT DEFAULT 'card',
+            media_url TEXT, achievement_type TEXT DEFAULT 'typing_record',
+            stat_highlight TEXT, likes_count INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS parent_student_messages (
+            {pk}, post_id INTEGER, parent_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL, message TEXT NOT NULL,
+            is_anonymous INTEGER DEFAULT 0, parent_alias TEXT DEFAULT 'Proud Parent',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, read_at TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS showcase_likes (
+            {pk}, post_id INTEGER NOT NULL, user_ip_or_id TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
     ]
 
     for sql in tables:
@@ -384,4 +401,22 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    cnt_showcase = db_fetchone("SELECT COUNT(*) FROM showcase_posts")
+    if not cnt_showcase or cnt_showcase[0] == 0:
+        first_user = db_fetchone("SELECT id FROM users LIMIT 1")
+        uid = first_user[0] if first_user else 1
+        initial_posts = [
+            (uid, "Broke 125 WPM on Advanced Python Syntax! ⚡", "Practiced late last night with Bionic Reading enabled. The saccade fixations made code reading so much faster! Dedicated to our upcoming school competition.", "image", "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80", "typing_record", "125 WPM • 99.4% Acc", 14),
+            (uid, "Certified: Algorithmic Architect (MIT Pathway Matched) 🏛️", "My 7-axis cognitive radar just qualified for the MIT EECS pathway after yesterday's tournament win and math sprint record!", "image", "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80", "cognitive_talent", "LTI: 940 • Top 1%", 28),
+            (uid, "Checkmated Grandmaster Bot in 34 Moves! ♟️", "Double knight sacrifice in the endgame against Manisoft_Chess[GM]. ELO jumped by +45 points!", "image", "https://images.unsplash.com/photo-1529699211952-734e80c4d42b?w=800&q=80", "chess_win", "ELO: 1520 • Victory", 19)
+        ]
+        for p in initial_posts:
+            try:
+                db_execute(
+                    "INSERT INTO showcase_posts (student_id, title, content, media_type, media_url, achievement_type, stat_highlight, likes_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    p
+                )
+            except Exception:
+                pass
 

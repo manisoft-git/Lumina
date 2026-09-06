@@ -7,6 +7,7 @@ import os
 import hashlib
 import random
 import string
+import uuid
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import render_template, request, redirect, url_for, flash, jsonify, Response, session
@@ -214,12 +215,19 @@ def register_routes(app):
         reaction_best = db_fetchone("SELECT MIN(best_ms) FROM reaction_tests WHERE user_id=?", (current_user.id,))
         pattern_best = db_fetchone("SELECT MAX(puzzles_solved) FROM pattern_tests WHERE user_id=?", (current_user.id,))
         word_best = db_fetchone("SELECT MAX(score) FROM word_blitz_scores WHERE user_id=?", (current_user.id,))
+        chess_best = db_fetchone("SELECT MAX(rating) FROM user_ratings WHERE user_id=? AND game_type='chess'", (current_user.id,))
+        best_wpm = db_fetchone("SELECT MAX(net_wpm), MAX(accuracy) FROM scores WHERE user_id=?", (current_user.id,))
+        talent_profile = compute_cognitive_profile(current_user.id)
         return render_template("analytics.html", heatmap=heatmap, progress=progress,
                                math_best=math_best[0] if math_best else 0,
                                memory_best=memory_best[0] if memory_best else 0,
                                reaction_best=reaction_best[0] if reaction_best else 0,
                                pattern_best=pattern_best[0] if pattern_best else 0,
-                               word_best=word_best[0] if word_best else 0)
+                               word_best=word_best[0] if word_best else 0,
+                               chess_best=chess_best[0] if chess_best else 1200,
+                               best_wpm=round(best_wpm[0], 1) if (best_wpm and best_wpm[0]) else 0,
+                               best_acc=round(best_wpm[1], 1) if (best_wpm and best_wpm[1]) else 100,
+                               talent_profile=talent_profile)
 
     @app.route("/history")
     @login_required
@@ -1134,6 +1142,241 @@ def register_routes(app):
         }, broadcast=True, namespace="/")
 
         return jsonify({"status": "broadcast_dispatched", "message": msg})
+
+    # === SHOWCASE FEED & PARENT PORTAL ===
+
+    @app.route("/showcase")
+    @app.route("/parents")
+    def showcase_feed():
+        filter_type = request.args.get("filter", "all")
+        query = """
+            SELECT sp.id, sp.student_id, sp.title, sp.content, sp.media_type,
+                   sp.media_url, sp.achievement_type, sp.stat_highlight,
+                   sp.likes_count, sp.created_at,
+                   u.username, u.fullname, u.level, u.role
+            FROM showcase_posts sp
+            JOIN users u ON sp.student_id = u.id
+        """
+        params = []
+        if filter_type != "all":
+            query += " WHERE sp.achievement_type = ?"
+            params.append(filter_type)
+        query += " ORDER BY sp.created_at DESC LIMIT 50"
+        posts = db_fetchall(query, tuple(params))
+
+        unread_messages = 0
+        user_stats = None
+        if current_user.is_authenticated:
+            unread_row = db_fetchone("SELECT COUNT(*) FROM parent_student_messages WHERE student_id=? AND read_at IS NULL", (current_user.id,))
+            if unread_row:
+                unread_messages = unread_row[0]
+            best_wpm = db_fetchone("SELECT MAX(net_wpm) FROM scores WHERE user_id=?", (current_user.id,))
+            user_stats = {
+                "best_wpm": round(best_wpm[0], 1) if (best_wpm and best_wpm[0]) else 0
+            }
+
+        return render_template(
+            "showcase_feed.html",
+            posts=posts,
+            current_filter=filter_type,
+            unread_messages=unread_messages,
+            user_stats=user_stats
+        )
+
+    @app.route("/showcase/post", methods=["POST"])
+    @login_required
+    def create_showcase_post():
+        data = request.get_json(silent=True) or request.form
+        title = (data.get("title") or "").strip()
+        content = (data.get("content") or "").strip()
+        achievement_type = data.get("achievement_type", "typing_record")
+        stat_highlight = (data.get("stat_highlight") or "").strip()
+        media_type = data.get("media_type", "image")
+        media_url = (data.get("media_url") or "").strip()
+
+        if not title:
+            if request.is_json:
+                return jsonify({"error": "Title is required"}), 400
+            flash("Title is required for showcase posts.", "error")
+            return redirect(url_for("showcase_feed"))
+
+        if not media_url:
+            defaults = {
+                "typing_record": "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80",
+                "cognitive_talent": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80",
+                "chess_win": "https://images.unsplash.com/photo-1529699211952-734e80c4d42b?w=800&q=80",
+                "certificate": "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80"
+            }
+            media_url = defaults.get(achievement_type, "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80")
+
+        cur = db_execute(
+            """INSERT INTO showcase_posts (student_id, title, content, media_type, media_url, achievement_type, stat_highlight, likes_count)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 0)""",
+            (current_user.id, title, content, media_type, media_url, achievement_type, stat_highlight)
+        )
+        post_id = cur.lastrowid
+        if request.is_json:
+            return jsonify({"success": True, "post_id": post_id, "message": "Achievement posted to showcase!"})
+        flash("🎉 Milestone posted to Parent & Community Showcase!", "success")
+        return redirect(url_for("showcase_feed"))
+
+    @app.route("/showcase/like/<int:post_id>", methods=["POST"])
+    def like_showcase_post(post_id):
+        user_key = str(current_user.id) if current_user.is_authenticated else (request.remote_addr or "guest")
+        already = db_fetchone("SELECT id FROM showcase_likes WHERE post_id=? AND user_ip_or_id=?", (post_id, user_key))
+        if already:
+            cur = db_fetchone("SELECT likes_count FROM showcase_posts WHERE id=?", (post_id,))
+            return jsonify({"success": True, "likes_count": cur[0] if cur else 0, "already_liked": True})
+
+        db_execute("INSERT INTO showcase_likes (post_id, user_ip_or_id) VALUES (?, ?)", (post_id, user_key))
+        db_execute("UPDATE showcase_posts SET likes_count = likes_count + 1 WHERE id=?", (post_id,))
+        cur = db_fetchone("SELECT likes_count FROM showcase_posts WHERE id=?", (post_id,))
+        return jsonify({"success": True, "likes_count": cur[0] if cur else 1, "already_liked": False})
+
+    @app.route("/showcase/message/<int:post_id>", methods=["POST"])
+    def message_showcase_post(post_id):
+        data = request.get_json(silent=True) or request.form
+        msg_text = (data.get("message") or "").strip()
+        if not msg_text:
+            return jsonify({"error": "Message text cannot be empty."}), 400
+
+        post = db_fetchone("SELECT student_id, title FROM showcase_posts WHERE id=?", (post_id,))
+        if not post:
+            return jsonify({"error": "Showcase post not found."}), 404
+
+        student_id = post[0]
+        is_anon = 1 if str(data.get("is_anonymous", "")).lower() in ("1", "true", "yes", "on") else 0
+        parent_alias = (data.get("parent_alias") or "").strip()
+        if not parent_alias:
+            parent_alias = "Proud Parent" if is_anon else "Parent Supporter"
+
+        parent_id = None
+        if current_user.is_authenticated:
+            parent_id = current_user.id
+        else:
+            parent_email = (data.get("email") or "").strip()
+            parent_name = (data.get("fullname") or data.get("name") or "Parent Supporter").strip()
+            if not parent_email:
+                return jsonify({"error": "Please provide your email address or sign in so mentors can authenticate your message."}), 400
+
+            existing = db_fetchone("SELECT id FROM users WHERE email=?", (parent_email,))
+            if existing:
+                parent_id = existing[0]
+            else:
+                uname = "parent_" + uuid.uuid4().hex[:6]
+                parent_id = User.create(uname, parent_name, parent_email, uuid.uuid4().hex, role="parent")
+                user_obj = User.get_by_id(parent_id)
+                if user_obj:
+                    login_user(user_obj)
+
+        cur = db_execute(
+            """INSERT INTO parent_student_messages (post_id, parent_id, student_id, message, is_anonymous, parent_alias)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (post_id, parent_id, student_id, msg_text, is_anon, parent_alias)
+        )
+        msg_id = cur.lastrowid
+
+        return jsonify({
+            "success": True,
+            "message_id": msg_id,
+            "message": "Your encouraging note has been sent to the student!",
+            "is_anonymous": bool(is_anon)
+        })
+
+    @app.route("/parent/quick-register", methods=["POST"])
+    def parent_quick_register():
+        data = request.get_json(silent=True) or request.form
+        fullname = (data.get("fullname") or "").strip()
+        email = (data.get("email") or "").strip()
+        password = data.get("password", "")
+        username = (data.get("username") or "").strip()
+
+        if not fullname or not email or not password:
+            return jsonify({"error": "Full name, email, and password are required."}), 400
+        if len(password) < 6:
+            return jsonify({"error": "Password must be at least 6 characters."}), 400
+        if not username:
+            username = "parent_" + email.split("@")[0].replace(".", "_") + "_" + uuid.uuid4().hex[:4]
+
+        if db_fetchone("SELECT id FROM users WHERE email=?", (email,)):
+            return jsonify({"error": "An account with this email already exists. Please log in."}), 400
+        if db_fetchone("SELECT id FROM users WHERE username=?", (username,)):
+            username = "parent_" + uuid.uuid4().hex[:8]
+
+        uid = User.create(username, fullname, email, password, role="parent")
+        user = User.get_by_id(uid)
+        login_user(user)
+        return jsonify({
+            "success": True,
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "fullname": user.fullname,
+                "role": user.role
+            },
+            "message": "Parent account created and authenticated!"
+        })
+
+    @app.route("/inbox")
+    @login_required
+    def inbox_page():
+        db_execute("UPDATE parent_student_messages SET read_at=CURRENT_TIMESTAMP WHERE student_id=? AND read_at IS NULL", (current_user.id,))
+        messages = db_fetchall("""
+            SELECT psm.id, psm.post_id, psm.parent_id, psm.message, psm.is_anonymous,
+                   psm.parent_alias, psm.created_at, psm.read_at,
+                   sp.title as post_title,
+                   u.username as parent_username, u.fullname as parent_fullname
+            FROM parent_student_messages psm
+            LEFT JOIN showcase_posts sp ON psm.post_id = sp.id
+            LEFT JOIN users u ON psm.parent_id = u.id
+            WHERE psm.student_id = ?
+            ORDER BY psm.created_at DESC
+        """, (current_user.id,))
+        return render_template("inbox.html", messages=messages)
+
+    @app.route("/producer/api/parent_messages")
+    @login_required
+    def producer_api_parent_messages():
+        if not session.get("producer_unlocked") and current_user.role != "admin":
+            return jsonify({"error": "Unauthorized"}), 403
+
+        messages = db_fetchall("""
+            SELECT psm.id, psm.post_id, psm.parent_id, psm.student_id,
+                   psm.message, psm.is_anonymous, psm.parent_alias, psm.created_at,
+                   parent.username, parent.fullname, parent.email,
+                   student.username, student.fullname,
+                   sp.title
+            FROM parent_student_messages psm
+            JOIN users parent ON psm.parent_id = parent.id
+            JOIN users student ON psm.student_id = student.id
+            LEFT JOIN showcase_posts sp ON psm.post_id = sp.id
+            ORDER BY psm.created_at DESC
+            LIMIT 50
+        """)
+        return jsonify([{
+            "id": m[0],
+            "post_id": m[1],
+            "parent_id": m[2],
+            "student_id": m[3],
+            "message": m[4],
+            "is_anonymous": bool(m[5]),
+            "parent_alias": m[6] or "Proud Parent",
+            "created_at": str(m[7]),
+            "parent_username": m[8] or "Guest",
+            "parent_fullname": m[9] or "Parent Supporter",
+            "parent_email": m[10] or "N/A",
+            "student_username": m[11] or "Student",
+            "student_fullname": m[12] or "Student",
+            "post_title": m[13] or "Achievement"
+        } for m in messages])
+
+    @app.route("/producer/api/delete_parent_message/<int:msg_id>", methods=["POST"])
+    @login_required
+    def producer_delete_parent_message(msg_id):
+        if not session.get("producer_unlocked") and current_user.role != "admin":
+            return jsonify({"error": "Unauthorized"}), 403
+        db_execute("DELETE FROM parent_student_messages WHERE id=?", (msg_id,))
+        return jsonify({"status": "ok", "deleted_id": msg_id})
 
     @app.route("/api_docs")
     def api_docs():
