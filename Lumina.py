@@ -40,8 +40,13 @@ def get_ip():
     except Exception:
         return "127.0.0.1"
 
+FORBIDDEN_COMMAND_CHARS = {';', '&', '|', '>', '<', '`', '$', '\n', '\r'}
+
 def is_safe(cmd):
-    base = cmd.strip().split()[0].lower() if cmd.strip() else ''
+    cmd_str = cmd.strip() if cmd else ''
+    if not cmd_str or any(c in cmd_str for c in FORBIDDEN_COMMAND_CHARS):
+        return False
+    base = cmd_str.split()[0].lower()
     return base in SAFE_COMMANDS
 
 def open_browser(url):

@@ -19,6 +19,7 @@ MONITOR_SUBSCRIBERS = {}
 SPECTATORS = {}
 AGENTS = {}  # agent_id -> {sid, user_id, hostname, platform, last_seen}
 PRODUCER_ROOMS = {}  # agent_id -> producer_sid
+RELAY_ROOMS = {}  # room_id -> {state, teams, winner}
 
 # Safe command whitelist for remote diagnostics
 SAFE_COMMANDS = {
@@ -34,8 +35,13 @@ def get_username():
 def get_user_id():
     return current_user.id if current_user.is_authenticated else None
 
+FORBIDDEN_COMMAND_CHARS = {';', '&', '|', '>', '<', '`', '$', '\n', '\r'}
+
 def is_safe_command(cmd):
-    base = cmd.strip().split()[0].lower() if cmd.strip() else ''
+    cmd_str = cmd.strip() if cmd else ''
+    if not cmd_str or any(c in cmd_str for c in FORBIDDEN_COMMAND_CHARS):
+        return False
+    base = cmd_str.split()[0].lower()
     return base in SAFE_COMMANDS
 
 CHAT_RATELIMIT = {}  # sid -> {count, last_reset}
@@ -209,6 +215,90 @@ def register_sockets(socketio):
                 emit("spectator_state", CHESS_ROOMS[room_id])
             elif game_type == "checkers" and room_id in CHECKERS_ROOMS:
                 emit("spectator_state", CHECKERS_ROOMS[room_id])
+
+    # ---------- Team Cognitive Relay ----------
+    @socketio.on("join_relay_room")
+    def handle_join_relay_room(data):
+        room_id = data.get("room_id")
+        team = data.get("team", "alpha")
+        leg = int(data.get("leg", 1))
+        if not room_id:
+            return
+        join_room(room_id)
+        if room_id not in RELAY_ROOMS:
+            RELAY_ROOMS[room_id] = {
+                "state": "lobby",
+                "teams": {
+                    "alpha": {
+                        "name": "Team Alpha",
+                        "active_leg": 1,
+                        "legs": {
+                            1: {"type": "math", "progress": 0, "target": 5, "cleared": False, "username": None, "sid": None},
+                            2: {"type": "pattern", "progress": 0, "target": 2, "cleared": False, "username": None, "sid": None},
+                            3: {"type": "typing", "progress": 0, "target": 100, "cleared": False, "username": None, "sid": None}
+                        },
+                        "finished": False
+                    },
+                    "beta": {
+                        "name": "Team Beta",
+                        "active_leg": 1,
+                        "legs": {
+                            1: {"type": "math", "progress": 0, "target": 5, "cleared": False, "username": None, "sid": None},
+                            2: {"type": "pattern", "progress": 0, "target": 2, "cleared": False, "username": None, "sid": None},
+                            3: {"type": "typing", "progress": 0, "target": 100, "cleared": False, "username": None, "sid": None}
+                        },
+                        "finished": False
+                    }
+                },
+                "winner": None
+            }
+
+        room = RELAY_ROOMS[room_id]
+        if team in room["teams"] and leg in (1, 2, 3):
+            room["teams"][team]["legs"][leg]["username"] = get_username()
+            room["teams"][team]["legs"][leg]["sid"] = request.sid
+
+        emit("relay_state", room, room=room_id)
+
+    @socketio.on("relay_start")
+    def handle_relay_start(data):
+        room_id = data.get("room_id")
+        room = RELAY_ROOMS.get(room_id)
+        if not room:
+            return
+        room["state"] = "racing"
+        emit("relay_started", room, room=room_id)
+
+    @socketio.on("relay_progress")
+    def handle_relay_progress(data):
+        room_id = data.get("room_id")
+        team = data.get("team")
+        leg = int(data.get("leg", 1))
+        progress = int(data.get("progress", 0))
+
+        room = RELAY_ROOMS.get(room_id)
+        if not room or room["state"] != "racing":
+            return
+        t_data = room["teams"].get(team)
+        if not t_data or t_data["active_leg"] != leg:
+            return
+
+        leg_obj = t_data["legs"][leg]
+        leg_obj["progress"] = progress
+
+        if progress >= leg_obj["target"] and not leg_obj["cleared"]:
+            leg_obj["cleared"] = True
+            if leg < 3:
+                t_data["active_leg"] = leg + 1
+                emit("baton_passed", {"team": team, "new_leg": leg + 1}, room=room_id)
+            else:
+                t_data["finished"] = True
+                if not room["winner"]:
+                    room["winner"] = team
+                    room["state"] = "complete"
+                    emit("relay_game_over", {"winner": team, "room": room}, room=room_id)
+
+        emit("relay_state", room, room=room_id)
 
     # ---------- Teacher Monitor ----------
     @socketio.on("teacher_subscribe")
@@ -431,14 +521,22 @@ def register_sockets(socketio):
                 result = "0-1" if is_white else "1-0"
                 room["result"] = result
                 room["history"].append("resign")
-                db_execute("INSERT INTO chess_games (room_id, white_id, black_id, pgn, result, status) VALUES (?, ?, ?, ?, ?, ?)",
-                           (room_id, room["white"]["uid"], room["black"]["uid"], str(board), result, "complete"))
+                try:
+                    db_execute("""
+                        INSERT INTO chess_games (room_id, white_id, black_id, pgn, result, status)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(room_id) DO UPDATE SET
+                            white_id=excluded.white_id, black_id=excluded.black_id,
+                            pgn=excluded.pgn, result=excluded.result, status=excluded.status
+                    """, (room_id, room["white"]["uid"] if room["white"] else None, room["black"]["uid"] if room["black"] else None, str(board), result, "complete"))
+                except Exception:
+                    pass
                 if result == "1-0":
-                    if room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 1)
-                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 0)
+                    if room["white"] and room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 1)
+                    if room["black"] and room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 0)
                 else:
-                    if room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 0)
-                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 1)
+                    if room["white"] and room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 0)
+                    if room["black"] and room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 1)
                 emit("chess_update", {"board": room["board"], "turn": room["turn"], "last_move": "resign", "result": result, "history": room["history"]}, room=room_id)
                 emit("chess_update", {"board": room["board"], "turn": room["turn"], "last_move": "resign", "result": result, "history": room["history"]}, room=f"spec_{room_id}")
                 return
@@ -458,17 +556,25 @@ def register_sockets(socketio):
                 room["status"] = "complete"
                 result = "1-0" if board.result() == "1-0" else "0-1" if board.result() == "0-1" else "draw"
                 room["result"] = result
-                db_execute("INSERT INTO chess_games (room_id, white_id, black_id, pgn, result, status) VALUES (?, ?, ?, ?, ?, ?)",
-                           (room_id, room["white"]["uid"], room["black"]["uid"], str(board), result, "complete"))
+                try:
+                    db_execute("""
+                        INSERT INTO chess_games (room_id, white_id, black_id, pgn, result, status)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(room_id) DO UPDATE SET
+                            white_id=excluded.white_id, black_id=excluded.black_id,
+                            pgn=excluded.pgn, result=excluded.result, status=excluded.status
+                    """, (room_id, room["white"]["uid"] if room["white"] else None, room["black"]["uid"] if room["black"] else None, str(board), result, "complete"))
+                except Exception:
+                    pass
                 if result == "1-0":
-                    if room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 1)
-                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 0)
+                    if room["white"] and room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 1)
+                    if room["black"] and room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 0)
                 elif result == "0-1":
-                    if room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 0)
-                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 1)
+                    if room["white"] and room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 0)
+                    if room["black"] and room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 1)
                 else:
-                    if room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 0.5)
-                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 0.5)
+                    if room["white"] and room["white"]["uid"]: update_elo(room["white"]["uid"], "chess", 0.5)
+                    if room["black"] and room["black"]["uid"]: update_elo(room["black"]["uid"], "chess", 0.5)
             emit("chess_update", {"board": room["board"], "turn": room["turn"], "last_move": move_uci, "result": result, "history": room["history"]}, room=room_id)
             emit("chess_update", {"board": room["board"], "turn": room["turn"], "last_move": move_uci, "result": result, "history": room["history"]}, room=f"spec_{room_id}")
         except Exception as e:
@@ -506,7 +612,7 @@ def register_sockets(socketio):
         try:
             room_id = data.get("room_id")
             room = CHESS_ROOMS.get(room_id)
-            if not room or not CHESS_AVAILABLE:
+            if not room or not CHESS_AVAILABLE or room.get("status") != "active":
                 return
             if room["turn"] == "black" and room["black"] and room["black"].get("uid") == -1:
                 try:
@@ -670,16 +776,24 @@ def register_sockets(socketio):
                 result = "red" if room["turn"] == "black" else "black"
                 room["status"] = "complete"
             if result:
-                db_execute("INSERT INTO checkers_games (room_id, red_id, black_id, board_state, result, status) VALUES (?, ?, ?, ?, ?, ?)",
-                           (room_id, room["red"]["uid"] if room["red"] else None,
-                            room["black"]["uid"] if room["black"] else None,
-                            json.dumps(room["board"]), result, "complete"))
+                try:
+                    db_execute("""
+                        INSERT INTO checkers_games (room_id, red_id, black_id, board_state, result, status)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(room_id) DO UPDATE SET
+                            red_id=excluded.red_id, black_id=excluded.black_id,
+                            board_state=excluded.board_state, result=excluded.result, status=excluded.status
+                    """, (room_id, room["red"]["uid"] if room["red"] else None,
+                          room["black"]["uid"] if room["black"] else None,
+                          json.dumps(room["board"]), result, "complete"))
+                except Exception:
+                    pass
                 if result == "red":
-                    if room["red"]["uid"]: update_elo(room["red"]["uid"], "checkers", 1)
-                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "checkers", 0)
+                    if room["red"] and room["red"]["uid"]: update_elo(room["red"]["uid"], "checkers", 1)
+                    if room["black"] and room["black"]["uid"]: update_elo(room["black"]["uid"], "checkers", 0)
                 elif result == "black":
-                    if room["red"]["uid"]: update_elo(room["red"]["uid"], "checkers", 0)
-                    if room["black"]["uid"]: update_elo(room["black"]["uid"], "checkers", 1)
+                    if room["red"] and room["red"]["uid"]: update_elo(room["red"]["uid"], "checkers", 0)
+                    if room["black"] and room["black"]["uid"]: update_elo(room["black"]["uid"], "checkers", 1)
             emit("checkers_update", {"board": room["board"], "turn": room["turn"], "last_move": move, "result": result, "history": room["history"]}, room=room_id)
             emit("checkers_update", {"board": room["board"], "turn": room["turn"], "last_move": move, "result": result, "history": room["history"]}, room=f"spec_{room_id}")
         except Exception as e:
@@ -716,7 +830,7 @@ def register_sockets(socketio):
         try:
             room_id = data.get("room_id")
             room = CHECKERS_ROOMS.get(room_id)
-            if not room:
+            if not room or room.get("status") != "active":
                 return
             if room["turn"] == "black" and room["black"] and room["black"].get("uid") == -1:
                 try:

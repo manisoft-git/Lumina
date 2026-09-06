@@ -12,6 +12,8 @@ def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = SECRET_KEY
     app.config["CORS_ORIGIN"] = CORS_ORIGIN
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
     # Dynamic async_mode: eventlet for production, threading for local/Termux
     try:
@@ -33,12 +35,25 @@ def create_app():
     from sockets import register_sockets
     register_sockets(socketio)
 
+    @app.after_request
+    def set_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        return response
+
     @app.errorhandler(404)
     def not_found(e):
+        from flask import request, jsonify
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Not found"}), 404
         return render_template("404.html"), 404
 
     @app.errorhandler(500)
     def server_error(e):
+        from flask import request, jsonify
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Internal server error"}), 500
         return render_template("500.html"), 500
 
     app.teardown_appcontext(close_db)

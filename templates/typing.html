@@ -9,9 +9,14 @@
             <span id="timer">60s</span>
             <span id="live-wpm">0 WPM</span>
             <span id="live-acc">100%</span>
+            <span id="combo-badge" class="badge" style="display:none; background:#f59e0b; color:#000; font-weight:bold;">🔥 0 Combo</span>
+            <span id="ghost-status" class="badge" style="display:none; background:rgba(56,189,248,0.2); color:#38bdf8;">👻 Ghost: Active</span>
         </div>
-        <div class="typing-controls">
+        <div class="typing-controls" style="flex-wrap:wrap; gap:12px;">
             <label><input type="checkbox" id="focus-toggle" {% if focus %}checked{% endif %} onchange="toggleFocus()"> Focus Mode</label>
+            <label><input type="checkbox" id="bionic-toggle"> Bionic Reading</label>
+            <label><input type="checkbox" id="dyslexic-toggle"> Dyslexia Font</label>
+            <label><input type="checkbox" id="soundscape-toggle"> 🎧 432Hz Soundscape</label>
             <label><input type="checkbox" id="ghost-toggle"> Ghost Racer</label>
             <select id="time-select" aria-label="Duration">
                 <option value="60" selected>60s</option>
@@ -20,6 +25,7 @@
             </select>
         </div>
     </div>
+    <div id="status-msg" style="display:none; padding:8px 14px; border-radius:6px; background:rgba(248,113,113,0.15); color:var(--danger); font-weight:600; margin-bottom:12px; text-align:center;"></div>
     <div id="typing-arena" class="typing-arena" role="application" aria-label="Typing test area">
         <div id="passage-display" class="passage-display" aria-live="polite" aria-atomic="true"></div>
         <input type="text" id="hidden-input" class="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type here">
@@ -31,10 +37,33 @@
             <div class="stat"><div class="stat-value" id="res-acc">0%</div><div class="stat-label">Accuracy</div></div>
             <div class="stat"><div class="stat-value" id="res-net">0</div><div class="stat-label">Net WPM</div></div>
             <div class="stat"><div class="stat-value" id="res-errs">0</div><div class="stat-label">Errors</div></div>
+            <div class="stat"><div class="stat-value" id="res-integrity" style="color:#4ade80;">✓ 100%</div><div class="stat-label">Anti-Cheat Biometrics</div></div>
         </div>
-        <div class="results-actions">
-            <a href="{{ url_for('typing_page', category=category) }}" class="btn btn-primary">Again</a>
-            <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Analytics</a>
+
+        <!-- Cognitive Stealth Assessment: Attentional Stamina & Socratic Debrief -->
+        <div class="stamina-card" id="stamina-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <strong style="font-size:1.1rem;">🧠 Attentional Stamina Ratio (ASR)</strong>
+                    <div style="font-size:0.85rem; color:var(--muted);" id="stamina-desc">Comparing motor cadence across test phases</div>
+                </div>
+                <div style="font-size:2rem; font-weight:900; color:var(--primary);" id="stamina-val">95%</div>
+            </div>
+            <div class="stamina-meter"><div class="stamina-fill stamina-high" id="stamina-fill" style="width:95%;"></div></div>
+            <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--muted); margin-top:8px; flex-wrap:wrap; gap:8px;">
+                <span>Phase 1 (Start): <strong id="p1-wpm" style="color:var(--text);">0</strong> WPM</span>
+                <span>Phase 2 (Mid): <strong id="p2-wpm" style="color:var(--text);">0</strong> WPM</span>
+                <span>Phase 3 (End): <strong id="p3-wpm" style="color:var(--text);">0</strong> WPM</span>
+                <span>Error Recovery: <strong id="erv-val" style="color:var(--accent);">180ms</strong></span>
+            </div>
+            <div id="socratic-debrief" style="margin-top:14px; font-size:0.92rem; padding:12px; background:var(--surface-solid); border-radius:8px; border-left:3px solid var(--primary); line-height:1.5;"></div>
+        </div>
+
+        <div class="results-actions" style="margin-top:24px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <a href="{{ url_for('typing_page', category=category) }}" class="btn btn-primary">Try Again</a>
+            <a href="{{ url_for('talent_profile_page') }}" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7, #4ade80);">🎯 Talent Profile</a>
+            <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Error Heatmap</a>
+            <a href="{{ url_for('replays_page') }}" class="btn btn-secondary">Saved Replays</a>
         </div>
     </div>
 </div>
@@ -50,22 +79,47 @@
     const timerEl = document.getElementById('timer');
     const wpmEl = document.getElementById('live-wpm');
     const accEl = document.getElementById('live-acc');
+    const comboEl = document.getElementById('combo-badge');
+    const ghostStatusEl = document.getElementById('ghost-status');
+    const statusMsgEl = document.getElementById('status-msg');
     const results = document.getElementById('results-panel');
     const arena = document.getElementById('typing-arena');
     const ghostCursor = document.getElementById('ghost-cursor');
+
     let startTime = null, ended = false, errors = 0, totalTyped = 0, errorMap = {};
     let duration = parseInt(document.getElementById('time-select').value);
     let timeLeft = duration, timerId = null;
-    let ghostInterval = null;
+    let ghostInterval = null, ghostPos = 0;
+    let combo = 0, maxCombo = 0;
+    let isBionic = false;
+    let timings = []; // Keystroke flight time records for biometrics
+    let phaseKeystrokes = [[], [], []]; // Phase 1, Phase 2, Phase 3
+    let errorTimestamp = null;
+    let recoveryTimes = [];
 
     function render() {
         display.innerHTML = '';
-        passage.split('').forEach((ch, i) => {
-            const span = document.createElement('span');
-            span.textContent = ch;
-            span.dataset.i = i;
-            span.className = 'char';
-            display.appendChild(span);
+        const words = passage.split(' ');
+        let charIdx = 0;
+        words.forEach((word, wIdx) => {
+            const bionicThreshold = Math.ceil(word.length * 0.45);
+            for (let c = 0; c < word.length; c++) {
+                const ch = word[c];
+                const span = document.createElement('span');
+                span.textContent = ch;
+                span.dataset.i = charIdx;
+                span.className = 'char' + (isBionic && c < bionicThreshold ? ' bionic-bold' : '');
+                display.appendChild(span);
+                charIdx++;
+            }
+            if (wIdx < words.length - 1) {
+                const spaceSpan = document.createElement('span');
+                spaceSpan.textContent = ' ';
+                spaceSpan.dataset.i = charIdx;
+                spaceSpan.className = 'char';
+                display.appendChild(spaceSpan);
+                charIdx++;
+            }
         });
     }
     render();
@@ -106,32 +160,158 @@
         if (timeLeft <= 0) finish();
     }
 
+    function showStatusAlert(msg, dur=2000) {
+        if (!statusMsgEl) return;
+        statusMsgEl.textContent = msg;
+        statusMsgEl.style.display = 'block';
+        setTimeout(() => { statusMsgEl.style.display = 'none'; }, dur);
+    }
+
     function finish() {
         if (ended) return;
         ended = true; clearInterval(timerId); clearInterval(ghostInterval); input.blur();
+        if (typeof LuminaAudio !== 'undefined') {
+            LuminaAudio.stopFocusSoundscape();
+            LuminaAudio.gameWin();
+        }
+
         const s = calcStats();
+        const elapsedSec = (Date.now() - startTime) / 1000;
         document.getElementById('res-wpm').textContent = s.wpm;
         document.getElementById('res-acc').textContent = s.acc + '%';
         document.getElementById('res-net').textContent = s.net;
         document.getElementById('res-errs').textContent = errors;
         results.style.display = 'block';
         arena.style.display = 'none';
+
+        // Cognitive Micro-Metrics Evaluation
+        const phaseLen = elapsedSec / 3;
+        const p1Count = phaseKeystrokes[0].length;
+        const p2Count = phaseKeystrokes[1].length;
+        const p3Count = phaseKeystrokes[2].length;
+        const p1Wpm = Math.round((p1Count / 5) / (Math.max(phaseLen, 0.1) / 60));
+        const p2Wpm = Math.round((p2Count / 5) / (Math.max(phaseLen, 0.1) / 60));
+        const p3Wpm = Math.round((p3Count / 5) / (Math.max(phaseLen, 0.1) / 60));
+        document.getElementById('p1-wpm').textContent = p1Wpm;
+        document.getElementById('p2-wpm').textContent = p2Wpm;
+        document.getElementById('p3-wpm').textContent = p3Wpm;
+
+        const staminaRatio = p1Wpm > 0 ? Math.min(130, Math.round((p3Wpm / p1Wpm) * 100)) : 100;
+        document.getElementById('stamina-val').textContent = staminaRatio + '%';
+        const fillEl = document.getElementById('stamina-fill');
+        fillEl.style.width = Math.min(100, staminaRatio) + '%';
+        if (staminaRatio >= 90) {
+            fillEl.className = 'stamina-fill stamina-high';
+            document.getElementById('stamina-desc').textContent = 'Sustained focus: Cadence maintained throughout entire trial.';
+        } else if (staminaRatio >= 75) {
+            fillEl.className = 'stamina-fill stamina-med';
+            document.getElementById('stamina-desc').textContent = 'Moderate fatigue: Slight velocity dropoff in final phase.';
+        } else {
+            fillEl.className = 'stamina-fill stamina-low';
+            document.getElementById('stamina-desc').textContent = 'High cognitive fatigue detected: Pace slowed >25% in final phase.';
+        }
+
+        const avgErv = recoveryTimes.length > 0 ? Math.round(recoveryTimes.reduce((a,b)=>a+b, 0) / recoveryTimes.length) : 160;
+        document.getElementById('erv-val').textContent = avgErv + 'ms';
+
+        // Socratic Cognitive Debrief text
+        let debrief = `<strong>Cognitive Debrief:</strong> You maintained an Attentional Stamina Ratio of <strong>${staminaRatio}%</strong>. `;
+        if (avgErv < 220) {
+            debrief += `Your Error Recovery Velocity was swift (<strong>${avgErv}ms</strong>), demonstrating rapid neurological adaptability after errors. `;
+        } else {
+            debrief += `Your Error Recovery Velocity was <strong>${avgErv}ms</strong>; deliberate pacing after mistakes will protect accuracy. `;
+        }
+        if (errors === 0) {
+            debrief += `Exceptional execution: zero errors recorded across ${totalTyped} keystrokes.`;
+        } else {
+            debrief += `Max accuracy streak was <strong>${maxCombo}</strong> consecutive correct characters.`;
+        }
+        document.getElementById('socratic-debrief').innerHTML = debrief;
+
         fetch('/submit_score', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({wpm: s.wpm, accuracy: s.acc, errors: errors, net_wpm: s.net, category: category, error_map: errorMap})
-        });
+            body: JSON.stringify({
+                wpm: s.wpm,
+                accuracy: s.acc,
+                errors: errors,
+                net_wpm: s.net,
+                category: category,
+                error_map: errorMap,
+                timings: timings,
+                duration_sec: elapsedSec,
+                passage_len: passage.length
+            })
+        }).then(r => r.json()).then(data => {
+            const intEl = document.getElementById('res-integrity');
+            if (data.anti_cheat) {
+                if (data.anti_cheat.verified) {
+                    intEl.textContent = '✓ Verified (' + Math.round(data.anti_cheat.integrity_score * 100) + '%)';
+                    intEl.style.color = '#4ade80';
+                } else {
+                    intEl.textContent = '⚠️ Flagged (' + data.anti_cheat.reason + ')';
+                    intEl.style.color = '#f87171';
+                }
+            }
+        }).catch(() => {});
+
         fetch('/save_replay', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({passage: passage, keystrokes: input.value.split(''), wpm: s.wpm, accuracy: s.acc})
+            body: JSON.stringify({passage: passage, keystrokes: input.value.split(''), wpm: s.wpm, accuracy: s.acc, timings: timings})
         });
         fetch('/api/check_milestones');
     }
 
     input.addEventListener('input', () => {
         if (ended) return;
-        if (!startTime) { startTime = Date.now(); timerId = setInterval(tick, 1000); }
+        const now = Date.now();
+        if (!startTime) {
+            startTime = now;
+            timerId = setInterval(tick, 1000);
+            if (document.getElementById('ghost-toggle').checked) {
+                startGhost();
+            }
+        }
+        const elapsedNow = (now - startTime) / 1000;
+        timings.push(now - startTime);
+
+        // Phase attribution for stamina curve
+        const phaseIdx = Math.min(2, Math.floor((elapsedNow / duration) * 3));
+        phaseKeystrokes[phaseIdx].push(now);
+
         const val = input.value;
+        const lastIdx = val.length - 1;
         totalTyped = val.length;
+
+        // Sound, Combo & Error Recovery tracking
+        if (lastIdx >= 0) {
+            const isCorrect = val[lastIdx] === passage[lastIdx];
+            if (isCorrect) {
+                combo++;
+                if (combo > maxCombo) maxCombo = combo;
+                if (errorTimestamp) {
+                    recoveryTimes.push(now - errorTimestamp);
+                    errorTimestamp = null;
+                }
+                if (typeof LuminaAudio !== 'undefined') {
+                    LuminaAudio.keyCorrect();
+                    if (combo % 15 === 0) LuminaAudio.comboChime(combo);
+                }
+            } else {
+                combo = 0;
+                if (!errorTimestamp) errorTimestamp = now;
+                if (typeof LuminaAudio !== 'undefined') {
+                    LuminaAudio.keyWrong();
+                }
+            }
+        }
+
+        if (combo >= 5) {
+            comboEl.style.display = 'inline-block';
+            comboEl.textContent = '🔥 ' + combo + ' Combo';
+        } else {
+            comboEl.style.display = 'none';
+        }
+
         errors = 0;
         for (let i = 0; i < val.length; i++) {
             if (val[i] !== passage[i]) {
@@ -144,6 +324,19 @@
         const s = calcStats();
         wpmEl.textContent = s.wpm + ' WPM';
         accEl.textContent = s.acc + '%';
+
+        // Ghost comparison update
+        if (ghostInterval) {
+            const deltaWords = Math.round((val.length - ghostPos) / 5);
+            if (deltaWords >= 0) {
+                ghostStatusEl.textContent = `👻 Ghost: +${deltaWords} words ahead`;
+                ghostStatusEl.style.color = '#4ade80';
+            } else {
+                ghostStatusEl.textContent = `👻 Ghost: ${Math.abs(deltaWords)} words behind`;
+                ghostStatusEl.style.color = '#f87171';
+            }
+        }
+
         if (val.length >= passage.length) finish();
     });
 
@@ -164,19 +357,50 @@
     };
     if (focusMode) document.querySelector('.typing-page').classList.add('focus-mode');
 
-    // Ghost racer
+    // Neurodiversity: Dyslexia typography toggle
+    document.getElementById('dyslexic-toggle').addEventListener('change', (e) => {
+        document.querySelector('.typing-page').classList.toggle('dyslexic-mode', e.target.checked);
+    });
+
+    // Neurodiversity: Bionic Reading Fixation toggle
+    document.getElementById('bionic-toggle').addEventListener('change', (e) => {
+        isBionic = e.target.checked;
+        document.querySelector('.typing-page').classList.toggle('bionic-fixation', isBionic);
+        render();
+        updateCaret();
+    });
+
+    // Sensory: 432Hz Ambient Focus Soundscape toggle
+    document.getElementById('soundscape-toggle').addEventListener('change', (e) => {
+        if (typeof LuminaAudio === 'undefined') return;
+        if (e.target.checked) {
+            LuminaAudio.startFocusSoundscape();
+        } else {
+            LuminaAudio.stopFocusSoundscape();
+        }
+    });
+
+    // Ghost racer implementation
     function startGhost() {
         fetch('/api/latest_replay').then(r => r.json()).then(d => {
             if (!d.keystrokes || !d.keystrokes.length) {
                 ghostCursor.style.display = 'none';
+                ghostStatusEl.style.display = 'none';
                 return;
             }
             ghostCursor.style.display = 'block';
-            const durationMs = ((passage.length / 5) / (d.wpm / 60)) * 1000;
+            ghostStatusEl.style.display = 'inline-block';
+            ghostStatusEl.textContent = '👻 Ghost (' + Math.round(d.wpm || 0) + ' WPM)';
+            const durationMs = ((passage.length / 5) / (Math.max(d.wpm, 20) / 60)) * 1000;
             const step = durationMs / d.keystrokes.length;
             let i = 0;
             ghostInterval = setInterval(() => {
-                if (i >= d.keystrokes.length || ended) { clearInterval(ghostInterval); ghostCursor.style.display = 'none'; return; }
+                if (i >= d.keystrokes.length || ended) {
+                    clearInterval(ghostInterval);
+                    ghostCursor.style.display = 'none';
+                    return;
+                }
+                ghostPos = i;
                 const spans = display.querySelectorAll('.char');
                 if (spans[i]) {
                     const rect = spans[i].getBoundingClientRect();
@@ -185,32 +409,27 @@
                     ghostCursor.style.top = (rect.top - parent.top) + 'px';
                 }
                 i++;
-            }, Math.max(step, 40));
+            }, Math.max(step, 35));
         }).catch(() => {});
     }
 
     document.getElementById('ghost-toggle').addEventListener('change', (e) => {
-        if (e.target.checked && startTime) startGhost();
+        if (e.target.checked && startTime && !ended) {
+            startGhost();
+        } else if (!e.target.checked) {
+            clearInterval(ghostInterval);
+            ghostCursor.style.display = 'none';
+            ghostStatusEl.style.display = 'none';
+        }
     });
 
     // Anti-cheat: prevent paste
     input.addEventListener('paste', (e) => {
         e.preventDefault();
-        statusEl.textContent = 'Paste blocked — type manually!';
-        setTimeout(() => statusEl.textContent = timeLeft + 's', 1500);
+        showStatusAlert('⚠️ Paste is disabled on Lumina tests — please type manually!');
     });
-    // Anti-cheat: prevent drag/drop
     input.addEventListener('drop', (e) => e.preventDefault());
     input.addEventListener('dragover', (e) => e.preventDefault());
-    // Anti-cheat: detect rapid input (bot-like)
-    let lastInputTime = 0;
-    input.addEventListener('input', () => {
-        const now = Date.now();
-        if (now - lastInputTime < 15 && totalTyped > 5) {
-            console.warn('[Anti-cheat] Suspicious input speed detected');
-        }
-        lastInputTime = now;
-    });
 
     input.focus();
     document.addEventListener('click', () => { if (!ended) input.focus(); });

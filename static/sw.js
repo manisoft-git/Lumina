@@ -1,11 +1,12 @@
-const CACHE_NAME = 'lumina-v5.1';
+const CACHE_NAME = 'lumina-v5.2';
 const STATIC_ASSETS = [
     '/',
     '/static/style.css',
     '/static/script.js',
     '/static/sound.js',
     '/static/socket.io.min.js',
-    '/static/manifest.json'
+    '/static/manifest.json',
+    '/offline-hub'
 ];
 
 self.addEventListener('install', (e) => {

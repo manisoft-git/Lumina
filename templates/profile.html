@@ -32,7 +32,10 @@
         <div style="position:relative;height:280px;max-width:400px;margin:0 auto;">
             <canvas id="skill-radar"></canvas>
         </div>
-        <div style="text-align:center;margin-top:14px;">
+        <div style="text-align:center;margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            {% if talent_profile %}
+            <a href="{{ url_for('student_talent_profile', user_id=user.id) }}" class="btn btn-primary">🎯 Full Cognitive Talent Profile</a>
+            {% endif %}
             <button class="btn btn-secondary" onclick="shareProfile()">🔗 Share Profile</button>
         </div>
     </div>
@@ -41,27 +44,23 @@
 (function(){
     const ctx = document.getElementById('skill-radar');
     if (!ctx) return;
-    const ratings = {{ ratings | tojson }} || [];
-    const scores = {{ scores | tojson }} || [];
-    let typing = 0, chess = 0, checkers = 0, math = 0, memory = 0;
-    ratings.forEach(r => {
-        if (r[0] === 'chess') chess = Math.min(100, r[1] / 20);
-        if (r[0] === 'checkers') checkers = Math.min(100, r[1] / 20);
-    });
-    if (scores.length > 0) {
-        const avgWpm = scores.reduce((a,s) => a + (s[2] || s[0]), 0) / scores.length;
-        typing = Math.min(100, avgWpm);
-    }
+    {% if talent_profile %}
+    const labels = {{ talent_profile.radar_labels | tojson }};
+    const dataValues = {{ talent_profile.radar_values | tojson }};
+    {% else %}
+    const labels = ['Typing', 'Math', 'Memory', 'Reflexes', 'Pattern', 'Strategy', 'Verbal'];
+    const dataValues = [20, 20, 20, 20, 20, 20, 20];
+    {% endif %}
     new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: ['Typing', 'Chess', 'Checkers', 'Math', 'Memory'],
+            labels: labels,
             datasets: [{
-                label: 'Skill Level',
-                data: [typing, chess, checkers, math, memory],
+                label: 'Cognitive Level',
+                data: dataValues,
                 backgroundColor: 'rgba(56,189,248,0.2)',
                 borderColor: '#38bdf8',
-                pointBackgroundColor: '#38bdf8',
+                pointBackgroundColor: '#4ade80',
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
                 pointHoverBorderColor: '#38bdf8'

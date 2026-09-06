@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from db import db_execute, db_fetchone, db_fetchall
+from db import db_execute, db_fetchone, db_fetchall, db_execute_returning_id
 
 K_NEW, K_EST, K_MAST = 40, 20, 10
 
@@ -24,7 +24,7 @@ def update_elo(uid, gtype, result):
         db_execute("INSERT INTO user_ratings (user_id, game_type, rating, games_played) VALUES (?, ?, 1200, 0)", (uid, gtype))
         rating, games = 1200, 0
     else:
-        rating, games = row
+        rating, games = row[0], row[1]
     bot_rating = 2000
     exp = expected(rating, bot_rating)
     k = get_k(games, rating)
@@ -34,19 +34,26 @@ def update_elo(uid, gtype, result):
 
 class User(UserMixin):
     def __init__(self, row):
-        self.id = row[0]
-        self.username = row[1]
-        self.fullname = row[2]
-        self.email = row[3]
-        self.password_hash = row[4]
-        self.role = row[5]
-        self.xp = row[6] or 0
-        self.level = row[7] or 1
-        self.streak = row[8] or 0
-        self.longest_streak = row[9] or 0
-        self.last_active = row[10]
-        self.parent_code = row[11]
-        self.created_at = row[12]
+        def g(idx, default=None):
+            try:
+                val = row[idx]
+                return val if val is not None else default
+            except (IndexError, KeyError):
+                return default
+
+        self.id = g(0)
+        self.username = g(1, "")
+        self.fullname = g(2, "")
+        self.email = g(3, "")
+        self.password_hash = g(4, "")
+        self.role = g(5, "student")
+        self.xp = g(6, 0)
+        self.level = g(7, 1)
+        self.streak = g(8, 0)
+        self.longest_streak = g(9, 0)
+        self.last_active = g(10)
+        self.parent_code = g(11)
+        self.created_at = g(12)
 
     def check_password(self, pw):
         return check_password_hash(self.password_hash, pw)
@@ -55,29 +62,29 @@ class User(UserMixin):
     def create(username, fullname, email, password, role="student"):
         ph = generate_password_hash(password)
         code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        cur = db_execute("INSERT INTO users (username, fullname, email, password_hash, role, parent_code) VALUES (?, ?, ?, ?, ?, ?)",
-                         (username, fullname, email, ph, role, code))
-        return cur.lastrowid
+        return db_execute_returning_id("INSERT INTO users (username, fullname, email, password_hash, role, parent_code) VALUES (?, ?, ?, ?, ?, ?)",
+                                      (username, fullname, email, ph, role, code))
 
     @staticmethod
     def get_by_id(user_id):
-        row = db_fetchone("SELECT * FROM users WHERE id=?", (user_id,))
+        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at FROM users WHERE id=?", (user_id,))
         return User(row) if row else None
 
     @staticmethod
     def get_by_username(username):
-        row = db_fetchone("SELECT * FROM users WHERE username=?", (username,))
+        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at FROM users WHERE username=?", (username,))
         return User(row) if row else None
 
     @staticmethod
     def get_by_parent_code(code):
-        row = db_fetchone("SELECT * FROM users WHERE parent_code=?", (code,))
+        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at FROM users WHERE parent_code=?", (code,))
         return User(row) if row else None
 
 def award_xp(user_id, amount):
     db_execute("UPDATE users SET xp = xp + ? WHERE id=?", (amount, user_id))
     row = db_fetchone("SELECT xp, level FROM users WHERE id=?", (user_id,))
-    xp, lvl = row
+    if not row: return 1
+    xp, lvl = row[0] or 0, row[1] or 1
     new_lvl = max(1, int((xp / 500) ** 0.6) + 1)
     if new_lvl > lvl:
         db_execute("UPDATE users SET level=? WHERE id=?", (new_lvl, user_id))
@@ -86,8 +93,8 @@ def award_xp(user_id, amount):
 def check_streak(user_id):
     today = datetime.utcnow().date().isoformat()
     row = db_fetchone("SELECT last_active, streak, longest_streak FROM users WHERE id=?", (user_id,))
-    if not row: return
-    last, streak, longest = row
+    if not row: return 0
+    last, streak, longest = row[0], row[1] or 0, row[2] or 0
     if last == today:
         return streak
     yesterday = (datetime.utcnow() - timedelta(days=1)).date().isoformat()
@@ -122,32 +129,32 @@ def check_badges(user_id):
     to_award = []
     row = db_fetchone("SELECT MAX(wpm), MAX(accuracy) FROM scores WHERE user_id=?", (user_id,))
     if row:
-        max_wpm, max_acc = row
-        if max_wpm >= 10: to_award.append("first_typing_test")
-        if max_wpm >= 50: to_award.append("speed_demon_50")
-        if max_wpm >= 80: to_award.append("speed_demon_80")
-        if max_acc and max_acc >= 99: to_award.append("accuracy_king")
+        max_wpm, max_acc = row[0], row[1]
+        if max_wpm is not None and max_wpm >= 10: to_award.append("first_typing_test")
+        if max_wpm is not None and max_wpm >= 50: to_award.append("speed_demon_50")
+        if max_wpm is not None and max_wpm >= 80: to_award.append("speed_demon_80")
+        if max_acc is not None and max_acc >= 99: to_award.append("accuracy_king")
     row = db_fetchone("SELECT COUNT(*) FROM scores WHERE user_id=? AND room_id IS NOT NULL", (user_id,))
-    if row and row[0] > 0: to_award.append("competition_winner")
+    if row and row[0] and row[0] > 0: to_award.append("competition_winner")
     for gtype in ["chess", "checkers"]:
-        row = db_fetchone(f"SELECT COUNT(*) FROM {gtype}_games WHERE white_id=? OR black_id=?", (user_id, user_id))
-        if row and row[0] > 0: to_award.append(f"{gtype}_novice")
+        row = db_fetchone(f"SELECT COUNT(*) FROM {gtype}_games WHERE white_id=? OR black_id=?", (user_id, user_id)) if gtype == "chess" else db_fetchone("SELECT COUNT(*) FROM checkers_games WHERE red_id=? OR black_id=?", (user_id, user_id))
+        if row and row[0] and row[0] > 0: to_award.append(f"{gtype}_novice")
     row = db_fetchone("SELECT MAX(score) FROM math_sprints WHERE user_id=?", (user_id,))
-    if row and row[0] and row[0] >= 100: to_award.append("math_whiz")
+    if row and row[0] is not None and row[0] >= 100: to_award.append("math_whiz")
     row = db_fetchone("SELECT MAX(level_reached) FROM memory_tests WHERE user_id=?", (user_id,))
-    if row and row[0] and row[0] >= 10: to_award.append("memory_master")
+    if row and row[0] is not None and row[0] >= 10: to_award.append("memory_master")
     row = db_fetchone("SELECT MIN(best_ms) FROM reaction_tests WHERE user_id=?", (user_id,))
-    if row and row[0] and row[0] <= 200: to_award.append("react_ninja")
+    if row and row[0] is not None and row[0] <= 200: to_award.append("react_ninja")
     row = db_fetchone("SELECT SUM(puzzles_solved) FROM pattern_tests WHERE user_id=?", (user_id,))
-    if row and row[0] and row[0] >= 5: to_award.append("pattern_solver")
+    if row and row[0] is not None and row[0] >= 5: to_award.append("pattern_solver")
     row = db_fetchone("SELECT MAX(score) FROM word_blitz_scores WHERE user_id=?", (user_id,))
-    if row and row[0] and row[0] >= 20: to_award.append("word_blitzer")
+    if row and row[0] is not None and row[0] >= 20: to_award.append("word_blitzer")
     row = db_fetchone("SELECT COUNT(*) FROM tournament_matches WHERE winner_id=?", (user_id,))
     if row and row[0] and row[0] > 0: to_award.append("tournament_winner")
     row = db_fetchone("SELECT COUNT(*) FROM homework_submissions WHERE user_id=?", (user_id,))
     if row and row[0] and row[0] >= 5: to_award.append("homework_hero")
     row = db_fetchone("SELECT streak FROM users WHERE id=?", (user_id,))
-    if row and row[0] and row[0] >= 7: to_award.append("seven_streak")
+    if row and row[0] is not None and row[0] >= 7: to_award.append("seven_streak")
 
     new_badges = []
     for bid in to_award:
@@ -160,9 +167,33 @@ def check_badges(user_id):
                 pass
     return new_badges
 
+def ensure_columns():
+    cols_to_add = [
+        ("users", "email", "TEXT"),
+        ("users", "xp", "INTEGER DEFAULT 0"),
+        ("users", "level", "INTEGER DEFAULT 1"),
+        ("users", "streak", "INTEGER DEFAULT 0"),
+        ("users", "longest_streak", "INTEGER DEFAULT 0"),
+        ("users", "last_active", "DATE"),
+        ("users", "parent_code", "TEXT"),
+        ("scores", "net_wpm", "REAL"),
+        ("scores", "passage_category", "TEXT"),
+        ("scores", "room_id", "TEXT"),
+        ("scores", "error_map", "TEXT"),
+        ("scores", "verified", "INTEGER DEFAULT 1"),
+        ("scores", "integrity_score", "REAL DEFAULT 1.0"),
+    ]
+    for table, col, col_type in cols_to_add:
+        try:
+            db_execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
+        except Exception:
+            pass
+
 def init_db():
     is_pg = bool(__import__("config").DATABASE_URL)
     pk = "id SERIAL PRIMARY KEY" if is_pg else "id INTEGER PRIMARY KEY AUTOINCREMENT"
+
+    ensure_columns()
 
     tables = [
         f"""CREATE TABLE IF NOT EXISTS users (
@@ -193,7 +224,8 @@ def init_db():
         f"""CREATE TABLE IF NOT EXISTS scores (
             {pk}, user_id INTEGER NOT NULL, wpm REAL NOT NULL, accuracy REAL NOT NULL,
             errors INTEGER DEFAULT 0, net_wpm REAL, passage_category TEXT,
-            room_id TEXT, error_map TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            room_id TEXT, error_map TEXT, verified INTEGER DEFAULT 1, integrity_score REAL DEFAULT 1.0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""",
         """CREATE TABLE IF NOT EXISTS user_badges (
             user_id INTEGER NOT NULL, badge_id TEXT NOT NULL,

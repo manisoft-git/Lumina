@@ -12,8 +12,14 @@ def get_db():
         if DATABASE_URL and psycopg2:
             g.db = psycopg2.connect(DATABASE_URL)
         else:
-            g.db = sqlite3.connect(str(get_db_path()))
+            g.db = sqlite3.connect(str(get_db_path()), check_same_thread=False, timeout=10.0)
             g.db.row_factory = sqlite3.Row
+            try:
+                g.db.execute("PRAGMA journal_mode=WAL")
+                g.db.execute("PRAGMA synchronous=NORMAL")
+                g.db.execute("PRAGMA foreign_keys=ON")
+            except Exception:
+                pass
     return g.db
 
 def close_db(e=None):

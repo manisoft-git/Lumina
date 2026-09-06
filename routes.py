@@ -15,6 +15,8 @@ from werkzeug.security import generate_password_hash
 
 from db import db_execute, db_fetchall, db_fetchone
 from models import User, update_elo, check_badges, award_xp, check_streak, BADGES
+from talent_engine import compute_cognitive_profile
+from anti_cheat import AntiCheatEngine
 
 def teacher_required(f):
     @wraps(f)
@@ -97,7 +99,7 @@ def register_routes(app):
             FROM homework h
             JOIN classroom_members cm ON h.classroom_id = cm.classroom_id
             LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.user_id = ?
-            WHERE cm.student_id = ? AND h.due_date >= date('now')
+            WHERE cm.student_id = ? AND h.due_date >= CURRENT_DATE
             ORDER BY h.due_date
         """, (current_user.id, current_user.id))
         today = datetime.utcnow().date().isoformat()
@@ -160,23 +162,30 @@ def register_routes(app):
     def leaderboard():
         period = request.args.get("period", "all")
         classroom = request.args.get("classroom", "")
-        where = ""
+        where_clauses = []
         params = []
         if period == "weekly":
-            where = "WHERE s.created_at >= datetime('now', '-7 days')"
+            seven_days_ago = (datetime.utcnow() - timedelta(days=7)).isoformat()
+            where_clauses.append("s.created_at >= ?")
+            params.append(seven_days_ago)
         elif period == "today":
-            where = "WHERE date(s.created_at) = date('now')"
+            today = datetime.utcnow().date().isoformat()
+            where_clauses.append("s.created_at >= ?")
+            params.append(today)
         if classroom:
-            where += " AND EXISTS (SELECT 1 FROM classroom_members cm WHERE cm.student_id = u.id AND cm.classroom_id = ?)"
+            where_clauses.append("EXISTS (SELECT 1 FROM classroom_members cm WHERE cm.student_id = u.id AND cm.classroom_id = ?)")
             params.append(classroom)
+
+        where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
         sql = f"""
             SELECT * FROM (
-                SELECT u.id, u.username, u.fullname, u.level, u.xp,
-                       s.wpm, s.accuracy, s.net_wpm, s.passage_category, s.created_at,
-                       ROW_NUMBER() OVER (PARTITION BY u.id ORDER BY s.net_wpm DESC, s.accuracy DESC) as rn
+                SELECT u.id, u.username, u.fullname, COALESCE(u.level, 1) as level, COALESCE(u.xp, 0) as xp,
+                       COALESCE(s.wpm, 0) as wpm, COALESCE(s.accuracy, 0) as accuracy, COALESCE(s.net_wpm, 0) as net_wpm,
+                       s.passage_category, s.created_at,
+                       ROW_NUMBER() OVER (PARTITION BY u.id ORDER BY COALESCE(s.net_wpm, 0) DESC, COALESCE(s.accuracy, 0) DESC) as rn
                 FROM users u
                 JOIN scores s ON u.id = s.user_id
-                {where}
+                {where_sql}
             ) t WHERE rn = 1
             ORDER BY net_wpm DESC, accuracy DESC
             LIMIT 100
@@ -242,7 +251,73 @@ def register_routes(app):
             (user_id,)
         )
         ratings = db_fetchall("SELECT game_type, rating, games_played FROM user_ratings WHERE user_id=?", (user_id,))
-        return render_template("profile.html", user=user, scores=scores, ratings=ratings)
+        talent_profile = compute_cognitive_profile(user_id)
+        return render_template("profile.html", user=user, scores=scores, ratings=ratings, talent_profile=talent_profile)
+
+    @app.route("/talent-profile")
+    @login_required
+    def talent_profile_page():
+        profile_data = compute_cognitive_profile(current_user.id)
+        return render_template("talent_profile.html", profile=profile_data)
+
+    @app.route("/talent-profile/<int:user_id>")
+    def student_talent_profile(user_id):
+        user = User.get_by_id(user_id)
+        if not user:
+            flash("User not found.", "error")
+            return redirect(url_for("leaderboard"))
+        profile_data = compute_cognitive_profile(user_id)
+        return render_template("talent_profile.html", profile=profile_data)
+
+    @app.route("/talent-report")
+    @login_required
+    def talent_report_self():
+        profile_data = compute_cognitive_profile(current_user.id)
+        return render_template("talent_report.html", profile=profile_data)
+
+    @app.route("/talent-report/<int:user_id>")
+    def talent_report(user_id):
+        user = User.get_by_id(user_id)
+        if not user:
+            flash("User not found.", "error")
+            return redirect(url_for("leaderboard"))
+        profile_data = compute_cognitive_profile(user_id)
+        return render_template("talent_report.html", profile=profile_data)
+
+    @app.route("/classroom/projector/<room_id>")
+    def classroom_projector(room_id):
+        return render_template("classroom_projector.html", room_id=room_id)
+
+    @app.route("/api/v1/talent_profile/<int:user_id>")
+    def api_talent_profile(user_id):
+        profile_data = compute_cognitive_profile(user_id)
+        if not profile_data:
+            return jsonify({"error": "User not found"}), 404
+        return jsonify(profile_data)
+
+    @app.route("/relay")
+    @login_required
+    def relay_lobby():
+        room_id = request.args.get("room", "RELAY_ARENA_1")
+        return redirect(url_for("relay_arena", room_id=room_id))
+
+    @app.route("/relay/<room_id>")
+    @login_required
+    def relay_arena(room_id):
+        return render_template("team_relay.html", room_id=room_id)
+
+    @app.route("/offline-hub")
+    def offline_hub():
+        import socket
+        from config import PORT
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+            s.close()
+        except Exception:
+            local_ip = "127.0.0.1"
+        return render_template("offline_hub.html", local_ip=local_ip, port=PORT)
 
     @app.route("/games")
     @login_required
@@ -377,7 +452,7 @@ def register_routes(app):
     @app.route("/submit_score", methods=["POST"])
     @login_required
     def submit_score():
-        data = request.get_json()
+        data = request.get_json() or {}
         wpm = float(data.get("wpm", 0))
         acc = float(data.get("accuracy", 0))
         errs = int(data.get("errors", 0))
@@ -385,11 +460,26 @@ def register_routes(app):
         cat = data.get("category", "general")
         room_id = data.get("room_id")
         error_map = json.dumps(data.get("error_map", {}))
-        db_execute("INSERT INTO scores (user_id, wpm, accuracy, errors, net_wpm, passage_category, room_id, error_map) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                   (current_user.id, wpm, acc, errs, net_wpm, cat, room_id, error_map))
-        award_xp(current_user.id, int(net_wpm / 2))
-        check_badges(current_user.id)
-        return jsonify({"status": "ok", "xp_earned": int(net_wpm / 2)})
+        timings = data.get("timings")
+        duration_sec = data.get("duration_sec")
+        passage_len = data.get("passage_len", 0)
+
+        anti_cheat = AntiCheatEngine.verify_submission(
+            wpm=wpm, accuracy=acc, duration_sec=duration_sec,
+            timings=timings, passage_len=passage_len
+        )
+        verified = 1 if anti_cheat["verified"] else 0
+        integrity = anti_cheat["integrity_score"]
+
+        db_execute(
+            "INSERT INTO scores (user_id, wpm, accuracy, errors, net_wpm, passage_category, room_id, error_map, verified, integrity_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (current_user.id, wpm, acc, errs, net_wpm, cat, room_id, error_map, verified, integrity)
+        )
+        xp = int(net_wpm / 2) if verified else 0
+        if verified:
+            award_xp(current_user.id, xp)
+            check_badges(current_user.id)
+        return jsonify({"status": "ok", "xp_earned": xp, "anti_cheat": anti_cheat})
 
     @app.route("/save_replay", methods=["POST"])
     @login_required
@@ -402,9 +492,15 @@ def register_routes(app):
     @app.route("/submit_homework/<int:hid>", methods=["POST"])
     @login_required
     def submit_homework(hid):
-        data = request.get_json()
+        data = request.get_json() or {}
         wpm = float(data.get("wpm", 0))
         acc = float(data.get("accuracy", 0))
+        timings = data.get("timings")
+        duration_sec = data.get("duration_sec")
+        passage_len = data.get("passage_len", 0)
+        anti_cheat = AntiCheatEngine.verify_submission(wpm=wpm, accuracy=acc, duration_sec=duration_sec, timings=timings, passage_len=passage_len)
+        if not anti_cheat["verified"]:
+            return jsonify({"status": "rejected", "reason": anti_cheat["reason"]}), 400
         db_execute("INSERT INTO homework_submissions (homework_id, user_id, wpm, accuracy) VALUES (?, ?, ?, ?)",
                    (hid, current_user.id, wpm, acc))
         hw = db_fetchone("SELECT min_wpm_target FROM homework WHERE id=?", (hid,))
@@ -412,7 +508,7 @@ def register_routes(app):
         if passed:
             award_xp(current_user.id, 50)
         check_badges(current_user.id)
-        return jsonify({"status": "ok", "passed": passed})
+        return jsonify({"status": "ok", "passed": passed, "anti_cheat": anti_cheat})
 
     @app.route("/submit_challenge", methods=["POST"])
     @login_required
@@ -665,7 +761,8 @@ def register_routes(app):
             d = BADGES.get(b[0], {})
             badge_list.append({"name": d.get("name", b[0]), "desc": d.get("desc", ""), "date": b[1]})
         ratings = db_fetchall("SELECT game_type, rating FROM user_ratings WHERE user_id=?", (student.id,))
-        return render_template("parent_portal.html", student=student, scores=scores, badges=badge_list, ratings=ratings)
+        talent_profile = compute_cognitive_profile(student.id)
+        return render_template("parent_portal.html", student=student, scores=scores, badges=badge_list, ratings=ratings, talent_profile=talent_profile)
 
     @app.route("/certificates")
     @login_required
@@ -914,7 +1011,8 @@ def register_routes(app):
             if user:
                 # In production, send email. For now, flash a reset token.
                 token = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=32))
-                db_execute("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+1 hour'))", (user[0], token))
+                exp = (datetime.utcnow() + timedelta(hours=1)).isoformat()
+                db_execute("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)", (user[0], token, exp))
                 flash(f"Password reset link: /reset-password?token={token}", "info")
             else:
                 flash("If that email exists, a reset link was sent.", "info")
@@ -927,7 +1025,8 @@ def register_routes(app):
         if not token:
             flash("Invalid reset link.", "error")
             return redirect(url_for("login"))
-        row = db_fetchone("SELECT user_id, expires_at FROM password_resets WHERE token=? AND expires_at > datetime('now')", (token,))
+        now_iso = datetime.utcnow().isoformat()
+        row = db_fetchone("SELECT user_id, expires_at FROM password_resets WHERE token=? AND expires_at > ?", (token, now_iso))
         if not row:
             flash("Reset link expired or invalid.", "error")
             return redirect(url_for("login"))

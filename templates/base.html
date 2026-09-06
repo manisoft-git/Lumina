@@ -29,10 +29,13 @@
             <li><a href="{{ url_for('home') }}">Home</a></li>
             {% if current_user.is_authenticated %}
                 <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('talent_profile_page') }}" style="color:var(--primary); font-weight:700;">🎯 Talent</a></li>
                 <li><a href="{{ url_for('typing_page') }}">Solo Type</a></li>
                 <li><a href="{{ url_for('competitions_hub') }}">Compete</a></li>
+                <li><a href="{{ url_for('relay_lobby') }}" style="color:#f59e0b; font-weight:700;">🤝 Relay</a></li>
                 <li><a href="{{ url_for('games_hub') }}">Games</a></li>
                 <li><a href="{{ url_for('tournament_list') }}">Tournaments</a></li>
+                <li><a href="{{ url_for('offline_hub') }}" title="Global Offline Hub">🌍 Hub</a></li>
                 <li><a href="{{ url_for('chat_page') }}">Chat</a></li>
                 <li><a href="{{ url_for('leaderboard') }}">Leaderboard</a></li>
                 <li><a href="{{ url_for('badges_page') }}">Badges</a></li>

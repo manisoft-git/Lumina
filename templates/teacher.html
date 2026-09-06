@@ -15,7 +15,7 @@
             <thead><tr><th>Name</th><th>Code</th><th>Created</th><th>Actions</th></tr></thead>
             <tbody>
                 {% for c in classrooms %}
-                <tr><td>{{ c[1] }}</td><td><code>{{ c[2] }}</code></td><td>{{ c[3] }}</td><td><a href="{{ url_for('teacher_monitor', classroom_code=c[2]) }}" class="btn btn-small">Monitor</a></td></tr>
+                <tr><td>{{ c[1] }}</td><td><code>{{ c[2] }}</code></td><td>{{ c[3] }}</td><td style="display:flex; gap:6px;"><a href="{{ url_for('teacher_monitor', classroom_code=c[2]) }}" class="btn btn-small">Monitor</a><a href="{{ url_for('classroom_projector', room_id=c[2]) }}" class="btn btn-small btn-primary" target="_blank">📺 Projector</a></td></tr>
                 {% endfor %}
             </tbody>
         </table>

@@ -1,20 +1,47 @@
 {% extends "base.html" %}
-{% block title %}Parent Portal - Lumina{% endblock %}
+{% block title %}Parent Portal — {{ student.fullname }} | Lumina{% endblock %}
 {% block content %}
 <div class="parent-page">
     {% if error %}
         <div class="flash flash-error">{{ error }}</div>
     {% else %}
-        <h1>{{ student.fullname }}'s Progress</h1>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+            <div>
+                <h1 style="margin-bottom:4px;">{{ student.fullname }}'s Talent Discovery Overview</h1>
+                <p style="color:var(--muted);">Parent Portal • Academic & Cognitive Verification</p>
+            </div>
+            {% if talent_profile %}
+            <a href="{{ url_for('talent_report', user_id=student.id) }}" class="btn btn-primary" target="_blank">
+                📄 View Official Student Talent Dossier
+            </a>
+            {% endif %}
+        </div>
+
+        {% if talent_profile %}
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
+            <div>
+                <div style="font-size:0.9rem; text-transform:uppercase; font-weight:700; color:var(--primary); letter-spacing:1px;">Cognitive Archetype</div>
+                <div style="font-size:1.8rem; font-weight:800; margin-top:2px;">{{ talent_profile.archetype.badge }} {{ talent_profile.archetype.title }}</div>
+                <p style="color:var(--muted); max-width:600px; margin-top:6px;">{{ talent_profile.archetype.tagline }}</p>
+            </div>
+            <div style="text-align:center; background:var(--surface-solid); border:1px solid var(--border); padding:16px 24px; border-radius:12px;">
+                <div style="font-size:2.4rem; font-weight:900; color:var(--primary); line-height:1;">{{ talent_profile.lti }}</div>
+                <div style="font-size:0.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-top:4px;">Lumina Talent Index</div>
+                <div style="font-size:0.85rem; color:var(--accent); font-weight:600; margin-top:2px;">Top {{ 100 - talent_profile.overall_percentile }}% Nationally</div>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="parent-grid">
             <section class="parent-card">
                 <h2>Overview</h2>
-                <p>Level: <strong>{{ student.level }}</strong></p>
-                <p>XP: <strong>{{ student.xp }}</strong></p>
-                <p>Streak: <strong>{{ student.streak }} days</strong></p>
+                <p>Academic Level: <strong>Level {{ student.level }}</strong></p>
+                <p>Platform Experience: <strong>{{ student.xp }} XP</strong></p>
+                <p>Study Streak: <strong>{{ student.streak }} days active</strong></p>
+                <p>Parent Access Code: <code>{{ student.parent_code }}</code></p>
             </section>
             <section class="parent-card">
-                <h2>Recent Scores</h2>
+                <h2>Recent Practice & Challenges</h2>
                 {% if scores %}
                     <div style="overflow-x:auto;">
                     <table class="data-table">
@@ -27,13 +54,13 @@
                 {% else %}<p>No scores yet.</p>{% endif %}
             </section>
             <section class="parent-card">
-                <h2>Badges</h2>
+                <h2>Milestones & Badges</h2>
                 {% if badges %}
-                    <ul>{% for b in badges %}<li><strong>{{ b.name }}</strong> — {{ b.desc }} <small>({{ b.date }})</small></li>{% endfor %}</ul>
+                    <ul>{% for b in badges %}<li><strong>{{ b.name }}</strong> — {{ b.desc }} <small style="color:var(--muted);">({{ b.date }})</small></li>{% endfor %}</ul>
                 {% else %}<p>No badges yet.</p>{% endif %}
             </section>
             <section class="parent-card">
-                <h2>Game Ratings</h2>
+                <h2>Arena ELO Ratings</h2>
                 {% if ratings %}
                     <ul>{% for r in ratings %}<li>{{ r[0].capitalize() }}: <strong>{{ r[1] }}</strong> ELO</li>{% endfor %}</ul>
                 {% else %}<p>No rated games yet.</p>{% endif %}

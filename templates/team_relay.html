@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Team Cognitive Relay — Lumina{% endblock %}
+{% block content %}
+<div class="relay-page" style="max-width:1100px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
+        <div>
+            <h1 style="margin-bottom:4px;">🤝 Team Cognitive Relay</h1>
+            <p style="color:var(--muted);">Room: <code>{{ room_id }}</code> • Interdisciplinary Esports Challenge</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary" id="start-relay-btn" onclick="startRelay()">🚩 Start Relay Match</button>
+            <a href="{{ url_for('competitions_hub') }}" class="btn btn-secondary">Exit Arena</a>
+        </div>
+    </div>
+
+    <!-- Match Status Banner -->
+    <div id="relay-status-banner" style="padding:12px 20px; border-radius:10px; background:rgba(56,189,248,0.15); border:1px solid var(--primary); text-align:center; font-weight:700; margin-bottom:24px;">
+        Waiting for teammates to take their positions... Choose your Team & Leg below!
+    </div>
+
+    <!-- Role Selection Bar -->
+    <div class="card" style="margin-bottom:24px; padding:18px;">
+        <h3>Select Your Relay Position</h3>
+        <div style="display:flex; gap:16px; margin-top:10px; flex-wrap:wrap;">
+            <label>Team:
+                <select id="my-team" style="padding:6px 12px; border-radius:6px; background:var(--bg); color:var(--text); border:1px solid var(--border);">
+                    <option value="alpha">Team Alpha</option>
+                    <option value="beta">Team Beta</option>
+                </select>
+            </label>
+            <label>Leg / Discipline:
+                <select id="my-leg" style="padding:6px 12px; border-radius:6px; background:var(--bg); color:var(--text); border:1px solid var(--border);">
+                    <option value="1">Leg 1: ➗ Mental Arithmetic (Math Whiz)</option>
+                    <option value="2">Leg 2: 🧩 Inductive Pattern Logic (Visual Deduction)</option>
+                    <option value="3">Leg 3: ⌨️ Speed Typing Anchor (Finish Line)</option>
+                </select>
+            </label>
+            <button class="btn btn-small btn-primary" onclick="claimPosition()">Confirm Position</button>
+        </div>
+    </div>
+
+    <!-- Live Relay Arena -->
+    <div class="relay-arena">
+        <!-- Team Alpha -->
+        <div class="team-pod" id="pod-alpha">
+            <div class="team-header">
+                <span class="team-title" style="color:#38bdf8;">🔷 Team Alpha</span>
+                <span class="baton-pill" id="baton-alpha">Baton: Leg 1</span>
+            </div>
+            <div class="relay-legs">
+                <div class="relay-leg-item" id="alpha-leg-1">
+                    <div><strong>Leg 1: Math Sprint</strong><div style="font-size:0.85rem; color:var(--muted);" id="alpha-u-1">Unassigned</div></div>
+                    <span class="badge" id="alpha-prog-1">0 / 5</span>
+                </div>
+                <div class="relay-leg-item" id="alpha-leg-2">
+                    <div><strong>Leg 2: Pattern Logic</strong><div style="font-size:0.85rem; color:var(--muted);" id="alpha-u-2">Unassigned</div></div>
+                    <span class="badge" id="alpha-prog-2">0 / 2</span>
+                </div>
+                <div class="relay-leg-item" id="alpha-leg-3">
+                    <div><strong>Leg 3: Typing Sprint</strong><div style="font-size:0.85rem; color:var(--muted);" id="alpha-u-3">Unassigned</div></div>
+                    <span class="badge" id="alpha-prog-3">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Beta -->
+        <div class="team-pod" id="pod-beta">
+            <div class="team-header">
+                <span class="team-title" style="color:#f59e0b;">🔶 Team Beta</span>
+                <span class="baton-pill" id="baton-beta" style="border-color:#f59e0b; color:#f59e0b;">Baton: Leg 1</span>
+            </div>
+            <div class="relay-legs">
+                <div class="relay-leg-item" id="beta-leg-1">
+                    <div><strong>Leg 1: Math Sprint</strong><div style="font-size:0.85rem; color:var(--muted);" id="beta-u-1">Unassigned</div></div>
+                    <span class="badge" id="beta-prog-1">0 / 5</span>
+                </div>
+                <div class="relay-leg-item" id="beta-leg-2">
+                    <div><strong>Leg 2: Pattern Logic</strong><div style="font-size:0.85rem; color:var(--muted);" id="beta-u-2">Unassigned</div></div>
+                    <span class="badge" id="beta-prog-2">0 / 2</span>
+                </div>
+                <div class="relay-leg-item" id="beta-leg-3">
+                    <div><strong>Leg 3: Typing Sprint</strong><div style="font-size:0.85rem; color:var(--muted);" id="beta-u-3">Unassigned</div></div>
+                    <span class="badge" id="beta-prog-3">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Player Interactive Sandbox -->
+    <div class="card" id="player-sandbox" style="margin-top:28px; display:none; padding:24px; text-align:center;">
+        <h2 id="sandbox-title">Your Stage is Active!</h2>
+        <div id="sandbox-content" style="margin-top:16px;"></div>
+    </div>
+</div>
+
+<script>
+const roomId = {{ room_id | tojson }};
+const socket = io();
+let currentTeam = 'alpha';
+let currentLeg = 1;
+let currentProgress = 0;
+let roomState = null;
+
+// Leg 1 Math state
+let mathA = 0, mathB = 0, mathAns = 0;
+// Leg 3 Typing passage
+const typingPassage = "The velocity of light in vacuum is exactly 299792458 meters per second.";
+
+function claimPosition() {
+    currentTeam = document.getElementById('my-team').value;
+    currentLeg = parseInt(document.getElementById('my-leg').value);
+    socket.emit('join_relay_room', { room_id: roomId, team: currentTeam, leg: currentLeg });
+    document.getElementById('relay-status-banner').textContent = `Position confirmed: ${currentTeam.toUpperCase()} - Leg ${currentLeg}. Ready when match begins!`;
+}
+
+function startRelay() {
+    socket.emit('relay_start', { room_id: roomId });
+}
+
+socket.on('connect', () => {
+    claimPosition();
+});
+
+socket.on('relay_state', (state) => {
+    roomState = state;
+    renderRoomState();
+});
+
+socket.on('relay_started', (state) => {
+    roomState = state;
+    document.getElementById('relay-status-banner').textContent = "⚡ THE RELAY HAS STARTED! Leg 1 is racing!";
+    if (typeof LuminaAudio !== 'undefined') LuminaAudio.gameStart();
+    renderRoomState();
+});
+
+socket.on('baton_passed', (data) => {
+    document.getElementById('relay-status-banner').textContent = `🔥 BATON PASSED: ${data.team.toUpperCase()} advanced to Leg ${data.new_leg}!`;
+    if (typeof LuminaAudio !== 'undefined') LuminaAudio.comboChime(30);
+});
+
+socket.on('relay_game_over', (data) => {
+    const winnerName = data.winner === 'alpha' ? 'Team Alpha' : 'Team Beta';
+    document.getElementById('relay-status-banner').innerHTML = `🏆 <strong>VICTORY! ${winnerName} has won the Cognitive Relay!</strong>`;
+    document.getElementById('player-sandbox').style.display = 'none';
+    if (typeof LuminaAudio !== 'undefined') LuminaAudio.gameWin();
+});
+
+function renderRoomState() {
+    if (!roomState || !roomState.teams) return;
+
+    ['alpha', 'beta'].forEach(team => {
+        const t = roomState.teams[team];
+        document.getElementById(`baton-${team}`).textContent = `Baton: Leg ${t.active_leg}`;
+
+        [1, 2, 3].forEach(l => {
+            const legObj = t.legs[l];
+            const uEl = document.getElementById(`${team}-u-${l}`);
+            const pEl = document.getElementById(`${team}-prog-${l}`);
+            const itemEl = document.getElementById(`${team}-leg-${l}`);
+
+            if (uEl) uEl.textContent = legObj.username || 'Unassigned';
+            if (pEl) {
+                pEl.textContent = l === 3 ? (legObj.progress + '%') : `${legObj.progress} / ${legObj.target}`;
+            }
+
+            if (itemEl) {
+                itemEl.className = 'relay-leg-item';
+                if (legObj.cleared) itemEl.classList.add('leg-cleared');
+                else if (t.active_leg === l && roomState.state === 'racing') itemEl.classList.add('leg-active');
+            }
+        });
+    });
+
+    // Determine if user's leg is currently active
+    const myTeamData = roomState.teams[currentTeam];
+    const sandbox = document.getElementById('player-sandbox');
+    if (roomState.state === 'racing' && myTeamData && myTeamData.active_leg === currentLeg && !myTeamData.legs[currentLeg].cleared) {
+        sandbox.style.display = 'block';
+        initSandboxForLeg(currentLeg);
+    } else {
+        sandbox.style.display = 'none';
+    }
+}
+
+function initSandboxForLeg(leg) {
+    const content = document.getElementById('sandbox-content');
+    const title = document.getElementById('sandbox-title');
+
+    if (leg === 1) {
+        title.textContent = `Leg 1: Mental Arithmetic (${currentProgress} / 5 solved)`;
+        if (!mathAns) nextMathProblem();
+    } else if (leg === 2) {
+        title.textContent = `Leg 2: Pattern Logic (${currentProgress} / 2 solved)`;
+        content.innerHTML = `
+            <p style="font-size:1.2rem; margin-bottom:14px;">Find the next number in sequence: <strong>2, 4, 8, 16, ?</strong></p>
+            <input type="number" id="pattern-ans" style="padding:10px; font-size:1.2rem; width:120px; text-align:center; border-radius:8px; border:1px solid var(--border);" autofocus>
+            <button class="btn btn-primary" onclick="checkPattern()" style="margin-left:10px;">Submit</button>
+        `;
+    } else if (leg === 3) {
+        title.textContent = "Leg 3: Anchor Typing Sprint to Finish Line!";
+        content.innerHTML = `
+            <div style="font-size:1.15rem; font-family:monospace; margin-bottom:14px; background:var(--surface-solid); padding:14px; border-radius:8px;">${typingPassage}</div>
+            <input type="text" id="relay-type-input" style="width:100%; max-width:600px; padding:12px; font-size:1.1rem; border-radius:8px; border:1px solid var(--border);" placeholder="Type the passage above..." oninput="handleRelayTyping(this.value)">
+        `;
+    }
+}
+
+function nextMathProblem() {
+    mathA = Math.floor(Math.random() * 12) + 2;
+    mathB = Math.floor(Math.random() * 12) + 2;
+    mathAns = mathA * mathB;
+    const content = document.getElementById('sandbox-content');
+    content.innerHTML = `
+        <div style="font-size:2rem; font-weight:800; margin-bottom:12px;">${mathA} × ${mathB} = ?</div>
+        <input type="number" id="math-input" style="padding:10px; font-size:1.3rem; width:140px; text-align:center; border-radius:8px; border:1px solid var(--border);" autofocus onkeydown="if(event.key==='Enter') checkMath()">
+        <button class="btn btn-primary" onclick="checkMath()" style="margin-left:10px;">Submit</button>
+    `;
+    setTimeout(() => { const el = document.getElementById('math-input'); if (el) el.focus(); }, 50);
+}
+
+function checkMath() {
+    const val = parseInt(document.getElementById('math-input').value);
+    if (val === mathAns) {
+        currentProgress++;
+        socket.emit('relay_progress', { room_id: roomId, team: currentTeam, leg: 1, progress: currentProgress });
+        if (typeof LuminaAudio !== 'undefined') LuminaAudio.keyCorrect();
+        if (currentProgress < 5) nextMathProblem();
+    } else {
+        if (typeof LuminaAudio !== 'undefined') LuminaAudio.keyWrong();
+    }
+}
+
+function checkPattern() {
+    const val = parseInt(document.getElementById('pattern-ans').value);
+    if (val === 32) {
+        currentProgress++;
+        socket.emit('relay_progress', { room_id: roomId, team: currentTeam, leg: 2, progress: currentProgress });
+        if (typeof LuminaAudio !== 'undefined') LuminaAudio.keyCorrect();
+    } else {
+        if (typeof LuminaAudio !== 'undefined') LuminaAudio.keyWrong();
+    }
+}
+
+function handleRelayTyping(val) {
+    let matched = 0;
+    for (let i = 0; i < val.length; i++) {
+        if (val[i] === typingPassage[i]) matched++;
+        else break;
+    }
+    const pct = Math.min(100, Math.round((matched / typingPassage.length) * 100));
+    socket.emit('relay_progress', { room_id: roomId, team: currentTeam, leg: 3, progress: pct });
+}
+</script>
+{% endblock %}

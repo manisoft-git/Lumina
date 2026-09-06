@@ -395,3 +395,117 @@ input:focus, select:focus, textarea:focus, button:focus {
     .mem-grid { max-width: 260px; gap: 8px; }
     .reaction-box { width: 160px; height: 160px; }
 }
+
+/* =========================================================
+   Lumina Neurodiversity & Cognitive Accessibility Matrix
+   ========================================================= */
+.dyslexic-mode, [data-font="dyslexic"] {
+    font-family: 'OpenDyslexic', 'Lexend', 'Comic Sans MS', sans-serif !important;
+    letter-spacing: 0.08em !important;
+    word-spacing: 0.18em !important;
+    line-height: 1.9 !important;
+}
+.dyslexic-mode .passage-display {
+    font-size: 1.45rem !important;
+    letter-spacing: 0.1em !important;
+    line-height: 2.1 !important;
+}
+
+/* Bionic Reading Fixation */
+.bionic-fixation .char.bionic-bold {
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    text-shadow: 0 0 1px rgba(255,255,255,0.8);
+}
+[data-theme="light"] .bionic-fixation .char.bionic-bold {
+    color: #000000 !important;
+    text-shadow: 0 0 1px rgba(0,0,0,0.4);
+}
+
+/* Attentional Stamina & Cognitive Micro-Metrics */
+.stamina-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 24px;
+    margin-top: 18px;
+}
+.stamina-meter {
+    height: 12px;
+    background: rgba(148,163,184,0.2);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+.stamina-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+.stamina-high { background: linear-gradient(90deg, #38bdf8, #4ade80); }
+.stamina-med { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.stamina-low { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+/* Team Cognitive Relay */
+.relay-arena {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+}
+@media (max-width: 860px) {
+    .relay-arena { grid-template-columns: 1fr; }
+}
+.team-pod {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.team-pod.active-turn {
+    border-color: var(--primary);
+    box-shadow: 0 0 24px var(--primary-glow);
+}
+.team-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+.team-title { font-size: 1.4rem; font-weight: 800; }
+.baton-pill {
+    background: rgba(56,189,248,0.2);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+.relay-legs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.relay-leg-item {
+    background: var(--surface-solid);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.relay-leg-item.leg-active {
+    border-color: var(--accent);
+    background: rgba(74,222,128,0.1);
+}
+.relay-leg-item.leg-cleared {
+    border-color: var(--accent);
+    opacity: 0.8;
+}
+

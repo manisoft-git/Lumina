@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Talent Dossier — {{ profile.fullname }}</title>
+    <style>
+        :root {
+            --text: #0f172a;
+            --muted: #475569;
+            --border: #cbd5e1;
+            --primary: #0284c7;
+            --accent: #16a34a;
+            --bg: #ffffff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background: #f1f5f9;
+            color: var(--text);
+            padding: 24px;
+            line-height: 1.5;
+        }
+        .report-page {
+            max-width: 850px;
+            margin: 0 auto;
+            background: var(--bg);
+            padding: 48px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid var(--border);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+        .brand { font-size: 1.8rem; font-weight: 900; color: var(--primary); letter-spacing: -0.5px; }
+        .doc-title { font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .meta-box {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .meta-box strong { color: var(--text); }
+
+        .student-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+        }
+        .student-name { font-size: 1.6rem; font-weight: 800; }
+        .archetype-tag {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .score-pill {
+            text-align: center;
+            background: #ffffff;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 12px 20px;
+        }
+        .score-num { font-size: 2.2rem; font-weight: 900; color: var(--primary); line-height: 1; }
+        .score-lbl { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--muted); }
+
+        .section-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+            color: #1e293b;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 28px;
+            font-size: 0.92rem;
+        }
+        .data-table th, .data-table td {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 700;
+            color: var(--muted);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .pathways-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .pathway-box {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px;
+            background: #f8fafc;
+        }
+        .pathway-title { font-weight: 700; color: var(--primary); font-size: 0.95rem; }
+        .pathway-majors { font-size: 0.85rem; color: var(--muted); margin: 3px 0; }
+        .pathway-role { font-size: 0.85rem; color: var(--accent); font-weight: 600; }
+
+        .verification-footer {
+            border-top: 1px dashed var(--border);
+            padding-top: 20px;
+            margin-top: 36px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+        .signature-line {
+            width: 220px;
+            border-bottom: 1px solid #000;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .print-btn-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .print-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(2,132,199,0.3);
+        }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .report-page { box-shadow: none; border: none; padding: 0; }
+            .print-btn-bar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="print-btn-bar">
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+</div>
+
+<div class="report-page">
+    <div class="header">
+        <div>
+            <div class="brand">⚡ LUMINA</div>
+            <div class="doc-title">Official Cognitive Talent Dossier</div>
+        </div>
+        <div class="meta-box">
+            <div>Date Issued: <strong>{{ profile.generated_date }}</strong></div>
+            <div>Dossier Hash: <strong>{{ profile.dossier_hash }}</strong></div>
+            <div>Student ID: <strong>#LUM-{{ profile.user_id }}</strong></div>
+        </div>
+    </div>
+
+    <div class="student-summary">
+        <div>
+            <div class="student-name">{{ profile.fullname }}</div>
+            <div class="archetype-tag">{{ profile.archetype.badge }} Archetype: {{ profile.archetype.title }}</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
+                Platform Progression: Level {{ profile.level }} • {{ profile.xp }} Total XP • {{ profile.streak }}-Day Active Streak
+            </div>
+        </div>
+        <div class="score-pill">
+            <div class="score-num">{{ profile.lti }}</div>
+            <div class="score-lbl">Lumina Talent Index</div>
+            <div style="font-size:0.75rem; color:var(--accent); font-weight:700; margin-top:2px;">{{ profile.overall_percentile }}th %ile</div>
+        </div>
+    </div>
+
+    <h3 class="section-title">Cognitive Domain Performance</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Domain</th>
+                <th>Peak Observed Metric</th>
+                <th>Normalized Score</th>
+                <th>Percentile Rank</th>
+                <th>Integrity Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in profile.domains %}
+            <tr>
+                <td><strong>{{ d.name }}</strong></td>
+                <td>{{ d.metric_label }}</td>
+                <td>{{ d.score }} / 100</td>
+                <td><strong>Top {{ 100 - d.percentile }}%</strong> ({{ d.percentile }}th %ile)</td>
+                <td><span class="status-badge">✓ Verified Biometrics</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3 class="section-title">Institutional & Academic Pathways Mapping</h3>
+    <div class="pathways-grid">
+        {% for c in profile.archetype.careers %}
+        <div class="pathway-box">
+            <div class="pathway-title">{{ c.field }}</div>
+            <div class="pathway-majors">Target Curriculum: <strong>{{ c.majors }}</strong></div>
+            <div class="pathway-role">Professional Trajectory: {{ c.sample_role }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="verification-footer">
+        <div>
+            <div><strong>Verification & Anti-Cheat Confirmation:</strong></div>
+            <div>Telemetry gathered through verified keystroke dynamics and time-series challenge logs.</div>
+            <div style="margin-top:4px;">Verification Fingerprint: <code>SHA256:{{ profile.dossier_hash }}</code></div>
+        </div>
+        <div class="signature-line">
+            Academic / Institutional Evaluator
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

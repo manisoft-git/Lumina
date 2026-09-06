@@ -1,25 +1,23 @@
-# Lumina v5.1 — Talent Discovery Platform
+# Lumina v5.2 — Cognitive Talent Discovery & Competitive Esports Platform
 
-Lumina is a gamified talent discovery platform for students. It combines typing races, chess, checkers, math sprints, memory challenges, reaction tests, and more into a competitive, classroom-friendly environment.
+Lumina is a gamified cognitive talent discovery and competitive esports platform designed for schools, classrooms, and ambitious students. It turns cognitive challenges (typing, chess, checkers, mental math, pattern induction, memory spans, and reflex tests) into validated academic talent profiles, institutional reports, and thrilling multiplayer arenas.
 
-## Features
+## Key Features
 
-- **Typing Races**: Solo practice and real-time multiplayer competitions
-- **Chess Arena**: Rated matches with AI Grandmaster Bot
-- **Checkers**: Classic strategy with ELO ratings
-- **Math Sprint**: 60-second mental arithmetic challenges
-- **Memory Palace**: Simon Says pattern sequences
-- **Reaction Test**: Measure reflexes in milliseconds
-- **Pattern Match**: Visual sequence puzzles
-- **Word Blitz**: Form words from random letters
-- **Tournaments**: Single-elimination brackets across all games
-- **Classrooms**: Teacher-created rooms with student codes
-- **Badges & XP**: Gamified progression system
-- **Leaderboards**: Weekly, daily, and all-time rankings
-- **Analytics**: Keyboard heatmaps, progress charts, skill radar
-- **Producer Panel**: Remote diagnostics and system oversight
-- **Parent Portal**: Track student progress with a unique code
-- **API Access**: REST API with key-based authentication
+- **Cognitive Talent Discovery Engine**: Standardized assessment synthesizing student telemetry into 7 cognitive domains, a composite Lumina Talent Index (LTI, 200–1000 scale), Cognitive Archetypes, and personalized adaptive weakness training.
+- **Academic & Career Pathways**: Direct mapping of cognitive strengths to university curriculums (e.g., MIT EECS, Aerospace, Brain & Cognitive Sciences) and real-world high-impact roles.
+- **Institutional Talent Dossiers**: Official, printable/PDF-ready student dossiers with cryptographic verification hashes (`SHA256`) and percentile distributions.
+- **Team Cognitive Relay (Esports)**: 3-Leg cooperative interdisciplinary relay (`/relay/<room_id>`): Leg 1 (Mental Arithmetic) → Leg 2 (Inductive Pattern Logic) → Leg 3 (Speed Typing Anchor) with real-time baton passes and team victory podiums.
+- **Neurodiversity & Accessibility Matrix**: Built for dyslexic and neurodivergent learners with OpenDyslexic typography anchoring, Bionic Reading eye-saccade fixation, and synthesized 432Hz binaural focus soundscapes.
+- **Cognitive Stealth Assessment & Micro-Metrics**: Real-time Attentional Stamina Ratio (ASR) phase curves, Error Recovery Velocity (ERV in milliseconds), and Socratic cognitive debriefs.
+- **Zero-Cloud Global Offline Hub**: Deployable on any local Wi-Fi router, budget Android phone (via Termux), or Raspberry Pi (`/offline-hub`) with local QR code pairing—requiring **zero internet connectivity** for equitable access in underserved schools.
+- **Classroom Live Projector Arena**: Dedicated widescreen projector/smartboard mode (`/classroom/projector/<code>`) with animated racer avatars, live telemetry, podium celebrations, and confetti effects.
+- **Keystroke Dynamics Anti-Cheat Engine**: Biomechanical flight-time analysis, inter-keystroke interval (IKI) entropy checks, and bulk paste rejection to protect competitive and academic integrity.
+- **Ghost Racing & Combo Audio**: Race against your personal best or classroom champions using real keystroke replays, paired with a zero-latency Web Audio API synthesizer.
+- **8 Cognitive & Strategy Arenas**: Typing races, Chess with AI Grandmaster bot, Checkers with ELO ratings, Math Sprint, Memory Palace, Reaction Test, Pattern Match, and Word Blitz.
+- **Teacher & Classroom Suite**: Roster management, student live monitor, custom passage creation, differentiated homework, and CSV gradebook exports.
+- **Parent Portal**: Direct parent access codes with student growth telemetry and links to the verified Talent Dossier.
+- **Automated Test Suite**: 13 unit and integration tests verifying the cognitive engine, anti-cheat, innovations, and API endpoints (`python run_tests.py`).
 
 ## Quick Start (Local / Termux / Replit)
 

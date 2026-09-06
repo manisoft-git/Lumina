@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}{{ profile.fullname }} — Cognitive Talent Profile | Lumina{% endblock %}
+{% block head %}
+<style>
+.talent-hero {
+    background: linear-gradient(135deg, rgba(56,189,248,0.15), rgba(74,222,128,0.1));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+}
+.talent-hero::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+    pointer-events: none;
+}
+.hero-main { flex: 1 1 300px; }
+.hero-title { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+.archetype-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(56,189,248,0.2);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+.hero-tagline { color: var(--muted); font-size: 1.05rem; max-width: 580px; line-height: 1.5; }
+.lti-pill {
+    background: var(--surface-solid);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 28px;
+    text-align: center;
+    min-width: 190px;
+    box-shadow: var(--shadow);
+}
+.lti-number { font-size: 3rem; font-weight: 900; color: var(--primary); line-height: 1; }
+.lti-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 6px; }
+.lti-percentile { font-size: 0.9rem; color: var(--accent); font-weight: 600; margin-top: 4px; }
+
+.talent-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 28px;
+}
+@media (max-width: 900px) {
+    .talent-grid { grid-template-columns: 1fr; }
+}
+
+.talent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    backdrop-filter: blur(8px);
+}
+.talent-card h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+.domain-row {
+    margin-bottom: 16px;
+}
+.domain-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.92rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.domain-bar-bg {
+    height: 10px;
+    background: rgba(148,163,184,0.15);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.domain-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    transition: width 0.6s ease;
+}
+
+.career-item {
+    background: var(--surface-solid);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.career-field { font-weight: 700; color: var(--primary); font-size: 1rem; }
+.career-majors { font-size: 0.88rem; color: var(--muted); margin-top: 3px; }
+.career-role { font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-top: 4px; }
+
+.drill-item {
+    background: var(--surface-solid);
+    border-left: 4px solid var(--primary);
+    border-radius: 0 10px 10px 0;
+    padding: 16px;
+    margin-bottom: 14px;
+}
+.drill-title { font-weight: 700; font-size: 1.02rem; margin-bottom: 4px; }
+.drill-reason { font-size: 0.88rem; color: var(--danger); margin-bottom: 6px; }
+.drill-presc { font-size: 0.9rem; color: var(--muted); margin-bottom: 12px; }
+
+.action-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="talent-page">
+    <div class="talent-hero">
+        <div class="hero-main">
+            <div class="archetype-badge">{{ profile.archetype.badge }} {{ profile.archetype.title }}</div>
+            <h1 class="hero-title">{{ profile.fullname }}</h1>
+            <p class="hero-tagline">{{ profile.archetype.tagline }}</p>
+            <p style="margin-top:10px; font-size:0.88rem; color:var(--muted);">
+                Verified Assessment • Level {{ profile.level }} • {{ profile.streak }}-Day Streak • Dossier Ref: <code>{{ profile.dossier_hash }}</code>
+            </p>
+        </div>
+        <div class="lti-pill">
+            <div class="lti-number">{{ profile.lti }}</div>
+            <div class="lti-label">Lumina Talent Index</div>
+            <div class="lti-percentile">Top {{ 100 - profile.overall_percentile }}% Nationally ({{ profile.overall_percentile }}th percentile)</div>
+        </div>
+    </div>
+
+    <div class="talent-grid">
+        <!-- Radar Chart -->
+        <div class="talent-card">
+            <h2>🎯 7-Axis Cognitive Radar</h2>
+            <div style="position:relative; height:320px; max-width:440px; margin:0 auto;">
+                <canvas id="talent-radar-canvas"></canvas>
+            </div>
+            <p style="font-size:0.82rem; color:var(--muted); text-align:center; margin-top:8px;">
+                Normalized against national student benchmarks across cognitive domains.
+            </p>
+        </div>
+
+        <!-- Domain Breakdown -->
+        <div class="talent-card">
+            <h2>📊 Cognitive Domain Metrics</h2>
+            {% for d in profile.domains %}
+            <div class="domain-row">
+                <div class="domain-header">
+                    <span>{{ d.icon }} {{ d.name }}</span>
+                    <span><strong>{{ d.percentile }}th</strong> %ile <small style="color:var(--muted);">({{ d.metric_label }})</small></span>
+                </div>
+                <div class="domain-bar-bg">
+                    <div class="domain-bar-fill" style="width: {{ d.score }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="talent-grid">
+        <!-- Career & Academic Pathways -->
+        <div class="talent-card">
+            <h2>🎓 Academic & Career Pathways</h2>
+            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:16px;">
+                Cognitive strengths indicate high aptitude for the following university programs and fields:
+            </p>
+            {% for c in profile.archetype.careers %}
+            <div class="career-item">
+                <div class="career-field">{{ c.field }}</div>
+                <div class="career-majors">Target Majors: <strong>{{ c.majors }}</strong></div>
+                <div class="career-role">Role Trajectory: {{ c.sample_role }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Adaptive Weakness Drills -->
+        <div class="talent-card">
+            <h2>⚡ AI Adaptive Training Regimen</h2>
+            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:16px;">
+                Personalized drills dynamically targeted to bridge cognitive gaps:
+            </p>
+            {% for drill in profile.adaptive_drills %}
+            <div class="drill-item">
+                <div class="drill-title">{{ drill.title }}</div>
+                <div class="drill-reason">{{ drill.reason }}</div>
+                <div class="drill-presc">{{ drill.prescription }}</div>
+                <a href="{{ drill.action_url }}" class="btn btn-small btn-primary">{{ drill.action_label }} →</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <a href="{{ url_for('talent_report', user_id=profile.user_id) }}" class="btn btn-primary" target="_blank">
+            📄 View Official Talent Dossier (Printable / PDF)
+        </a>
+        <button class="btn btn-secondary" onclick="shareProfile()">
+            🔗 Share Talent Profile
+        </button>
+        <a href="{{ url_for('typing_page') }}" class="btn btn-secondary">
+            ⚡ Start New Practice
+        </a>
+        <a href="{{ url_for('games_hub') }}" class="btn btn-secondary">
+            🎮 Games Arena
+        </a>
+    </div>
+</div>
+
+<script>
+(function() {
+    const ctx = document.getElementById('talent-radar-canvas');
+    if (!ctx) return;
+    const labels = {{ profile.radar_labels | tojson }};
+    const values = {{ profile.radar_values | tojson }};
+
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Cognitive Agility',
+                data: values,
+                backgroundColor: 'rgba(56, 189, 248, 0.25)',
+                borderColor: '#38bdf8',
+                pointBackgroundColor: '#4ade80',
+                pointBorderColor: '#ffffff',
+                pointHoverBackgroundColor: '#ffffff',
+                pointHoverBorderColor: '#38bdf8',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { display: false, stepSize: 20 },
+                    grid: { color: 'rgba(148, 163, 184, 0.15)' },
+                    angleLines: { color: 'rgba(148, 163, 184, 0.15)' },
+                    pointLabels: {
+                        color: 'var(--text)',
+                        font: { size: 11, weight: '600' }
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    window.shareProfile = function() {
+        const url = window.location.href;
+        if (navigator.share) {
+            navigator.share({ title: '{{ profile.fullname }} - Lumina Talent Profile', url: url });
+        } else {
+            navigator.clipboard.writeText(url);
+            alert('Talent Profile link copied to clipboard!');
+        }
+    };
+})();
+</script>
+{% endblock %}

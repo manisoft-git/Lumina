@@ -31,9 +31,27 @@
                 <button class="btn btn-secondary" onclick="playCheckersBot()">vs Manisoft_Checkers[M]</button>
             </div>
         </div>
+        <div class="game-card" style="border: 2px solid #f59e0b;">
+            <h2>🤝 Team Cognitive Relay (Esports)</h2>
+            <p>3-Leg interdisciplinary team race: Mental Math → Pattern Logic → Speed Typing.</p>
+            <div class="room-form">
+                <input type="text" id="relay-room-id" placeholder="Relay Room (e.g., RELAY-CHAMP-1)" aria-label="Relay Room ID">
+                <button class="btn btn-primary" style="background:#f59e0b; color:#000;" onclick="joinRelay()">Enter Relay Arena</button>
+            </div>
+        </div>
+        <div class="game-card" style="border: 2px solid #38bdf8;">
+            <h2>📺 Classroom Projector Arena</h2>
+            <p>Widescreen smartboard display mode with animated racing lanes and podium fireworks.</p>
+            <div class="room-form">
+                <input type="text" id="projector-room-id" placeholder="Classroom Room (e.g. CS101-A)" aria-label="Projector Room ID">
+                <button class="btn btn-primary" onclick="openProjector()">Launch Projector</button>
+            </div>
+        </div>
     </div>
 </div>
 <script>
+function joinRelay() { const r = document.getElementById('relay-room-id').value || 'RELAY_' + Math.random().toString(36).slice(2, 8).toUpperCase(); location.href = '/relay/' + encodeURIComponent(r); }
+function openProjector() { const r = document.getElementById('projector-room-id').value || 'GLOBAL'; window.open('/classroom/projector/' + encodeURIComponent(r), '_blank'); }
 function joinTyping() { const r = document.getElementById('typing-room-id').value || 'room-' + Math.random().toString(36).slice(2); location.href = '/competitions/typing/' + encodeURIComponent(r); }
 function joinChess() { const r = document.getElementById('chess-room-id').value || 'room-' + Math.random().toString(36).slice(2); location.href = '/chess/' + encodeURIComponent(r); }
 function joinCheckers() { const r = document.getElementById('checkers-room-id').value || 'room-' + Math.random().toString(36).slice(2); location.href = '/checkers/' + encodeURIComponent(r); }
