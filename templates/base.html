@@ -26,32 +26,32 @@
             <button class="hamburger" aria-label="Toggle menu" aria-expanded="false" onclick="toggleNav()">☰</button>
         </div>
         <ul class="nav-links" id="nav-links">
-            <li><a href="{{ url_for('home') }}">Home</a></li>
-            <li><a href="{{ url_for('showcase_feed') }}" style="color:#ec4899; font-weight:700;">🌟 Showcase</a></li>
+            <li><a href="{{ url_for('home') }}" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
+            <li><a href="{{ url_for('showcase_feed') }}" class="{% if '/showcase' in request.path %}active{% endif %}" style="color:#f472b6; font-weight:700; background:rgba(236,72,153,0.12); border:1px solid rgba(236,72,153,0.3);">🌟 Showcase</a></li>
             {% if current_user.is_authenticated %}
-                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                <li><a href="{{ url_for('talent_profile_page') }}" style="color:var(--primary); font-weight:700;">🎯 Talent</a></li>
-                <li><a href="{{ url_for('analytics') }}">📊 Analytics</a></li>
-                <li><a href="{{ url_for('inbox_page') }}">💌 Inbox</a></li>
-                <li><a href="{{ url_for('typing_page') }}">Solo Type</a></li>
-                <li><a href="{{ url_for('competitions_hub') }}">Compete</a></li>
-                <li><a href="{{ url_for('relay_lobby') }}" style="color:#f59e0b; font-weight:700;">🤝 Relay</a></li>
-                <li><a href="{{ url_for('games_hub') }}">Games</a></li>
-                <li><a href="{{ url_for('tournament_list') }}">Tournaments</a></li>
-                <li><a href="{{ url_for('offline_hub') }}" title="Global Offline Hub">🌍 Hub</a></li>
-                <li><a href="{{ url_for('chat_page') }}">Chat</a></li>
-                <li><a href="{{ url_for('leaderboard') }}">Leaderboard</a></li>
-                <li><a href="{{ url_for('badges_page') }}">Badges</a></li>
-                <li><a href="{{ url_for('weekly') }}">Weekly</a></li>
+                <li><a href="{{ url_for('dashboard') }}" class="{% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a></li>
+                <li><a href="{{ url_for('talent_profile_page') }}" class="{% if '/talent' in request.path %}active{% endif %}" style="color:var(--primary); font-weight:700; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3);">🎯 Talent</a></li>
+                <li><a href="{{ url_for('analytics') }}" class="{% if request.path == '/analytics' %}active{% endif %}">📊 Analytics</a></li>
+                <li><a href="{{ url_for('inbox_page') }}" class="{% if request.path == '/inbox' %}active{% endif %}">💌 Inbox</a></li>
+                <li><a href="{{ url_for('typing_page') }}" class="{% if request.path == '/typing' %}active{% endif %}">Solo Type</a></li>
+                <li><a href="{{ url_for('competitions_hub') }}" class="{% if request.path == '/competitions' %}active{% endif %}">Compete</a></li>
+                <li><a href="{{ url_for('relay_lobby') }}" class="{% if '/relay' in request.path %}active{% endif %}" style="color:#fbbf24; font-weight:700; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3);">🤝 Relay</a></li>
+                <li><a href="{{ url_for('games_hub') }}" class="{% if request.path == '/games' %}active{% endif %}">Games</a></li>
+                <li><a href="{{ url_for('tournament_list') }}" class="{% if request.path == '/tournaments' %}active{% endif %}">Tournaments</a></li>
+                <li><a href="{{ url_for('offline_hub') }}" class="{% if request.path == '/offline_hub' %}active{% endif %}" title="Global Offline Hub">🌍 Hub</a></li>
+                <li><a href="{{ url_for('chat_page') }}" class="{% if request.path == '/chat' %}active{% endif %}">Chat</a></li>
+                <li><a href="{{ url_for('leaderboard') }}" class="{% if request.path == '/leaderboard' %}active{% endif %}">Leaderboard</a></li>
+                <li><a href="{{ url_for('badges_page') }}" class="{% if request.path == '/badges' %}active{% endif %}">Badges</a></li>
+                <li><a href="{{ url_for('weekly') }}" class="{% if request.path == '/weekly' %}active{% endif %}">Weekly</a></li>
 
                 {% if current_user.role == 'teacher' %}
-                    <li><a href="{{ url_for('teacher_panel') }}">Teacher</a></li>
+                    <li><a href="{{ url_for('teacher_panel') }}" class="{% if request.path == '/teacher' %}active{% endif %}">Teacher</a></li>
                 {% endif %}
-                <li><a href="{{ url_for('logout') }}">Logout ({{ current_user.username }})</a></li>
+                <li><a href="{{ url_for('logout') }}" style="color:var(--muted); opacity:0.85;">Logout ({{ current_user.username }})</a></li>
             {% else %}
-                <li><a href="{{ url_for('leaderboard') }}">Leaderboard</a></li>
-                <li><a href="{{ url_for('login') }}">Login</a></li>
-                <li><a href="{{ url_for('register') }}">Register</a></li>
+                <li><a href="{{ url_for('leaderboard') }}" class="{% if request.path == '/leaderboard' %}active{% endif %}">Leaderboard</a></li>
+                <li><a href="{{ url_for('login') }}" class="{% if request.path == '/login' %}active{% endif %}">Login</a></li>
+                <li><a href="{{ url_for('register') }}" class="{% if request.path == '/register' %}active{% endif %}" style="background:var(--primary-gradient); color:#fff; font-weight:700;">Get Started</a></li>
             {% endif %}
             <li>
                 <select id="theme-select" aria-label="Theme" onchange="setTheme(this.value)">

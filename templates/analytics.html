@@ -2,110 +2,144 @@
 {% block title %}Analytics & Cognitive Milestones — Lumina{% endblock %}
 {% block head %}
 <style>
+/* Modern Bento Grid Analytics Architecture */
 .analytics-hero {
-    background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(139,92,246,0.1));
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 28px;
-    margin-bottom: 24px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    margin-bottom: 26px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 20px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+}
+.analytics-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--accent-purple), var(--accent));
 }
 .analytics-hero h1 {
-    font-size: 1.8rem;
-    font-weight: 800;
-    margin: 0 0 6px;
-    background: linear-gradient(135deg, var(--primary), #a855f7);
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    margin: 0 0 8px;
+    background: linear-gradient(135deg, #38bdf8 0%, #c084fc 50%, #4ade80 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 .analytics-hero p {
     margin: 0;
-    color: var(--muted);
-    font-size: 0.92rem;
+    color: var(--text-secondary);
+    font-size: 0.96rem;
+    max-width: 600px;
+    line-height: 1.5;
 }
 
 /* Cognitive Talent Radar Summary Card */
 .cognitive-summary-card {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    margin-bottom: 24px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 26px;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
-.cognitive-summary-card::before {
+.cognitive-summary-card::after {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, var(--primary), #a855f7, var(--accent));
+    top: -50px; right: -50px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
+    pointer-events: none;
 }
 .lti-hud {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
 }
 .lti-box {
-    background: var(--surface2);
+    background: rgba(15, 23, 42, 0.6);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 14px;
+    padding: 20px;
     text-align: center;
+    transition: transform var(--transition), border-color var(--transition);
+}
+.lti-box:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-strong);
 }
 .lti-val {
-    font-size: 2rem;
-    font-weight: 800;
-    font-family: monospace;
+    font-size: 2.3rem;
+    font-weight: 900;
+    font-family: var(--font-mono);
     color: var(--primary);
+    letter-spacing: -0.03em;
 }
 .lti-sub {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 4px;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    margin-top: 6px;
 }
 
 /* Domains Pill Grid */
 .domains-pill-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 14px;
+    gap: 10px;
+    margin-top: 16px;
 }
 .domain-chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(255,255,255,0.05);
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 5px 12px;
-    font-size: 0.8rem;
+    border-radius: var(--radius-pill);
+    padding: 7px 16px;
+    font-size: 0.85rem;
     color: var(--text);
+    transition: all var(--transition);
+}
+.domain-chip:hover {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: var(--border-primary);
+    transform: translateY(-2px);
 }
 
 /* Share to Showcase Action Grid */
 .showcase-share-banner {
-    background: linear-gradient(135deg, rgba(236,72,153,0.12), rgba(99,102,241,0.12));
-    border: 1px solid rgba(236,72,153,0.3);
-    border-radius: var(--radius);
-    padding: 22px 24px;
-    margin-bottom: 24px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(99, 102, 241, 0.12) 100%);
+    border: 1px solid rgba(236, 72, 153, 0.35);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    margin-bottom: 26px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 18px;
+    box-shadow: 0 4px 24px rgba(236, 72, 153, 0.1);
 }
 .showcase-share-banner h3 {
-    margin: 0 0 4px;
-    font-size: 1.15rem;
+    margin: 0 0 6px;
+    font-size: 1.2rem;
+    font-weight: 800;
     color: #fbcfe8;
     display: flex;
     align-items: center;
@@ -113,28 +147,57 @@
 }
 .showcase-share-banner p {
     margin: 0;
-    font-size: 0.85rem;
-    color: var(--muted);
+    font-size: 0.88rem;
+    color: var(--text-secondary);
 }
 .quick-share-buttons {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
 }
 .btn-share-record {
-    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
     color: #fff;
-    border: none;
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-size: 0.82rem;
-    font-weight: 700;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-pill);
+    padding: 9px 18px;
+    font-size: 0.85rem;
+    font-weight: 800;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition);
+    box-shadow: 0 3px 12px rgba(236, 72, 153, 0.3);
+    user-select: none;
 }
 .btn-share-record:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(236,72,153,0.4);
+    box-shadow: 0 6px 20px rgba(236, 72, 153, 0.5);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+.btn-share-record:active {
+    transform: translateY(0) scale(0.96);
+}
+
+/* Toast Notification for Milestone Sharing */
+#share-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10000;
+    background: rgba(15, 23, 42, 0.95);
+    color: #fff;
+    border: 1px solid var(--accent);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 16px var(--accent-glow);
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    animation: toastSlideUp 0.35s ease;
+}
+@keyframes toastSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>
 {% endblock %}
@@ -254,16 +317,50 @@
     <!-- Game High Scores -->
     <section class="analytics-section">
         <h2>🎮 Multi-Discipline High Scores</h2>
-        <div class="stat-grid">
-            <div class="stat"><div class="stat-value">{{ best_wpm }}</div><div class="stat-label">Best Net WPM</div></div>
-            <div class="stat"><div class="stat-value">{{ math_best }}</div><div class="stat-label">Math Sprint Best</div></div>
-            <div class="stat"><div class="stat-value">{{ memory_best }}</div><div class="stat-label">Memory Level</div></div>
-            <div class="stat"><div class="stat-value">{{ reaction_best }}ms</div><div class="stat-label">Reaction Best</div></div>
-            <div class="stat"><div class="stat-value">{{ pattern_best }}</div><div class="stat-label">Patterns Solved</div></div>
-            <div class="stat"><div class="stat-value">{{ word_best }}</div><div class="stat-label">Word Blitz Best</div></div>
-            <div class="stat"><div class="stat-value">{{ chess_best }}</div><div class="stat-label">Chess Peak ELO</div></div>
+        <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 18px;">
+            <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:1.6rem; margin-bottom:4px;">⚡</div>
+                <div class="stat-value">{{ best_wpm }}</div>
+                <div class="stat-label">Best Net WPM</div>
+            </div>
+            <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:1.6rem; margin-bottom:4px;">🧮</div>
+                <div class="stat-value">{{ math_best }}</div>
+                <div class="stat-label">Math Sprint Best</div>
+            </div>
+            <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:1.6rem; margin-bottom:4px;">🧠</div>
+                <div class="stat-value">{{ memory_best }}</div>
+                <div class="stat-label">Memory Level</div>
+            </div>
+            <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:1.6rem; margin-bottom:4px;">⏱️</div>
+                <div class="stat-value">{{ reaction_best }}ms</div>
+                <div class="stat-label">Reaction Best</div>
+            </div>
+            <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:1.6rem; margin-bottom:4px;">🧩</div>
+                <div class="stat-value">{{ pattern_best }}</div>
+                <div class="stat-label">Patterns Solved</div>
+            </div>
+            <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:1.6rem; margin-bottom:4px;">📚</div>
+                <div class="stat-value">{{ word_best }}</div>
+                <div class="stat-label">Word Blitz Best</div>
+            </div>
+            <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:1.6rem; margin-bottom:4px;">♟️</div>
+                <div class="stat-value">{{ chess_best }}</div>
+                <div class="stat-label">Chess Peak ELO</div>
+            </div>
         </div>
     </section>
+</div>
+
+<!-- Floating Toast Feedback -->
+<div id="share-toast" role="status" aria-live="polite">
+    <span style="font-size:1.4rem;">🎉</span>
+    <span id="share-toast-msg">Milestone successfully published to the Parent Showcase!</span>
 </div>
 
 <script>
@@ -272,27 +369,99 @@ const rawData = {{ progress | tojson }} || [];
 if (rawData.length === 0) {
     ctx.parentElement.innerHTML = '<div class="empty-state" style="padding:60px 20px;"><div class="empty-state-icon">📈</div><p>No typing data recorded yet. Complete some typing drills to unlock cadence graphs!</p></div>';
 } else {
+    const canvasContext = ctx.getContext('2d');
+    
+    // Gradient fills
+    const wpmGrad = canvasContext.createLinearGradient(0, 0, 0, 280);
+    wpmGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+    wpmGrad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
+    const accGrad = canvasContext.createLinearGradient(0, 0, 0, 280);
+    accGrad.addColorStop(0, 'rgba(74, 222, 128, 0.25)');
+    accGrad.addColorStop(1, 'rgba(74, 222, 128, 0.0)');
+
     new Chart(ctx, {
         type: 'line',
         data: {
             labels: rawData.map(d => d[0]),
             datasets: [
-                {label: 'Avg Net WPM', data: rawData.map(d => d[1] ? Math.round(d[1]*10)/10 : 0), borderColor: '#38bdf8', tension: 0.3, fill: false, pointBackgroundColor: '#38bdf8'},
-                {label: 'Avg Accuracy', data: rawData.map(d => d[2] ? Math.round(d[2]*10)/10 : 0), borderColor: '#4ade80', tension: 0.3, fill: false, pointBackgroundColor: '#4ade80'}
+                {
+                    label: 'Avg Net WPM',
+                    data: rawData.map(d => d[1] ? Math.round(d[1]*10)/10 : 0),
+                    borderColor: '#38bdf8',
+                    borderWidth: 3,
+                    backgroundColor: wpmGrad,
+                    tension: 0.35,
+                    fill: true,
+                    pointBackgroundColor: '#38bdf8',
+                    pointRadius: 4,
+                    pointHoverRadius: 7
+                },
+                {
+                    label: 'Avg Accuracy (%)',
+                    data: rawData.map(d => d[2] ? Math.round(d[2]*10)/10 : 0),
+                    borderColor: '#4ade80',
+                    borderWidth: 2,
+                    backgroundColor: accGrad,
+                    tension: 0.35,
+                    fill: true,
+                    pointBackgroundColor: '#4ade80',
+                    pointRadius: 3,
+                    pointHoverRadius: 6
+                }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             scales: {
-                y: { beginAtZero: true, grid: {color: 'rgba(148,163,184,0.1)'}, ticks: {color: 'var(--muted)'} },
-                x: { grid: {display: false}, ticks: {color: 'var(--muted)'} }
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                    ticks: { color: '#94a3b8', font: { family: 'inherit', size: 12 } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8', font: { family: 'inherit', size: 12 } }
+                }
             },
             plugins: {
-                legend: { labels: { color: 'var(--text)' } }
+                legend: {
+                    labels: {
+                        color: '#f8fafc',
+                        font: { family: 'inherit', size: 13, weight: 'bold' },
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#38bdf8',
+                    bodyColor: '#f8fafc',
+                    borderColor: 'rgba(56, 189, 248, 0.3)',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 10
+                }
             }
         }
     });
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('share-toast');
+    const toastMsg = document.getElementById('share-toast-msg');
+    if (toast && toastMsg) {
+        toastMsg.textContent = msg;
+        toast.style.display = 'flex';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3500);
+    }
 }
 
 function quickShareShowcase(category, title, stat, story) {
@@ -313,8 +482,10 @@ function quickShareShowcase(category, title, stat, story) {
     .then(r => r.json())
     .then(d => {
         if (d.success) {
-            alert('🎉 Published! Your milestone is now live on the Parent Showcase.');
-            window.location.href = '/showcase';
+            showToast('🎉 Milestone is now live on the Parent Showcase!');
+            setTimeout(() => {
+                window.location.href = '/showcase';
+            }, 1200);
         } else {
             alert(d.error || 'Failed to post to showcase.');
         }

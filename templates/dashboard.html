@@ -61,9 +61,13 @@
     <div class="quick-actions">
         <a href="{{ url_for('typing_page') }}" class="btn btn-primary">Solo Type</a>
         <a href="{{ url_for('competitions_hub') }}" class="btn btn-primary">Compete</a>
-        <a href="{{ url_for('games_hub') }}" class="btn btn-primary">Play Games</a>
-        <a href="{{ url_for('tournament_list') }}" class="btn btn-primary">Tournaments</a>
+        <a href="{{ url_for('showcase_feed') }}" class="btn btn-primary" style="background:linear-gradient(135deg, #ec4899, #8b5cf6); border-color:rgba(255,255,255,0.3);">🌟 Showcase</a>
+        <a href="{{ url_for('talent_profile_page') }}" class="btn btn-primary" style="background:linear-gradient(135deg, #38bdf8, #6366f1); border-color:rgba(255,255,255,0.3);">🎯 7-Axis Talent</a>
+        <a href="{{ url_for('relay_lobby') }}" class="btn btn-primary" style="background:linear-gradient(135deg, #f59e0b, #d97706); border-color:rgba(255,255,255,0.3);">🤝 Team Relay</a>
+        <a href="{{ url_for('games_hub') }}" class="btn btn-secondary">Play Games</a>
+        <a href="{{ url_for('tournament_list') }}" class="btn btn-secondary">Tournaments</a>
         <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Analytics</a>
+        <a href="{{ url_for('inbox_page') }}" class="btn btn-secondary">💌 Inbox</a>
         <a href="{{ url_for('history') }}" class="btn btn-secondary">History</a>
         <a href="{{ url_for('certificates') }}" class="btn btn-secondary">Certificates</a>
         <a href="{{ url_for('replays_page') }}" class="btn btn-secondary">Replays</a>
