@@ -25,21 +25,23 @@
     const avgEl = document.getElementById('react-avg');
     let attempts = [], state = 'idle', startTime = 0, timerId = null, attemptNum = 0;
     function reset() {
-        if (attemptNum >= 5) {
+        if (attempts.length >= 5) {
             box.textContent = 'Done!';
+            box.className = 'reaction-box';
             document.getElementById('react-results').style.display = 'block';
-            const best = Math.min(...attempts);
-            const avg = Math.round(attempts.reduce((a,b)=>a+b,0)/attempts.length);
+            const best = attempts.length ? Math.min(...attempts) : 300;
+            const avg = attempts.length ? Math.round(attempts.reduce((a,b)=>a+b,0)/attempts.length) : 350;
             document.getElementById('react-final-best').textContent = best;
             document.getElementById('react-final-avg').textContent = avg;
+            if (typeof LuminaAudio !== 'undefined') LuminaAudio.gameWin();
             fetch('/submit/reaction', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({best_ms: best, avg_ms: avg, attempts: 5})
+                body: JSON.stringify({best_ms: best, avg_ms: avg, attempts: attempts.length})
             });
             return;
         }
         state = 'waiting'; box.textContent = 'Wait...'; box.className = 'reaction-box waiting';
-        attemptNum++; attemptEl.textContent = 'Attempt ' + attemptNum + '/5';
+        attemptEl.textContent = 'Attempt ' + (attempts.length + 1) + '/5';
         const delay = 1000 + Math.random() * 3000;
         timerId = setTimeout(() => {
             state = 'ready'; box.textContent = 'CLICK!'; box.className = 'reaction-box ready'; startTime = Date.now();
@@ -47,13 +49,20 @@
     }
     box.addEventListener('click', () => {
         if (state === 'idle') { reset(); }
-        else if (state === 'waiting') { clearTimeout(timerId); box.textContent = 'Too early! Click to retry.'; state = 'idle'; }
+        else if (state === 'waiting') {
+            clearTimeout(timerId);
+            box.textContent = 'Too early! Click to retry.';
+            box.className = 'reaction-box';
+            state = 'idle';
+            if (typeof LuminaAudio !== 'undefined') LuminaAudio.keyWrong();
+        }
         else if (state === 'ready') {
             const ms = Date.now() - startTime; attempts.push(ms);
             box.textContent = ms + 'ms'; box.className = 'reaction-box';
             const best = Math.min(...attempts);
             const avg = Math.round(attempts.reduce((a,b)=>a+b,0)/attempts.length);
             bestEl.textContent = 'Best: ' + best + 'ms'; avgEl.textContent = 'Avg: ' + avg + 'ms';
+            if (typeof LuminaAudio !== 'undefined') LuminaAudio.keyCorrect();
             state = 'idle'; setTimeout(reset, 800);
         }
     });

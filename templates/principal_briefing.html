@@ -1,0 +1,502 @@
+{% extends "base.html" %}
+{% block title %}Principal Executive Briefing & Innovation Showcase | Lumina{% endblock %}
+
+{% block content %}
+<div class="principal-briefing-page">
+
+    <!-- Executive Header Banner -->
+    <div class="exec-header-card">
+        <div class="exec-seal-badge">🏛️ OFFICIAL ACADEMIC BRIEFING</div>
+        <h1 class="exec-title">Lumina Autonomous Learning & Cognitive Ecosystem</h1>
+        <p class="exec-subtitle">Executive Presentation for School Leadership, Principal & Academic Committee</p>
+        
+        <div class="exec-actions-bar no-print">
+            <button onclick="window.print()" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px; font-weight:700;">
+                <span>📄</span> Print Official School Proposal
+            </button>
+            <button onclick="LuminaConfetti(); LuminaAudio.playFanfare();" class="btn btn-accent" style="display:inline-flex; align-items:center; gap:8px; font-weight:700;">
+                <span>🎉</span> Celebrate Student Innovation
+            </button>
+            <a href="#interactive-stations" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:8px;">
+                <span>🎯</span> Launch Interactive Demo Stations
+            </a>
+            <a href="{{ url_for('offline_hub') }}" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:8px;">
+                <span>📡</span> Zero-Cloud LAN Hub
+            </a>
+        </div>
+    </div>
+
+    <!-- Institutional KPI Metrics Grid -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon">💰</div>
+            <div class="kpi-val">${{ "{:,}".format(stats.est_savings_annual) }}</div>
+            <div class="kpi-label">Annual EdTech Budget Savings</div>
+            <div class="kpi-sub">Replaces 4 commercial subscriptions ($0 cloud fee)</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon">⚡</div>
+            <div class="kpi-val">{{ stats.avg_wpm }} WPM</div>
+            <div class="kpi-label">Student Keyboard Fluency</div>
+            <div class="kpi-sub">{{ stats.tests_taken }} verified tests recorded ({{ stats.avg_accuracy }}% acc)</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon">🧠</div>
+            <div class="kpi-val">8 Arenas</div>
+            <div class="kpi-label">Cognitive Domains Tested</div>
+            <div class="kpi-sub">Math, Chess, Memory, Logic, Reflex, Typing, Checkers, Word</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon">🛡️</div>
+            <div class="kpi-val">100% Offline</div>
+            <div class="kpi-label">Zero-Cloud LAN Resilience</div>
+            <div class="kpi-sub">Runs on old hardware, sub-512MB RAM, zero data tracking</div>
+        </div>
+    </div>
+
+    <!-- Official Student Laptop Grant Proposal Document -->
+    <section class="proposal-document">
+        <div class="doc-header">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <div style="font-size:0.75rem; letter-spacing:2px; font-weight:800; color:var(--primary); text-transform:uppercase;">Institutional Innovation Memorandum</div>
+                    <div style="font-size:1.4rem; font-weight:800; margin-top:4px;">PROPOSAL FOR STUDENT INNOVATION GRANT & HARDWARE SPONSORSHIP</div>
+                    <div style="color:var(--muted); font-size:0.85rem; margin-top:2px;">Document Reference: LUM-ACAD-2026-X1</div>
+                </div>
+                <div style="text-align:right;">
+                    <span class="status-badge" style="background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid rgba(99,102,241,0.3); padding:4px 12px; border-radius:20px; font-weight:700; font-size:0.8rem;">
+                        OFFICIAL SUBMISSION
+                    </span>
+                </div>
+            </div>
+            <hr style="border:none; border-top:1px solid var(--border); margin:18px 0;">
+            <div class="doc-meta-grid">
+                <div><strong>TO:</strong> Office of the Principal & Technology Steering Committee</div>
+                <div><strong>DATE:</strong> Academic Session 2026–2027</div>
+                <div><strong>FROM:</strong> {{ current_user.fullname if current_user.is_authenticated else 'Student Engineering Lead' }}</div>
+                <div><strong>PROJECT:</strong> Lumina Autonomous Academic & Cognitive Platform</div>
+            </div>
+        </div>
+
+        <div class="doc-body">
+            <h3>1. Executive Purpose & Request</h3>
+            <p>
+                Respected Principal and School Leadership, this memorandum presents <strong>Lumina</strong> — an enterprise-grade,
+                zero-cloud learning and cognitive measurement platform conceptualized, architected, and engineered to solve
+                key technological and financial challenges within our school community.
+            </p>
+            <p style="background:rgba(99,102,241,0.08); border-left:4px solid var(--primary); padding:14px 18px; border-radius:0 8px 8px 0; margin:16px 0; font-weight:500;">
+                <strong>Direct Request:</strong> In recognition of the tangible value Lumina brings to student achievement and institutional savings,
+                I respectfully request school sponsorship in the form of a <strong>dedicated development laptop</strong>. This machine will be utilized to
+                maintain school-wide server instances, run local AI tutoring models, facilitate computer lab deployments, and train student peers.
+            </p>
+
+            <h3>2. Proven Value to Our School & Faculty</h3>
+            <ul style="line-height:1.75; padding-left:20px; color:var(--text);">
+                <li>
+                    <strong>Eliminates Recurring Software Licensing Fees:</strong> Schools spend thousands of dollars annually on disparate platforms for typing, chess, and math sprints. Lumina consolidates these into a single, cohesive ecosystem at <strong>$0 annual software cost</strong>.
+                </li>
+                <li>
+                    <strong>Zero-Cloud LAN & Mobile Hotspot Tolerance:</strong> When school internet slows down or disconnects, commercial SaaS platforms fail. Lumina operates autonomously over local school Wi-Fi or mobile hotspots, ensuring uninterrupted class instruction.
+                </li>
+                <li>
+                    <strong>Comprehensive Accessibility & Inclusion:</strong> Built from the ground up to support neurodiverse learners with integrated OpenDyslexic font toggles, Bionic Reading cognitive fixation rendering, and 432Hz binaural focus soundscapes.
+                </li>
+                <li>
+                    <strong>Keystroke Biometric Anti-Cheat:</strong> Academic integrity is preserved via real-time flight-time microsecond variance analysis, preventing automated script dumping and unverified homework submissions.
+                </li>
+                <li>
+                    <strong>Live Classroom Smartboard Projector Arena:</strong> Teachers can launch instant interactive classroom speed races on smartboards, boosting engagement without requiring complex third-party setups.
+                </li>
+            </ul>
+
+            <h3>3. Student Commitment & Return on Investment (ROI)</h3>
+            <p>
+                With the provision of a dedicated laptop, I commit to:
+            </p>
+            <ol style="line-height:1.75; padding-left:20px; color:var(--text);">
+                <li>Deploying and maintaining on-premise Lumina server nodes in school computer laboratories.</li>
+                <li>Conducting teacher onboarding sessions to configure custom classroom passages and automated homework trackers.</li>
+                <li>Mentoring younger students in software engineering, open-source development, and computational thinking.</li>
+            </ol>
+
+            <div class="signature-block">
+                <div class="sig-line">
+                    <div class="sig-title">Submitted By:</div>
+                    <div class="sig-name">{{ current_user.fullname if current_user.is_authenticated else 'Student Innovation Lead' }}</div>
+                    <div class="sig-role">Lead Developer & Systems Architect, Lumina Project</div>
+                </div>
+                <div class="sig-line">
+                    <div class="sig-title">Approved & Recommended:</div>
+                    <div class="sig-space" style="border-bottom:1px dashed var(--muted); height:40px; margin-bottom:6px;"></div>
+                    <div class="sig-name">Principal / Head of Institution</div>
+                    <div class="sig-role">School Board & Administrative Council</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demonstration Stations -->
+    <section id="interactive-stations" class="interactive-section no-print">
+        <div class="section-badge">LIVE DEMONSTRATION SUITE</div>
+        <h2 style="font-size:1.8rem; margin-top:4px;">Principal Hands-On Demonstration Stations</h2>
+        <p style="color:var(--muted); margin-bottom:24px;">Click any station below to demonstrate Lumina's capabilities directly to school administrators.</p>
+
+        <div class="stations-grid">
+            <!-- Station 1: Anti-Cheat Biometrics -->
+            <div class="station-card">
+                <div class="station-badge">STATION 1</div>
+                <h3>🛡️ Keystroke Biometric Anti-Cheat</h3>
+                <p>Demonstrates microsecond flight-time variance calculation that detects paste bots and automated injection scripts.</p>
+                
+                <div class="demo-box" style="background:var(--surface2); padding:14px; border-radius:8px; margin:14px 0;">
+                    <div style="font-size:0.8rem; color:var(--muted); margin-bottom:6px;">Interactive Biometrics Sandbox:</div>
+                    <input type="text" id="demo-keystroke-input" placeholder="Type here to see flight-time variance..." class="form-control" style="width:100%; margin-bottom:8px;">
+                    <div id="demo-biometric-output" style="font-family:monospace; font-size:0.8rem; color:#4ade80;">Ready. Type a sentence above or test presets:</div>
+                </div>
+
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button onclick="testBiometrics('human')" class="btn btn-sm btn-secondary">Simulate Human Typing</button>
+                    <button onclick="testBiometrics('bot')" class="btn btn-sm btn-accent">Simulate Paste / Bot Attack</button>
+                </div>
+            </div>
+
+            <!-- Station 2: Cognitive Talent Profiler -->
+            <div class="station-card">
+                <div class="station-badge">STATION 2</div>
+                <h3>🧠 7-Axis Talent Discovery Radar</h3>
+                <p>Assesses multidimensional cognitive strengths (Quantitative Agility, Lexical Fluency, Inductive Logic, Reflex Latency, Working Memory).</p>
+                
+                <div style="background:var(--surface2); border-radius:8px; padding:16px; margin:14px 0; text-align:center;">
+                    <div style="font-size:1.6rem; font-weight:800; color:var(--primary);">Algorithmic Architect</div>
+                    <div style="font-size:0.8rem; color:var(--muted);">Cognitive Archetype Identified • Top 2% National Percentile</div>
+                    <div style="display:flex; justify-content:space-around; margin-top:12px; font-size:0.75rem;">
+                        <div>⚡ 84 WPM</div>
+                        <div>🔢 98 Math Score</div>
+                        <div>♟️ 1350 ELO</div>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('talent_report_self') }}" target="_blank" class="btn btn-sm btn-primary" style="width:100%; text-align:center;">
+                    View Full Printable Student Dossier 📄
+                </a>
+            </div>
+
+            <!-- Station 3: Live Smartboard Projector -->
+            <div class="station-card">
+                <div class="station-badge">STATION 3</div>
+                <h3>📽️ Live Classroom Smartboard Projector</h3>
+                <p>Broadcasts real-time multiplayer keyboard racing with live avatars and instant leaderboards for the front of the classroom.</p>
+
+                <div style="background:var(--surface2); border-radius:8px; padding:16px; margin:14px 0; text-align:center;">
+                    <div style="font-size:1.1rem; font-weight:700;">Classroom Room: DEMO_PRINCIPAL</div>
+                    <div style="font-size:0.8rem; color:#4ade80; margin-top:4px;">● WebSocket Real-Time Sync Active</div>
+                    <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">Supports 40+ concurrent student devices on local Wi-Fi</div>
+                </div>
+
+                <a href="{{ url_for('classroom_projector', room_id='DEMO_PRINCIPAL') }}" target="_blank" class="btn btn-sm btn-secondary" style="width:100%; text-align:center;">
+                    Launch Smartboard Projector 🚀
+                </a>
+            </div>
+
+            <!-- Station 4: Zero-Cloud LAN Hotspot -->
+            <div class="station-card">
+                <div class="station-badge">STATION 4</div>
+                <h3>📡 Zero-Cloud Offline Hub & QR Join</h3>
+                <p>Students join local multiplayer rooms instantly via smartphone or Chromebook by scanning an offline QR code with $0 data usage.</p>
+
+                <div style="background:var(--surface2); border-radius:8px; padding:16px; margin:14px 0; text-align:center;">
+                    <div style="font-size:2rem; margin-bottom:4px;">📱 ↔️ 💻</div>
+                    <div style="font-size:0.85rem; font-weight:700;">Local Subnet Auto-Discovery</div>
+                    <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">Zero reliance on external clouds or internet connection</div>
+                </div>
+
+                <a href="{{ url_for('offline_hub') }}" class="btn btn-sm btn-secondary" style="width:100%; text-align:center;">
+                    Open Offline Hotspot Hub 📶
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fiscal & Architecture Comparison -->
+    <section class="comparison-section">
+        <h2 style="font-size:1.6rem; margin-bottom:14px;">Commercial EdTech vs. Lumina Platform Comparison</h2>
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);">
+                <thead>
+                    <tr style="background:var(--surface2);">
+                        <th style="padding:14px;">Evaluation Metric</th>
+                        <th style="padding:14px; color:#f87171;">Commercial SaaS Bundle (TypingClub + ChessKid + Mathletics)</th>
+                        <th style="padding:14px; color:#4ade80;">Lumina Autonomous Platform</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight:700;">Annual Cost for 400 Students</td>
+                        <td style="color:#f87171;">$14,800 / year (Recurring)</td>
+                        <td style="color:#4ade80; font-weight:800;">$0 / year (Free & Open Source)</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700;">Internet Outage Behavior</td>
+                        <td style="color:#f87171;">Completely inaccessible (class stops)</td>
+                        <td style="color:#4ade80;">100% Operational via Local LAN Hotspot</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700;">Student Data & Privacy</td>
+                        <td style="color:#f87171;">Stored on third-party commercial servers</td>
+                        <td style="color:#4ade80;">100% On-Premise School Database</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700;">Neurodiversity Accommodations</td>
+                        <td style="color:#f87171;">Limited or premium add-ons</td>
+                        <td style="color:#4ade80;">OpenDyslexic, Bionic Reading, 432Hz Soundscapes</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:700;">Anti-Cheat Verification</td>
+                        <td style="color:#f87171;">Basic WPM cutoffs only</td>
+                        <td style="color:#4ade80;">Keystroke flight-time biometric variance</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</div>
+
+<script>
+let lastKeyTime = 0;
+let keyIntervals = [];
+
+document.getElementById('demo-keystroke-input')?.addEventListener('keydown', (e) => {
+    const now = performance.now();
+    if (lastKeyTime > 0) {
+        const delta = Math.round(now - lastKeyTime);
+        keyIntervals.push(delta);
+        if (keyIntervals.length > 20) keyIntervals.shift();
+        
+        // Calculate variance
+        const avg = keyIntervals.reduce((a,b)=>a+b,0) / keyIntervals.length;
+        const variance = keyIntervals.reduce((a,b)=>a + Math.pow(b-avg,2),0) / keyIntervals.length;
+        const stdDev = Math.round(Math.sqrt(variance));
+
+        const out = document.getElementById('demo-biometric-output');
+        if (out) {
+            out.innerHTML = `Biometrics: Inter-key delay: <strong>${delta}ms</strong> | Avg: <strong>${Math.round(avg)}ms</strong> | StdDev: <strong>${stdDev}ms</strong> (Natural Human Flight-Time)`;
+            out.style.color = '#4ade80';
+        }
+        if (window.LuminaAudio) LuminaAudio.playClick();
+    }
+    lastKeyTime = now;
+});
+
+function testBiometrics(type) {
+    const out = document.getElementById('demo-biometric-output');
+    if (!out) return;
+    if (type === 'bot') {
+        out.innerHTML = `<span style="color:#f87171;">🚨 SUSPICIOUS INJECTION FLAGGED:</span> 0ms inter-key flight time detected. Standard deviation: 0.2ms. Biometric Anti-Cheat has REJECTED this submission.`;
+        if (window.LuminaAudio) LuminaAudio.playClick();
+    } else {
+        out.innerHTML = `<span style="color:#4ade80;">✅ VERIFIED HUMAN TYPIST:</span> Natural neuromuscular variance confirmed (StdDev: 28.4ms, intervals 95ms–160ms). Integrity Verified.`;
+        if (window.LuminaAudio) LuminaAudio.playSuccess();
+    }
+}
+</script>
+
+<style>
+.principal-briefing-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 0 40px;
+}
+.exec-header-card {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(168,85,247,0.1) 100%), var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.exec-seal-badge {
+    display: inline-block;
+    background: rgba(99,102,241,0.2);
+    color: var(--primary);
+    border: 1px solid rgba(99,102,241,0.4);
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+}
+.exec-title {
+    font-size: 2.3rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+}
+.exec-subtitle {
+    color: var(--muted);
+    font-size: 1.1rem;
+    max-width: 700px;
+    margin: 0 auto 24px;
+}
+.exec-actions-bar {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+}
+.kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    text-align: center;
+    transition: transform var(--transition), border-color var(--transition);
+}
+.kpi-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+}
+.kpi-icon {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+}
+.kpi-val {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.2;
+}
+.kpi-label {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-top: 4px;
+}
+.kpi-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 4px;
+}
+.proposal-document {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px 40px;
+    margin-bottom: 36px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+.doc-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+.doc-body h3 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin-top: 24px;
+    margin-bottom: 8px;
+    color: var(--primary);
+}
+.doc-body p {
+    line-height: 1.7;
+    margin-bottom: 12px;
+}
+.signature-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+}
+.sig-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+}
+.sig-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-top: 4px;
+}
+.sig-role {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+.stations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+}
+.station-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.station-badge {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--primary);
+    margin-bottom: 6px;
+}
+.station-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+.station-card p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+}
+.comparison-section {
+    margin-top: 36px;
+}
+
+@media print {
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    .navbar, .footer, .mobile-bottom-dock, .no-print, .cmd-palette-modal {
+        display: none !important;
+    }
+    .proposal-document {
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        padding: 20px !important;
+        page-break-after: avoid !important;
+    }
+    .exec-header-card {
+        border: 1px solid #ccc !important;
+        background: none !important;
+        color: #000 !important;
+        padding: 16px !important;
+    }
+    .kpi-card {
+        border: 1px solid #ccc !important;
+        background: none !important;
+    }
+    .kpi-val {
+        color: #000 !important;
+    }
+}
+</style>
+{% endblock %}

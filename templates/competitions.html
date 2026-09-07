@@ -101,7 +101,12 @@
 
     socket.on('room_message', (m) => {
         const div = document.createElement('div'); div.className = 'chat-msg';
-        div.innerHTML = '<strong>' + m.username + ':</strong> ' + m.message;
+        const strong = document.createElement('strong');
+        strong.textContent = (m.username || 'Anon') + ': ';
+        const span = document.createElement('span');
+        span.textContent = m.message || '';
+        div.appendChild(strong);
+        div.appendChild(span);
         chatLog.appendChild(div); chatLog.scrollTop = chatLog.scrollHeight;
     });
 

@@ -139,8 +139,9 @@ def compute_cognitive_profile(user_id):
 
     # 4. Perceptual Reflexes (Reaction Test)
     react_rows = db_fetchall("SELECT best_ms, avg_ms FROM reaction_tests WHERE user_id=? ORDER BY created_at DESC LIMIT 20", (user_id,))
-    if react_rows:
-        react_best = min(r[0] or 999 for r in react_rows if r[0])
+    valid_reacts = [r[0] for r in react_rows if r and r[0] is not None and r[0] > 0]
+    if valid_reacts:
+        react_best = min(valid_reacts)
         if react_best < 50:
             react_best = 180
         reflex_score = _clamp(100.0 - ((react_best - 150.0) / 2.8))

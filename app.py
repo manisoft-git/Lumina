@@ -2,7 +2,7 @@
 """Lumina v5.0 - Talent Discovery Platform"""
 import os
 import sys
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from config import SECRET_KEY, CORS_ORIGIN
 from extensions import socketio, login_manager
 from db import close_db
@@ -35,11 +35,29 @@ def create_app():
     from sockets import register_sockets
     register_sockets(socketio)
 
+    @app.context_processor
+    def inject_global_vars():
+        unread = 0
+        from flask_login import current_user
+        from db import db_fetchone
+        if current_user.is_authenticated:
+            try:
+                row = db_fetchone("SELECT COUNT(*) FROM parent_student_messages WHERE student_id=? AND read_at IS NULL", (current_user.id,))
+                if row and row[0]:
+                    unread = row[0]
+            except Exception:
+                pass
+        return {
+            "unread_inbox_count": unread
+        }
+
     @app.after_request
     def set_security_headers(response):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["X-XSS-Protection"] = "1; mode=block"
+        if request.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         return response
 
     @app.errorhandler(404)

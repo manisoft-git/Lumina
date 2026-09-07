@@ -374,11 +374,21 @@ def init_db():
 
     db_execute("CREATE INDEX IF NOT EXISTS idx_scores_user ON scores(user_id)")
     db_execute("CREATE INDEX IF NOT EXISTS idx_scores_created ON scores(created_at)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_scores_user_created ON scores(user_id, created_at)")
     db_execute("CREATE INDEX IF NOT EXISTS idx_chat_room ON chat_messages(room)")
     db_execute("CREATE INDEX IF NOT EXISTS idx_classroom_code ON classrooms(code)")
     db_execute("CREATE INDEX IF NOT EXISTS idx_tournament_status ON tournaments(status)")
     db_execute("CREATE INDEX IF NOT EXISTS idx_api_key ON api_keys(key_hash)")
     db_execute("CREATE INDEX IF NOT EXISTS idx_agent_id ON client_agents(agent_id)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_user_badges_uid ON user_badges(user_id)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_user_ratings_uid ON user_ratings(user_id)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_showcase_created ON showcase_posts(created_at)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_showcase_type ON showcase_posts(achievement_type)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_parent_msg_student ON parent_student_messages(student_id, read_at)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_replays_user ON typing_replays(user_id, created_at)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_hw_classroom ON homework(classroom_id)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_hw_sub_user ON homework_submissions(user_id)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_classroom_members_stu ON classroom_members(student_id)")
 
     # Per-key typing statistics table
     db_execute("""

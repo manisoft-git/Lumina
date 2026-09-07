@@ -1,16 +1,161 @@
 {% extends "base.html" %}
 {% block title %}Games - Lumina{% endblock %}
 {% block content %}
-<div class="games-hub">
-    <h1>Talent Games</h1>
-    <p>Discover your strengths across multiple disciplines. Every game earns XP toward your level.</p>
-    <div class="game-cards">
-        <div class="game-card"><h2>🧮 Math Sprint</h2><p>60 seconds of mental arithmetic.</p><a href="{{ url_for('math_sprint') }}" class="btn btn-primary">Play</a></div>
-        <div class="game-card"><h2>🧠 Memory Palace</h2><p>Simon Says pattern sequences.</p><a href="{{ url_for('memory_palace') }}" class="btn btn-primary">Play</a></div>
-        <div class="game-card"><h2>⚡ Reaction Test</h2><p>Click when green. How fast are you?</p><a href="{{ url_for('reaction_test') }}" class="btn btn-primary">Play</a></div>
-        <div class="game-card"><h2>🔷 Pattern Match</h2><p>Complete visual sequences under time pressure.</p><a href="{{ url_for('pattern_match') }}" class="btn btn-primary">Play</a></div>
-        <div class="game-card"><h2>🔤 Word Blitz</h2><p>Form as many words as possible from given letters.</p><a href="{{ url_for('word_blitz') }}" class="btn btn-primary">Play</a></div>
-        <div class="game-card"><h2>♟️ Chess</h2><p>Rated chess matches with Grandmaster Bot.</p><a href="{{ url_for('competitions_hub') }}" class="btn btn-primary">Play</a></div>
+<div class="games-hub" style="max-width:1100px; margin:0 auto; padding:10px 0;">
+    <div style="text-align:center; margin-bottom:32px;">
+        <h1 style="font-size:2.4rem; font-weight:900; letter-spacing:-0.5px;">Cognitive & Strategy Arenas</h1>
+        <p style="color:var(--muted); font-size:1.05rem; max-width:650px; margin:8px auto 0;">
+            Calibrate your mind across 7 standardized cognitive domains. Every game session feeds your verified Lumina Talent Index (LTI) profile and earns XP.
+        </p>
+    </div>
+
+    <div class="game-cards" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+        <!-- Solo Typing -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #38bdf8;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">⌨️ Speed Typing</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(56,189,248,0.15); color:var(--primary); padding:4px 10px; border-radius:12px;">Motor Cadence</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Calibrate your raw biomechanical typing velocity, accuracy, and flight-time stability with Bionic Reading and Dyslexia font support.
+                </p>
+            </div>
+            <div style="margin-top:16px; display:flex; gap:8px;">
+                <a href="{{ url_for('typing_page') }}" class="btn btn-primary" style="flex:1; text-align:center;">Solo Practice</a>
+                <a href="{{ url_for('competitions_hub') }}" class="btn btn-secondary" style="flex:1; text-align:center;">Multiplayer</a>
+            </div>
+        </div>
+
+        <!-- Math Sprint -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #10b981;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🧮 Math Sprint</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(16,185,129,0.15); color:var(--accent); padding:4px 10px; border-radius:12px;">Quantitative Agility</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    60-second high-pressure mental arithmetic challenge. Build rapid numerical retrieval and formula manipulation under clock pressure.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('math_sprint') }}" class="btn btn-primary" style="width:100%; text-align:center;">Start Math Sprint</a>
+            </div>
+        </div>
+
+        <!-- Chess Arena -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #a855f7;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">♟️ Chess Arena</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(168,85,247,0.15); color:#a855f7; padding:4px 10px; border-radius:12px;">Strategic Foresight</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Rated chess battles evaluated with ELO progression. Play tactical endgames against the Manisoft_Chess Grandmaster Bot or classroom peers.
+                </p>
+            </div>
+            <div style="margin-top:16px; display:flex; gap:8px;">
+                <a href="/chess/solo_bot?bot=1" class="btn btn-primary" style="flex:1; text-align:center;">vs GM Bot</a>
+                <a href="{{ url_for('competitions_hub') }}" class="btn btn-secondary" style="flex:1; text-align:center;">PvP Match</a>
+            </div>
+        </div>
+
+        <!-- Checkers -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #ef4444;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🔴 Checkers</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(239,68,68,0.15); color:#ef4444; padding:4px 10px; border-radius:12px;">Spatial Deduction</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Classic positional tactics and jump combinations. Test forward planning against the built-in AI bot or challenge classmates.
+                </p>
+            </div>
+            <div style="margin-top:16px; display:flex; gap:8px;">
+                <a href="/checkers/solo_bot?bot=1" class="btn btn-primary" style="flex:1; text-align:center;">vs Bot</a>
+                <a href="{{ url_for('competitions_hub') }}" class="btn btn-secondary" style="flex:1; text-align:center;">PvP Match</a>
+            </div>
+        </div>
+
+        <!-- Memory Palace -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #ec4899;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🧠 Memory Palace</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(236,72,153,0.15); color:#ec4899; padding:4px 10px; border-radius:12px;">Working Memory</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Simon-style sequence retention. Expand your cognitive chunking capacity as pattern lengths grow progressively more complex.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('memory_palace') }}" class="btn btn-primary" style="width:100%; text-align:center;">Enter Memory Palace</a>
+            </div>
+        </div>
+
+        <!-- Reaction Test -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #f59e0b;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">⚡ Reaction Test</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(245,158,11,0.15); color:#f59e0b; padding:4px 10px; border-radius:12px;">Perceptual Reflexes</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Millisecond-level neuromuscular response calibration. Measure visual stimulus transduction and latency across 5 rounds.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('reaction_test') }}" class="btn btn-primary" style="width:100%; text-align:center;">Measure Reflexes</a>
+            </div>
+        </div>
+
+        <!-- Pattern Match -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #06b6d4;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🔷 Pattern Match</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(6,182,212,0.15); color:#06b6d4; padding:4px 10px; border-radius:12px;">Inductive Logic</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Visual matrix completion under time constraints. Form hypotheses on geometric and color sequences to find the missing symbol.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('pattern_match') }}" class="btn btn-primary" style="width:100%; text-align:center;">Solve Patterns</a>
+            </div>
+        </div>
+
+        <!-- Word Blitz -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #8b5cf6;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🔤 Word Blitz</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(139,92,246,0.15); color:#8b5cf6; padding:4px 10px; border-radius:12px;">Lexical Fluency</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Construct valid lexical tokens from randomized vowels and consonants in 60 seconds. Tests verbal processing volume and speed.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('word_blitz') }}" class="btn btn-primary" style="width:100%; text-align:center;">Launch Word Blitz</a>
+            </div>
+        </div>
+
+        <!-- Team Cognitive Relay -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #fbbf24; background:rgba(245,158,11,0.06);">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🤝 Team Cognitive Relay</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(251,191,36,0.2); color:#fbbf24; padding:4px 10px; border-radius:12px;">Esports Relay</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    3-Leg cooperative relay: Leg 1 (Mental Arithmetic) → Leg 2 (Inductive Logic) → Leg 3 (Speed Typing Anchor) with real-time baton passing!
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('relay_lobby') }}" class="btn btn-primary" style="background:#f59e0b; color:#000; font-weight:800; width:100%; text-align:center;">Enter Relay Arena</a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

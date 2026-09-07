@@ -4,6 +4,7 @@ import csv
 import io
 import json
 import os
+import math
 import hashlib
 import random
 import string
@@ -464,7 +465,7 @@ def register_routes(app):
         wpm = float(data.get("wpm", 0))
         acc = float(data.get("accuracy", 0))
         errs = int(data.get("errors", 0))
-        net_wpm = float(data.get("net_wpm", wpm - errs))
+        net_wpm = max(0.0, float(data.get("net_wpm", wpm - errs)))
         cat = data.get("category", "general")
         room_id = data.get("room_id")
         error_map = json.dumps(data.get("error_map", {}))
@@ -493,7 +494,7 @@ def register_routes(app):
             "INSERT INTO scores (user_id, wpm, accuracy, errors, net_wpm, passage_category, room_id, error_map, verified, integrity_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (current_user.id, wpm, acc, errs, net_wpm, cat, room_id, error_map, verified, integrity)
         )
-        xp = int(net_wpm / 2) if verified else 0
+        xp = max(0, int(net_wpm / 2)) if verified else 0
         if verified:
             award_xp(current_user.id, xp)
             check_badges(current_user.id)
@@ -502,9 +503,9 @@ def register_routes(app):
     @app.route("/save_replay", methods=["POST"])
     @login_required
     def save_replay():
-        data = request.get_json()
+        data = request.get_json() or {}
         db_execute("INSERT INTO typing_replays (user_id, passage, keystrokes, wpm, accuracy) VALUES (?, ?, ?, ?, ?)",
-                   (current_user.id, data.get("passage"), json.dumps(data.get("keystrokes")), data.get("wpm"), data.get("accuracy")))
+                   (current_user.id, data.get("passage"), json.dumps(data.get("keystrokes", [])), data.get("wpm", 0), data.get("accuracy", 100)))
         return jsonify({"status": "ok"})
 
     @app.route("/submit_homework/<int:hid>", methods=["POST"])
@@ -531,53 +532,87 @@ def register_routes(app):
     @app.route("/submit_challenge", methods=["POST"])
     @login_required
     def submit_challenge():
-        data = request.get_json()
+        data = request.get_json() or {}
         cid = data.get("challenge_id")
+        if not cid:
+            today = datetime.utcnow().date().isoformat()
+            ch = db_fetchone("SELECT id FROM daily_challenges WHERE challenge_date=?", (today,))
+            if ch:
+                cid = ch[0]
+            else:
+                return jsonify({"status": "error", "message": "No active challenge found"}), 400
+
         progress = int(data.get("progress", 0))
-        completed = data.get("completed", False)
+        completed = bool(data.get("completed", False)) or (data.get("status") == "completed")
         comp_val = 1 if completed else 0
         comp_time = datetime.utcnow().isoformat() if completed else None
-        db_execute("INSERT INTO user_challenges (user_id, challenge_id, progress, completed, completed_at) VALUES (?, ?, ?, ?, ?)",
-                   (current_user.id, cid, progress, comp_val, comp_time))
-        if completed:
-            ch = db_fetchone("SELECT reward_xp FROM daily_challenges WHERE id=?", (cid,))
-            if ch:
-                award_xp(current_user.id, ch[0])
-        return jsonify({"status": "ok"})
+
+        existing = db_fetchone("SELECT completed FROM user_challenges WHERE user_id=? AND challenge_id=?", (current_user.id, cid))
+        xp_earned = 0
+        if existing:
+            was_completed = bool(existing[0])
+            db_execute("UPDATE user_challenges SET progress=?, completed=MAX(completed, ?), completed_at=COALESCE(completed_at, ?) WHERE user_id=? AND challenge_id=?",
+                       (progress, comp_val, comp_time, current_user.id, cid))
+            if completed and not was_completed:
+                ch = db_fetchone("SELECT reward_xp FROM daily_challenges WHERE id=?", (cid,))
+                if ch and ch[0]:
+                    award_xp(current_user.id, ch[0])
+                    xp_earned = ch[0]
+        else:
+            db_execute("INSERT INTO user_challenges (user_id, challenge_id, progress, completed, completed_at) VALUES (?, ?, ?, ?, ?)",
+                       (current_user.id, cid, progress, comp_val, comp_time))
+            if completed:
+                ch = db_fetchone("SELECT reward_xp FROM daily_challenges WHERE id=?", (cid,))
+                if ch and ch[0]:
+                    award_xp(current_user.id, ch[0])
+                    xp_earned = ch[0]
+        return jsonify({"status": "ok", "xp_earned": xp_earned})
 
     @app.route("/submit/math", methods=["POST"])
     @login_required
     def submit_math():
-        d = request.get_json()
+        d = request.get_json() or {}
         score = int(d.get("score", 0))
         db_execute("INSERT INTO math_sprints (user_id, correct, total, difficulty, time_limit, score) VALUES (?, ?, ?, ?, ?, ?)",
                    (current_user.id, d.get("correct", 0), d.get("total", 0), d.get("difficulty", "medium"), d.get("time_limit", 60), score))
-        award_xp(current_user.id, score // 5)
+        xp_earned = max(0, score // 5)
+        award_xp(current_user.id, xp_earned)
         check_badges(current_user.id)
-        return jsonify({"status": "ok", "xp": score // 5})
+        return jsonify({"status": "ok", "xp": xp_earned})
 
     @app.route("/submit/memory", methods=["POST"])
     @login_required
     def submit_memory():
-        d = request.get_json()
+        d = request.get_json() or {}
         level = int(d.get("level_reached", 0))
         db_execute("INSERT INTO memory_tests (user_id, level_reached, max_pattern_length, attempts) VALUES (?, ?, ?, ?)",
                    (current_user.id, level, d.get("max_pattern", 0), d.get("attempts", 1)))
-        award_xp(current_user.id, level * 10)
+        xp_earned = max(0, level * 10)
+        award_xp(current_user.id, xp_earned)
         check_badges(current_user.id)
-        return jsonify({"status": "ok", "xp": level * 10})
+        return jsonify({"status": "ok", "xp": xp_earned})
 
     @app.route("/submit/reaction", methods=["POST"])
     @login_required
     def submit_reaction():
-        d = request.get_json()
-        best = int(d.get("best_ms", 0))
-        avg = int(d.get("avg_ms", 0))
+        d = request.get_json() or {}
+        try:
+            raw_best = float(d.get("best_ms", 300))
+            best = int(raw_best) if (not math.isnan(raw_best) and not math.isinf(raw_best) and raw_best > 0) else 300
+        except (ValueError, OverflowError, TypeError):
+            best = 300
+        try:
+            raw_avg = float(d.get("avg_ms", 350))
+            avg = int(raw_avg) if (not math.isnan(raw_avg) and not math.isinf(raw_avg) and raw_avg > 0) else 350
+        except (ValueError, OverflowError, TypeError):
+            avg = 350
+        attempts = int(d.get("attempts", 5))
         db_execute("INSERT INTO reaction_tests (user_id, best_ms, avg_ms, attempts) VALUES (?, ?, ?, ?)",
-                   (current_user.id, best, avg, d.get("attempts", 5)))
-        award_xp(current_user.id, max(0, 100 - best // 5))
+                   (current_user.id, best, avg, attempts))
+        xp_earned = max(0, 100 - best // 5)
+        award_xp(current_user.id, xp_earned)
         check_badges(current_user.id)
-        return jsonify({"status": "ok", "xp": max(0, 100 - best // 5)})
+        return jsonify({"status": "ok", "xp": xp_earned})
 
     @app.route("/submit/pattern", methods=["POST"])
     @login_required
@@ -1442,4 +1477,39 @@ def register_routes(app):
             "websocket": True,
             "timestamp": datetime.utcnow().isoformat()
         })
+
+    @app.route("/principal")
+    @app.route("/executive-briefing")
+    def principal_briefing():
+        """Executive showcase and leadership briefing for the School Principal & Academic Board."""
+        student_count = (db_fetchone("SELECT COUNT(*) FROM users WHERE role='student'") or [0])[0]
+        teacher_count = (db_fetchone("SELECT COUNT(*) FROM users WHERE role='teacher' OR role='producer'") or [0])[0]
+        total_users = (db_fetchone("SELECT COUNT(*) FROM users") or [0])[0]
+        classroom_count = (db_fetchone("SELECT COUNT(*) FROM classrooms") or [0])[0]
+        score_stats = db_fetchone("SELECT COUNT(*), COALESCE(AVG(wpm), 0.0), COALESCE(AVG(accuracy), 0.0) FROM scores") or (0, 0.0, 0.0)
+        badge_count = (db_fetchone("SELECT COUNT(*) FROM user_badges") or [0])[0]
+        math_count = (db_fetchone("SELECT COUNT(*) FROM math_sprints") or [0])[0]
+        tourney_count = (db_fetchone("SELECT COUNT(*) FROM tournaments") or [0])[0]
+        replay_count = (db_fetchone("SELECT COUNT(*) FROM typing_replays") or [0])[0]
+
+        cohort_base = max(student_count, 150)
+        est_savings_annual = cohort_base * 37 + (max(classroom_count, 5) * 250)
+
+        stats = {
+            "students": student_count,
+            "teachers": teacher_count,
+            "classrooms": classroom_count,
+            "total_users": total_users,
+            "tests_taken": score_stats[0],
+            "avg_wpm": round(score_stats[1], 1),
+            "avg_accuracy": round(score_stats[2], 1),
+            "badges_awarded": badge_count,
+            "math_sprints": math_count,
+            "tournaments": tourney_count,
+            "replays": replay_count,
+            "cohort_base": cohort_base,
+            "est_savings_annual": est_savings_annual
+        }
+        return render_template("principal_briefing.html", stats=stats)
+
 

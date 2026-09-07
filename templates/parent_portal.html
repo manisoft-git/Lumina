@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Parent Portal — {{ student.fullname }} | Lumina{% endblock %}
+{% block title %}Parent Portal — {{ student.fullname if student else 'Student Overview' }} | Lumina{% endblock %}
 {% block content %}
 <div class="parent-page">
     {% if error %}

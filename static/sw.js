@@ -1,10 +1,12 @@
-const CACHE_NAME = 'lumina-v5.2';
+const CACHE_NAME = 'lumina-v5.4';
 const STATIC_ASSETS = [
     '/',
     '/static/style.css',
     '/static/script.js',
     '/static/sound.js',
+    '/static/sound_fx.js',
     '/static/socket.io.min.js',
+    '/static/qrcode.min.js',
     '/static/manifest.json',
     '/offline-hub'
 ];
@@ -35,7 +37,12 @@ self.addEventListener('fetch', (e) => {
                     caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
                 }
                 return response;
-            }).catch(() => cached);
+            }).catch(() => {
+                if (e.request.mode === 'navigate') {
+                    return caches.match('/offline-hub') || caches.match('/');
+                }
+                return cached;
+            });
         })
     );
 });

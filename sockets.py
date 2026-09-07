@@ -135,6 +135,102 @@ def check_chat_rate(sid):
     CHAT_RATELIMIT[sid] = entry
     return entry["count"] <= 5
 
+def clean_disconnected_socket(sid, emit_fn=None):
+    """Clean up state across all game rooms, monitoring, spectators, and rate limiters when a socket disconnects."""
+    CHAT_RATELIMIT.pop(sid, None)
+
+    if sid in PRODUCER_ROOMS:
+        del PRODUCER_ROOMS[sid]
+
+    for aid, info in list(AGENTS.items()):
+        if info.get("sid") == sid:
+            try:
+                db_execute("UPDATE client_agents SET status='offline' WHERE agent_id=?", (aid,))
+            except Exception:
+                pass
+            del AGENTS[aid]
+            if emit_fn:
+                try:
+                    emit_fn("agent_offline", {"agent_id": aid}, broadcast=True, namespace="/")
+                except Exception:
+                    pass
+            break
+
+    for rid, rdata in list(TYPING_ROOMS.items()):
+        if sid in rdata.get("players", {}):
+            pname = rdata["players"][sid].get("username", "A player")
+            del rdata["players"][sid]
+            if not rdata["players"]:
+                del TYPING_ROOMS[rid]
+            elif emit_fn:
+                try:
+                    emit_fn("player_left", {"sid": sid, "username": pname}, room=rid)
+                    emit_fn("room_state", rdata, room=rid)
+                except Exception:
+                    pass
+
+    for rid, rdata in list(CHESS_ROOMS.items()):
+        changed = False
+        if rdata.get("white") and rdata["white"].get("sid") == sid:
+            rdata["white"] = None
+            if emit_fn:
+                try: emit_fn("opponent_left", {"color": "white"}, room=rid)
+                except Exception: pass
+            changed = True
+        elif rdata.get("black") and rdata["black"].get("sid") == sid:
+            rdata["black"] = None
+            if emit_fn:
+                try: emit_fn("opponent_left", {"color": "black"}, room=rid)
+                except Exception: pass
+            changed = True
+        if sid in rdata.get("spectators", []):
+            rdata["spectators"].remove(sid)
+            changed = True
+        if not rdata.get("white") and not rdata.get("black") and not rdata.get("spectators"):
+            del CHESS_ROOMS[rid]
+
+    for rid, rdata in list(CHECKERS_ROOMS.items()):
+        changed = False
+        if rdata.get("red") and rdata["red"].get("sid") == sid:
+            rdata["red"] = None
+            if emit_fn:
+                try: emit_fn("opponent_left", {"color": "red"}, room=rid)
+                except Exception: pass
+            changed = True
+        elif rdata.get("black") and rdata["black"].get("sid") == sid:
+            rdata["black"] = None
+            if emit_fn:
+                try: emit_fn("opponent_left", {"color": "black"}, room=rid)
+                except Exception: pass
+            changed = True
+        if sid in rdata.get("spectators", []):
+            rdata["spectators"].remove(sid)
+            changed = True
+        if not rdata.get("red") and not rdata.get("black") and not rdata.get("spectators"):
+            del CHECKERS_ROOMS[rid]
+
+    for rid, rdata in list(RELAY_ROOMS.items()):
+        relay_changed = False
+        for tname, tdata in rdata.get("teams", {}).items():
+            for leg_num, ldata in tdata.get("legs", {}).items():
+                if ldata.get("sid") == sid:
+                    ldata["sid"] = None
+                    ldata["username"] = None
+                    relay_changed = True
+        if relay_changed and emit_fn:
+            try: emit_fn("relay_state", rdata, room=rid)
+            except Exception: pass
+
+    for code, sids in list(MONITOR_SUBSCRIBERS.items()):
+        sids.discard(sid)
+        if not sids:
+            del MONITOR_SUBSCRIBERS[code]
+
+    for rid, sids in list(SPECTATORS.items()):
+        sids.discard(sid)
+        if not sids:
+            del SPECTATORS[rid]
+
 def register_sockets(socketio):
 
     @socketio.on("connect")
@@ -480,16 +576,7 @@ def register_sockets(socketio):
 
     @socketio.on("disconnect")
     def handle_disconnect():
-        # Clean up producer subscriptions
-        if request.sid in PRODUCER_ROOMS:
-            del PRODUCER_ROOMS[request.sid]
-        # Clean up agent if this sid matches
-        for aid, info in list(AGENTS.items()):
-            if info.get("sid") == request.sid:
-                db_execute("UPDATE client_agents SET status='offline' WHERE agent_id=?", (aid,))
-                del AGENTS[aid]
-                emit("agent_offline", {"agent_id": aid}, broadcast=True, namespace="/")
-                break
+        clean_disconnected_socket(request.sid, emit_fn=emit)
 
     # ---------- Chess ----------
 

@@ -380,76 +380,80 @@ if (rawData.length === 0) {
     accGrad.addColorStop(0, 'rgba(74, 222, 128, 0.25)');
     accGrad.addColorStop(1, 'rgba(74, 222, 128, 0.0)');
 
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: rawData.map(d => d[0]),
-            datasets: [
-                {
-                    label: 'Avg Net WPM',
-                    data: rawData.map(d => d[1] ? Math.round(d[1]*10)/10 : 0),
-                    borderColor: '#38bdf8',
-                    borderWidth: 3,
-                    backgroundColor: wpmGrad,
-                    tension: 0.35,
-                    fill: true,
-                    pointBackgroundColor: '#38bdf8',
-                    pointRadius: 4,
-                    pointHoverRadius: 7
-                },
-                {
-                    label: 'Avg Accuracy (%)',
-                    data: rawData.map(d => d[2] ? Math.round(d[2]*10)/10 : 0),
-                    borderColor: '#4ade80',
-                    borderWidth: 2,
-                    backgroundColor: accGrad,
-                    tension: 0.35,
-                    fill: true,
-                    pointBackgroundColor: '#4ade80',
-                    pointRadius: 3,
-                    pointHoverRadius: 6
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false
+    if (typeof Chart !== 'undefined') {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: rawData.map(d => d[0]),
+                datasets: [
+                    {
+                        label: 'Avg Net WPM',
+                        data: rawData.map(d => d[1] ? Math.round(d[1]*10)/10 : 0),
+                        borderColor: '#38bdf8',
+                        borderWidth: 3,
+                        backgroundColor: wpmGrad,
+                        tension: 0.35,
+                        fill: true,
+                        pointBackgroundColor: '#38bdf8',
+                        pointRadius: 4,
+                        pointHoverRadius: 7
+                    },
+                    {
+                        label: 'Avg Accuracy (%)',
+                        data: rawData.map(d => d[2] ? Math.round(d[2]*10)/10 : 0),
+                        borderColor: '#4ade80',
+                        borderWidth: 2,
+                        backgroundColor: accGrad,
+                        tension: 0.35,
+                        fill: true,
+                        pointBackgroundColor: '#4ade80',
+                        pointRadius: 3,
+                        pointHoverRadius: 6
+                    }
+                ]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(255, 255, 255, 0.06)' },
-                    ticks: { color: '#94a3b8', font: { family: 'inherit', size: 12 } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
                 },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#94a3b8', font: { family: 'inherit', size: 12 } }
-                }
-            },
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#f8fafc',
-                        font: { family: 'inherit', size: 13, weight: 'bold' },
-                        usePointStyle: true,
-                        pointStyle: 'circle'
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                        ticks: { color: '#94a3b8', font: { family: 'inherit', size: 12 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { family: 'inherit', size: 12 } }
                     }
                 },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#38bdf8',
-                    bodyColor: '#f8fafc',
-                    borderColor: 'rgba(56, 189, 248, 0.3)',
-                    borderWidth: 1,
-                    padding: 12,
-                    cornerRadius: 10
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#f8fafc',
+                            font: { family: 'inherit', size: 13, weight: 'bold' },
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#38bdf8',
+                        bodyColor: '#f8fafc',
+                        borderColor: 'rgba(56, 189, 248, 0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 10
+                    }
                 }
             }
-        }
-    });
+        });
+    } else {
+        ctx.parentElement.innerHTML = '<div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">📈</div><p>Typing cadence history recorded. Connect online or view history tab for raw metrics.</p></div>';
+    }
 }
 
 function showToast(msg) {

@@ -72,17 +72,21 @@
     </div>
 </div>
 
-<!-- Lightweight Inline SVG QR Code Generator (Pure Vanilla JS, 0 External Dependencies) -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<!-- Lightweight Local SVG QR Code Generator (Pure Vanilla JS, 100% Offline, Zero Cloud Dependency) -->
+<script src="{{ url_for('static', filename='qrcode.min.js') }}"></script>
 <script>
 (function(){
     const url = "http://" + {{ local_ip | tojson }} + ":" + {{ port | tojson }};
     const qrDiv = document.getElementById('qr-container');
     if (typeof qrcode !== 'undefined') {
-        const qr = qrcode(0, 'M');
-        qr.addData(url);
-        qr.make();
-        qrDiv.innerHTML = qr.createSvgTag(4, 0);
+        try {
+            const qr = qrcode(0, 'M');
+            qr.addData(url);
+            qr.make();
+            qrDiv.innerHTML = qr.createSvgTag(4, 0);
+        } catch(e) {
+            qrDiv.innerHTML = '<div style="width:120px; height:120px; display:flex; align-items:center; justify-content:center; background:#e2e8f0; color:#0f172a; font-size:0.8rem; font-weight:700;">' + url + '</div>';
+        }
     } else {
         qrDiv.innerHTML = '<div style="width:120px; height:120px; display:flex; align-items:center; justify-content:center; background:#e2e8f0; color:#0f172a; font-size:0.8rem; font-weight:700;">Local IP Ready</div>';
     }

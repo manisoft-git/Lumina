@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="{{ url_for('static', filename='socket.io.min.js') }}"></script>
     <script src="{{ url_for('static', filename='sound.js') }}"></script>
+    <script src="{{ url_for('static', filename='sound_fx.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     {% block head %}{% endblock %}
 </head>
@@ -22,42 +23,192 @@
     <a href="#main-content" class="skip-link">Skip to content</a>
     <nav class="navbar" role="navigation" aria-label="Main navigation">
         <div class="nav-brand">
-            <a href="{{ url_for('home') }}" aria-label="Lumina Home">⚡ Lumina</a>
+            <a href="{{ url_for('home') }}" aria-label="Lumina Home" style="text-decoration:none;">
+                <span style="font-size:1.4rem;">⚡</span>
+                <span style="font-weight:900; letter-spacing:-0.5px;">Lumina</span>
+                <span style="font-size:0.68rem; background:linear-gradient(135deg,#38bdf8,#818cf8); color:#fff; padding:2px 7px; border-radius:10px; font-weight:800; margin-left:4px;">v5.2</span>
+            </a>
+            <button class="cmd-palette-btn" onclick="openCommandPalette()" aria-label="Quick jump search" style="margin-left:14px;">
+                <span>🔍</span>
+                <span class="cmd-text">Jump...</span>
+                <span class="cmd-kbd">⌘K</span>
+            </button>
             <button class="hamburger" aria-label="Toggle menu" aria-expanded="false" onclick="toggleNav()">☰</button>
         </div>
         <ul class="nav-links" id="nav-links">
             <li><a href="{{ url_for('home') }}" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
-            <li><a href="{{ url_for('showcase_feed') }}" class="{% if '/showcase' in request.path %}active{% endif %}" style="color:#f472b6; font-weight:700; background:rgba(236,72,153,0.12); border:1px solid rgba(236,72,153,0.3);">🌟 Showcase</a></li>
+            <li><a href="{{ url_for('showcase_feed') }}" class="{% if '/showcase' in request.path or '/parents' in request.path %}active{% endif %}" style="color:#f472b6; font-weight:700;">🌟 Showcase</a></li>
+            <li><a href="{{ url_for('offline_hub') }}" class="{% if request.path == '/offline_hub' %}active{% endif %}">🌍 Hub</a></li>
+
             {% if current_user.is_authenticated %}
-                <li><a href="{{ url_for('dashboard') }}" class="{% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a></li>
-                <li><a href="{{ url_for('talent_profile_page') }}" class="{% if '/talent' in request.path %}active{% endif %}" style="color:var(--primary); font-weight:700; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3);">🎯 Talent</a></li>
-                <li><a href="{{ url_for('analytics') }}" class="{% if request.path == '/analytics' %}active{% endif %}">📊 Analytics</a></li>
-                <li><a href="{{ url_for('inbox_page') }}" class="{% if request.path == '/inbox' %}active{% endif %}">💌 Inbox</a></li>
-                <li><a href="{{ url_for('typing_page') }}" class="{% if request.path == '/typing' %}active{% endif %}">Solo Type</a></li>
-                <li><a href="{{ url_for('competitions_hub') }}" class="{% if request.path == '/competitions' %}active{% endif %}">Compete</a></li>
-                <li><a href="{{ url_for('relay_lobby') }}" class="{% if '/relay' in request.path %}active{% endif %}" style="color:#fbbf24; font-weight:700; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3);">🤝 Relay</a></li>
-                <li><a href="{{ url_for('games_hub') }}" class="{% if request.path == '/games' %}active{% endif %}">Games</a></li>
-                <li><a href="{{ url_for('tournament_list') }}" class="{% if request.path == '/tournaments' %}active{% endif %}">Tournaments</a></li>
-                <li><a href="{{ url_for('offline_hub') }}" class="{% if request.path == '/offline_hub' %}active{% endif %}" title="Global Offline Hub">🌍 Hub</a></li>
-                <li><a href="{{ url_for('chat_page') }}" class="{% if request.path == '/chat' %}active{% endif %}">Chat</a></li>
-                <li><a href="{{ url_for('leaderboard') }}" class="{% if request.path == '/leaderboard' %}active{% endif %}">Leaderboard</a></li>
-                <li><a href="{{ url_for('badges_page') }}" class="{% if request.path == '/badges' %}active{% endif %}">Badges</a></li>
-                <li><a href="{{ url_for('weekly') }}" class="{% if request.path == '/weekly' %}active{% endif %}">Weekly</a></li>
+                <!-- Play & Compete Dropdown -->
+                <li class="nav-dropdown">
+                    <button class="nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+                        ⚔️ Play & Compete <span style="font-size:0.68rem; opacity:0.7;">▼</span>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('typing_page') }}" class="nav-dropdown-item">
+                            <span class="item-icon">⌨️</span>
+                            <div>
+                                <div class="item-title">Solo Speed Typing</div>
+                                <div class="item-desc">Precision cadence & bionic reading</div>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('competitions_hub') }}" class="nav-dropdown-item">
+                            <span class="item-icon">🏁</span>
+                            <div>
+                                <div class="item-title">Multiplayer Races</div>
+                                <div class="item-desc">Real-time classroom speed duels</div>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('relay_lobby') }}" class="nav-dropdown-item">
+                            <span class="item-icon">🤝</span>
+                            <div>
+                                <div class="item-title">Team Cognitive Relay</div>
+                                <div class="item-desc">Cooperative math, pattern & typing</div>
+                            </div>
+                        </a>
+                        <div class="nav-divider"></div>
+                        <a href="{{ url_for('games_hub') }}" class="nav-dropdown-item">
+                            <span class="item-icon">🎮</span>
+                            <div>
+                                <div class="item-title">All 8 Cognitive Arenas</div>
+                                <div class="item-desc">Chess, Checkers, Math, Memory, etc.</div>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('tournament_list') }}" class="nav-dropdown-item">
+                            <span class="item-icon">🏆</span>
+                            <div>
+                                <div class="item-title">Tournaments</div>
+                                <div class="item-desc">Single-elimination brackets</div>
+                            </div>
+                        </a>
+                    </div>
+                </li>
+
+                <!-- Talent & Growth Dropdown -->
+                <li class="nav-dropdown">
+                    <button class="nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+                        🎯 Talent & Growth <span style="font-size:0.68rem; opacity:0.7;">▼</span>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('talent_profile_page') }}" class="nav-dropdown-item">
+                            <span class="item-icon">🧠</span>
+                            <div>
+                                <div class="item-title">7-Axis Talent Profile</div>
+                                <div class="item-desc">Cognitive radar & MIT pathway match</div>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('analytics') }}" class="nav-dropdown-item">
+                            <span class="item-icon">📊</span>
+                            <div>
+                                <div class="item-title">Performance Analytics</div>
+                                <div class="item-desc">Heatmaps & velocity curves</div>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('talent_report_self') }}" class="nav-dropdown-item" target="_blank">
+                            <span class="item-icon">📄</span>
+                            <div>
+                                <div class="item-title">Official Talent Dossier</div>
+                                <div class="item-desc">Printable certified report</div>
+                            </div>
+                        </a>
+                        <div class="nav-divider"></div>
+                        <a href="{{ url_for('leaderboard') }}" class="nav-dropdown-item">
+                            <span class="item-icon">🏅</span>
+                            <div>
+                                <div class="item-title">Leaderboard</div>
+                                <div class="item-desc">Global & classroom rankings</div>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('badges_page') }}" class="nav-dropdown-item">
+                            <span class="item-icon">🎖️</span>
+                            <div>
+                                <div class="item-title">Badges & Mastery</div>
+                                <div class="item-desc">Unlocked milestones & XP</div>
+                            </div>
+                        </a>
+                    </div>
+                </li>
+
+                <!-- Community & Chat -->
+                <li><a href="{{ url_for('chat_page') }}" class="{% if request.path == '/chat' %}active{% endif %}">💬 Chat</a></li>
 
                 {% if current_user.role == 'teacher' %}
-                    <li><a href="{{ url_for('teacher_panel') }}" class="{% if request.path == '/teacher' %}active{% endif %}">Teacher</a></li>
+                    <li><a href="{{ url_for('teacher_panel') }}" class="{% if request.path == '/teacher' %}active{% endif %}" style="color:#4ade80; font-weight:700;">🏫 Teacher</a></li>
                 {% endif %}
-                <li><a href="{{ url_for('logout') }}" style="color:var(--muted); opacity:0.85;">Logout ({{ current_user.username }})</a></li>
+
+                <!-- Inbox with Unread Badge -->
+                <li>
+                    <a href="{{ url_for('inbox_page') }}" class="{% if request.path == '/inbox' %}active{% endif %}" title="Parent & Mentor Notes">
+                        💌 Inbox
+                        {% if unread_inbox_count and unread_inbox_count > 0 %}
+                            <span class="inbox-badge">{{ unread_inbox_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <!-- User Account Dropdown -->
+                <li class="nav-dropdown">
+                    <button class="nav-dropdown-toggle" style="background:var(--surface2); border-radius:20px; padding:6px 14px; border:1px solid var(--border);" aria-haspopup="true" aria-expanded="false">
+                        <span style="color:var(--primary); font-weight:800;">Lv. {{ current_user.level }}</span>
+                        <span style="color:var(--muted); font-size:0.8rem;">({{ current_user.xp }} XP)</span>
+                        <span style="font-size:0.68rem; opacity:0.7;">▼</span>
+                    </button>
+                    <div class="nav-dropdown-menu right-aligned">
+                        <div style="padding:8px 14px; font-size:0.85rem; border-bottom:1px solid var(--border); margin-bottom:4px;">
+                            <div style="font-weight:700; color:var(--text);">{{ current_user.fullname }}</div>
+                            <div style="color:var(--muted); font-size:0.75rem;">@{{ current_user.username }} • {{ current_user.role.capitalize() }}</div>
+                        </div>
+                        <a href="{{ url_for('dashboard') }}" class="nav-dropdown-item">
+                            <span class="item-icon">🏠</span>
+                            <span class="item-title">Dashboard</span>
+                        </a>
+                        <a href="{{ url_for('profile', user_id=current_user.id) }}" class="nav-dropdown-item">
+                            <span class="item-icon">👤</span>
+                            <span class="item-title">My Profile</span>
+                        </a>
+                        <a href="{{ url_for('replays_page') }}" class="nav-dropdown-item">
+                            <span class="item-icon">📼</span>
+                            <span class="item-title">Typing Replays</span>
+                        </a>
+                        <a href="{{ url_for('certificates') }}" class="nav-dropdown-item">
+                            <span class="item-icon">📜</span>
+                            <span class="item-title">Certificates</span>
+                        </a>
+                        <a href="{{ url_for('producer_panel') }}" class="nav-dropdown-item">
+                            <span class="item-icon">⚙️</span>
+                            <span class="item-title">Producer Console</span>
+                        </a>
+                        <div class="nav-divider"></div>
+                        <a href="{{ url_for('logout') }}" class="nav-dropdown-item" style="color:var(--danger);">
+                            <span class="item-icon">🚪</span>
+                            <span class="item-title">Logout</span>
+                        </a>
+                    </div>
+                </li>
             {% else %}
                 <li><a href="{{ url_for('leaderboard') }}" class="{% if request.path == '/leaderboard' %}active{% endif %}">Leaderboard</a></li>
                 <li><a href="{{ url_for('login') }}" class="{% if request.path == '/login' %}active{% endif %}">Login</a></li>
                 <li><a href="{{ url_for('register') }}" class="{% if request.path == '/register' %}active{% endif %}" style="background:var(--primary-gradient); color:#fff; font-weight:700;">Get Started</a></li>
             {% endif %}
+
+            <!-- Flagship Principal Briefing Button -->
+            <li>
+                <a href="{{ url_for('principal_briefing') }}" class="{% if request.path in ['/principal', '/executive-briefing'] %}active{% endif %}" style="background:linear-gradient(135deg, rgba(99,102,241,0.25), rgba(168,85,247,0.25)); border:1px solid rgba(168,85,247,0.5); border-radius:18px; padding:5px 12px; font-weight:800; color:#c084fc; text-shadow:0 0 10px rgba(168,85,247,0.3); font-size:0.85rem;" title="Executive Briefing & Student Innovation Proposal">
+                    🎓 Principal Briefing
+                </a>
+            </li>
+            <!-- Sound FX Toggle Button -->
+            <li>
+                <button onclick="LuminaAudio.toggle()" class="sound-toggle-btn" style="background:var(--surface2); border:1px solid var(--border); border-radius:50%; width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; font-size:1.05rem; cursor:pointer;" title="Toggle Sound FX">🔊</button>
+            </li>
+
             <li>
                 <select id="theme-select" aria-label="Theme" onchange="setTheme(this.value)">
                     <option value="dark">🌙 Dark</option>
                     <option value="light">☀️ Light</option>
-                    <option value="contrast">👁️ High Contrast</option>
+                    <option value="contrast">👁️ Contrast</option>
                 </select>
             </li>
         </ul>
@@ -75,17 +226,213 @@
         {% block content %}{% endblock %}
     </main>
     <footer class="site-footer">
-        <p>Lumina v5.0 — Talent Discovery Platform</p>
+        <p>Lumina v5.2 — Cognitive Talent Discovery & Competitive Esports Platform</p>
     </footer>
+
+    <!-- Mobile Bottom Dock (Smartphones & Tablets) -->
+    <nav class="mobile-bottom-dock" aria-label="Quick mobile navigation">
+        <ul class="mobile-dock-links">
+            {% if current_user.is_authenticated %}
+                <li><a href="{{ url_for('dashboard') }}" class="{% if request.path == '/dashboard' %}active{% endif %}"><span class="dock-icon">🏠</span><span>Home</span></a></li>
+                <li><a href="{{ url_for('games_hub') }}" class="{% if '/games' in request.path or '/typing' in request.path %}active{% endif %}"><span class="dock-icon">⚡</span><span>Play</span></a></li>
+                <li><a href="{{ url_for('principal_briefing') }}" class="{% if request.path in ['/principal', '/executive-briefing'] %}active{% endif %}"><span class="dock-icon">🎓</span><span>Briefing</span></a></li>
+                <li><a href="{{ url_for('talent_profile_page') }}" class="{% if '/talent' in request.path %}active{% endif %}"><span class="dock-icon">🎯</span><span>Talent</span></a></li>
+                <li><a href="javascript:void(0)" onclick="openCommandPalette()"><span class="dock-icon">🔍</span><span>Jump</span></a></li>
+            {% else %}
+                <li><a href="{{ url_for('home') }}" class="{% if request.path == '/' %}active{% endif %}"><span class="dock-icon">⚡</span><span>Lumina</span></a></li>
+                <li><a href="{{ url_for('principal_briefing') }}" class="{% if request.path in ['/principal', '/executive-briefing'] %}active{% endif %}"><span class="dock-icon">🎓</span><span>Briefing</span></a></li>
+                <li><a href="{{ url_for('leaderboard') }}"><span class="dock-icon">🏅</span><span>Rankings</span></a></li>
+                <li><a href="{{ url_for('login') }}"><span class="dock-icon">🔑</span><span>Login</span></a></li>
+                <li><a href="javascript:void(0)" onclick="openCommandPalette()"><span class="dock-icon">🔍</span><span>Jump</span></a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <!-- Universal Command Palette Modal (Ctrl+K / Cmd+K) -->
+    <div id="cmd-palette-overlay" class="cmd-palette-overlay" onclick="closeCommandPalette(event)" role="dialog" aria-modal="true" aria-label="Command search">
+        <div class="cmd-palette-modal" onclick="event.stopPropagation()">
+            <div class="cmd-palette-search">
+                <span style="font-size:1.2rem; color:var(--primary);">🔍</span>
+                <input type="text" id="cmd-palette-input" placeholder="Type a game, arena, or page to jump..." autocomplete="off" oninput="filterCommandPalette()" onkeydown="handleCommandKey(event)">
+                <button onclick="closeCommandPalette()" style="background:none; border:none; color:var(--muted); font-size:1.2rem; cursor:pointer;" aria-label="Close search">✕</button>
+            </div>
+            <div class="cmd-palette-list" id="cmd-palette-list"></div>
+        </div>
+    </div>
+
     <script>
         function setTheme(t) { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('lumina-theme', t); }
         function toggleNav() {
             const nav = document.getElementById('nav-links');
             nav.classList.toggle('open');
             const btn = document.querySelector('.hamburger');
-            btn.setAttribute('aria-expanded', nav.classList.contains('open'));
+            if (btn) btn.setAttribute('aria-expanded', nav.classList.contains('open'));
         }
         (function(){ var t = localStorage.getItem('lumina-theme') || 'dark'; document.documentElement.setAttribute('data-theme', t); var s = document.getElementById('theme-select'); if(s) s.value = t; })();
+
+        // Command Palette Items
+        const CMD_ITEMS = [
+            { title: "Principal Briefing & Laptop Grant Proposal", category: "Featured", icon: "🎓", url: "{{ url_for('principal_briefing') }}", badge: "Executive" },
+            { title: "Toggle Web Audio Synthesis", category: "Actions", icon: "🔊", action: "toggleSound", badge: "Audio" },
+            { title: "Celebrate Student Innovation", category: "Actions", icon: "🎉", action: "celebrate", badge: "Confetti" },
+            { title: "Speed Typing (Solo)", category: "Play & Compete", icon: "⌨️", url: "{{ url_for('typing_page') }}", badge: "Motor Cadence" },
+            { title: "Multiplayer Typing Races", category: "Play & Compete", icon: "🏁", url: "{{ url_for('competitions_hub') }}", badge: "Multiplayer" },
+            { title: "Team Cognitive Relay", category: "Play & Compete", icon: "🤝", url: "{{ url_for('relay_lobby') }}", badge: "Esports" },
+            { title: "Chess Arena (vs GM Bot)", category: "Play & Compete", icon: "♟️", url: "/chess/solo_bot?bot=1", badge: "Strategy" },
+            { title: "Checkers Arena", category: "Play & Compete", icon: "🔴", url: "/checkers/solo_bot?bot=1", badge: "Deduction" },
+            { title: "Math Sprint", category: "Play & Compete", icon: "🧮", url: "{{ url_for('math_sprint') }}", badge: "Arithmetic" },
+            { title: "Memory Palace", category: "Play & Compete", icon: "🧠", url: "{{ url_for('memory_palace') }}", badge: "Working Memory" },
+            { title: "Reaction Test", category: "Play & Compete", icon: "⚡", url: "{{ url_for('reaction_test') }}", badge: "Reflexes" },
+            { title: "Pattern Match", category: "Play & Compete", icon: "🔷", url: "{{ url_for('pattern_match') }}", badge: "Inductive Logic" },
+            { title: "Word Blitz", category: "Play & Compete", icon: "🔤", url: "{{ url_for('word_blitz') }}", badge: "Lexical" },
+            { title: "Tournaments Bracket", category: "Play & Compete", icon: "🏆", url: "{{ url_for('tournament_list') }}", badge: "Bracket" },
+            { title: "7-Axis Talent Profile", category: "Talent & Growth", icon: "🎯", url: "{{ url_for('talent_profile_page') }}", badge: "LTI Radar" },
+            { title: "Performance Analytics", category: "Talent & Growth", icon: "📊", url: "{{ url_for('analytics') }}", badge: "Telemetry" },
+            { title: "Official Talent Dossier", category: "Talent & Growth", icon: "📄", url: "{{ url_for('talent_report_self') }}", badge: "Certified" },
+            { title: "Global Leaderboard", category: "Talent & Growth", icon: "🏅", url: "{{ url_for('leaderboard') }}", badge: "Rankings" },
+            { title: "Badges & Achievements", category: "Talent & Growth", icon: "🎖️", url: "{{ url_for('badges_page') }}", badge: "Mastery" },
+            { title: "Student Showcase & Parent Feed", category: "Community", icon: "🌟", url: "{{ url_for('showcase_feed') }}", badge: "Public" },
+            { title: "Zero-Cloud Global Offline Hub", category: "Community", icon: "🌍", url: "{{ url_for('offline_hub') }}", badge: "Offline Hub" },
+            { title: "Classroom Live Projector Arena", category: "Community", icon: "📺", url: "{{ url_for('classroom_projector', room_id='GLOBAL') }}", badge: "Smartboard" },
+            { title: "Global Community Chat", category: "Community", icon: "💬", url: "{{ url_for('chat_page') }}", badge: "Real-time" },
+            { title: "Dashboard", category: "Navigation", icon: "🏠", url: "{{ url_for('dashboard') }}", badge: "Home" },
+            { title: "Inbox & Parent Notes", category: "Navigation", icon: "💌", url: "{{ url_for('inbox_page') }}", badge: "Messages" }
+        ];
+
+        let selectedCmdIndex = 0;
+        let filteredCmdItems = [...CMD_ITEMS];
+
+        function openCommandPalette() {
+            const overlay = document.getElementById('cmd-palette-overlay');
+            const inp = document.getElementById('cmd-palette-input');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                inp.value = '';
+                filterCommandPalette();
+                setTimeout(() => inp.focus(), 50);
+                if (window.LuminaAudio) LuminaAudio.playClick();
+            }
+        }
+
+        function closeCommandPalette(e) {
+            const overlay = document.getElementById('cmd-palette-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        function filterCommandPalette() {
+            const query = (document.getElementById('cmd-palette-input').value || '').toLowerCase().trim();
+            const list = document.getElementById('cmd-palette-list');
+            if (!list) return;
+
+            filteredCmdItems = CMD_ITEMS.filter(it => 
+                it.title.toLowerCase().includes(query) || 
+                it.category.toLowerCase().includes(query) || 
+                it.badge.toLowerCase().includes(query)
+            );
+
+            selectedCmdIndex = 0;
+            renderCommandList();
+        }
+
+        function executeCommand(item) {
+            if (!item) return;
+            if (item.action === 'toggleSound') {
+                if (window.LuminaAudio) LuminaAudio.toggle();
+                closeCommandPalette();
+            } else if (item.action === 'celebrate') {
+                if (window.LuminaConfetti) LuminaConfetti();
+                if (window.LuminaAudio) LuminaAudio.playFanfare();
+                closeCommandPalette();
+            } else if (item.url) {
+                window.location.href = item.url;
+            }
+        }
+
+        function renderCommandList() {
+            const list = document.getElementById('cmd-palette-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            if (filteredCmdItems.length === 0) {
+                list.innerHTML = '<div style="padding:24px; text-align:center; color:var(--muted);">No matching destinations found.</div>';
+                return;
+            }
+
+            let currentCategory = '';
+            filteredCmdItems.forEach((item, index) => {
+                if (item.category !== currentCategory) {
+                    currentCategory = item.category;
+                    const catTitle = document.createElement('div');
+                    catTitle.className = 'cmd-category-title';
+                    catTitle.textContent = currentCategory;
+                    list.appendChild(catTitle);
+                }
+
+                const el = document.createElement('a');
+                el.href = item.url || 'javascript:void(0)';
+                el.className = 'cmd-item' + (index === selectedCmdIndex ? ' selected' : '');
+                el.innerHTML = `
+                    <div class="item-meta">
+                        <span style="font-size:1.2rem;">${item.icon}</span>
+                        <span style="font-weight:600;">${item.title}</span>
+                    </div>
+                    <span class="item-badge">${item.badge}</span>
+                `;
+                el.addEventListener('mouseenter', () => {
+                    selectedCmdIndex = index;
+                    updateCommandSelection();
+                });
+                el.addEventListener('click', (e) => {
+                    if (item.action) {
+                        e.preventDefault();
+                        executeCommand(item);
+                    }
+                });
+                list.appendChild(el);
+            });
+        }
+
+        function updateCommandSelection() {
+            const items = document.querySelectorAll('.cmd-item');
+            items.forEach((it, idx) => {
+                it.classList.toggle('selected', idx === selectedCmdIndex);
+                if (idx === selectedCmdIndex) it.scrollIntoView({ block: 'nearest' });
+            });
+        }
+
+        function handleCommandKey(e) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedCmdIndex = (selectedCmdIndex + 1) % filteredCmdItems.length;
+                updateCommandSelection();
+                if (window.LuminaAudio) LuminaAudio.playClick();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedCmdIndex = (selectedCmdIndex - 1 + filteredCmdItems.length) % filteredCmdItems.length;
+                updateCommandSelection();
+                if (window.LuminaAudio) LuminaAudio.playClick();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                executeCommand(filteredCmdItems[selectedCmdIndex]);
+            } else if (e.key === 'Escape') {
+                closeCommandPalette();
+            }
+        }
+
+        // Global hotkey Ctrl+K / Cmd+K
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                const overlay = document.getElementById('cmd-palette-overlay');
+                if (overlay && overlay.style.display === 'flex') {
+                    closeCommandPalette();
+                } else {
+                    openCommandPalette();
+                }
+            } else if (e.key === 'Escape') {
+                closeCommandPalette();
+            }
+        });
     </script>
     {% block scripts %}{% endblock %}
 <script>
