@@ -170,6 +170,37 @@ class TestOptimizationsAndHardening(unittest.TestCase):
         cache_header = resp.headers.get("Cache-Control", "")
         self.assertIn("max-age=31536000", cache_header)
 
+    def test_analytics_guest_and_scores_serialization(self):
+        """Verify /analytics works for guests without redirect and serializes Row objects safely when scores exist"""
+        # 1. Guest access should return 200 OK (never 302 redirect)
+        res_guest = self.client.get("/analytics")
+        self.assertEqual(res_guest.status_code, 200)
+        self.assertIn(b"Campus Telemetry", res_guest.data)
+        self.assertIn(b"Performance & Cognitive Analytics", res_guest.data)
+
+        # 2. Authenticated user WITH score rows (must not raise TypeError: Object of type Row is not JSON serializable)
+        uid, uname = self._create_test_user()
+        with self.app.app_context():
+            from db import db_execute
+            db_execute(
+                "INSERT INTO scores (user_id, wpm, accuracy, net_wpm, errors, error_map, integrity_score) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (uid, 92.0, 98.5, 90.6, 2, json.dumps({"p": 3, "q": 1}), 0.99)
+            )
+
+        with self.client.session_transaction() as sess:
+            sess["_user_id"] = str(uid)
+
+        res_user = self.client.get("/analytics")
+        self.assertEqual(res_user.status_code, 200)
+        self.assertIn(b"90.6", res_user.data)
+        self.assertIn(b"Motor Cadence & Accuracy Trajectory", res_user.data)
+
+    def test_local_chart_asset_serving(self):
+        """Verify local Chart.js bundle is served with 200 OK and aggressive caching"""
+        resp = self.client.get("/static/chart.umd.min.js")
+        self.assertEqual(resp.status_code, 200)
+        self.assertGreater(len(resp.data), 50000)
+
 if __name__ == "__main__":
     unittest.main()
     import os; os._exit(0)

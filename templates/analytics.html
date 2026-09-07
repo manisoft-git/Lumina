@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Analytics & Cognitive Milestones — Lumina{% endblock %}
+{% block title %}Performance & Cognitive Analytics | Lumina{% endblock %}
 {% block head %}
 <style>
 /* Modern Bento Grid Analytics Architecture */
@@ -7,8 +7,8 @@
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-lg);
-    padding: 32px;
-    margin-bottom: 26px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -19,16 +19,16 @@
     overflow: hidden;
 }
 .analytics-hero::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0; left: 0; right: 0; height: 3px;
     background: linear-gradient(90deg, var(--primary), var(--accent-purple), var(--accent));
 }
 .analytics-hero h1 {
-    font-size: 2rem;
+    font-size: 1.9rem;
     font-weight: 900;
     letter-spacing: -0.03em;
-    margin: 0 0 8px;
+    margin: 0 0 6px;
     background: linear-gradient(135deg, #38bdf8 0%, #c084fc 50%, #4ade80 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -36,98 +36,209 @@
 .analytics-hero p {
     margin: 0;
     color: var(--text-secondary);
-    font-size: 0.96rem;
-    max-width: 600px;
+    font-size: 0.95rem;
+    max-width: 620px;
     line-height: 1.5;
 }
 
-/* Cognitive Talent Radar Summary Card */
-.cognitive-summary-card {
+/* Institutional / Guest Status Banner */
+.status-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 14px 20px;
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+}
+.status-banner-guest {
+    background: rgba(14, 165, 233, 0.1);
+    border-color: rgba(56, 189, 248, 0.35);
+}
+.status-banner-onboarding {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(192, 132, 252, 0.35);
+}
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    background: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+/* 4-Card Telemetry HUD */
+.telemetry-hud-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 26px;
+}
+.telemetry-hud-card {
     background: var(--surface);
     border: 1px solid var(--border-strong);
-    border-radius: var(--radius-lg);
-    padding: 28px;
-    margin-bottom: 26px;
+    border-radius: var(--radius);
+    padding: 22px 20px;
     position: relative;
     overflow: hidden;
     box-shadow: var(--shadow);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-}
-.cognitive-summary-card::after {
-    content: '';
-    position: absolute;
-    top: -50px; right: -50px;
-    width: 200px; height: 200px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
-    pointer-events: none;
-}
-.lti-hud {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 18px;
-    margin-bottom: 24px;
-}
-.lti-box {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-    text-align: center;
     transition: transform var(--transition), border-color var(--transition);
 }
-.lti-box:hover {
+.telemetry-hud-card:hover {
     transform: translateY(-3px);
-    border-color: var(--border-strong);
+    border-color: var(--primary);
 }
-.lti-val {
-    font-size: 2.3rem;
+.telemetry-hud-card::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; width: 60px; height: 60px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+}
+.telemetry-val {
+    font-size: 2.2rem;
     font-weight: 900;
     font-family: var(--font-mono);
     color: var(--primary);
-    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 4px 0;
 }
-.lti-sub {
-    font-size: 0.78rem;
+.telemetry-label {
+    font-size: 0.8rem;
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
     font-weight: 700;
+    letter-spacing: 0.06em;
+}
+.telemetry-sub {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
     margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-/* Domains Pill Grid */
-.domains-pill-grid {
+/* Cadence Section Header & Timeframe Buttons */
+.section-header-bar {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 16px;
-}
-.domain-chip {
-    display: inline-flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.04);
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.timeframe-group {
+    display: inline-flex;
+    background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);
-    padding: 7px 16px;
-    font-size: 0.85rem;
-    color: var(--text);
+    padding: 3px;
+    gap: 4px;
+}
+.btn-timeframe {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
     transition: all var(--transition);
 }
-.domain-chip:hover {
-    background: rgba(56, 189, 248, 0.1);
-    border-color: var(--border-primary);
-    transform: translateY(-2px);
+.btn-timeframe.active, .btn-timeframe:hover {
+    background: var(--primary);
+    color: #0b0f19;
 }
 
-/* Share to Showcase Action Grid */
+/* 7-Axis Domain Agility Cards */
+.domain-matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 26px;
+}
+.domain-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    transition: all var(--transition);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.domain-card:hover {
+    border-color: var(--border-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+.domain-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.domain-name {
+    font-size: 0.96rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.domain-score {
+    font-size: 1.3rem;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    color: var(--primary);
+}
+.domain-bar-bg {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0 12px;
+}
+.domain-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #38bdf8, #818cf8);
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.domain-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+.domain-footer a {
+    color: var(--primary);
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.82rem;
+}
+.domain-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Share to Showcase Banner */
 .showcase-share-banner {
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(99, 102, 241, 0.12) 100%);
     border: 1px solid rgba(236, 72, 153, 0.35);
     border-radius: var(--radius-lg);
-    padding: 24px 28px;
+    padding: 22px 26px;
     margin-bottom: 26px;
     display: flex;
     justify-content: space-between;
@@ -135,25 +246,6 @@
     flex-wrap: wrap;
     gap: 18px;
     box-shadow: 0 4px 24px rgba(236, 72, 153, 0.1);
-}
-.showcase-share-banner h3 {
-    margin: 0 0 6px;
-    font-size: 1.2rem;
-    font-weight: 800;
-    color: #fbcfe8;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.showcase-share-banner p {
-    margin: 0;
-    font-size: 0.88rem;
-    color: var(--text-secondary);
-}
-.quick-share-buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
 }
 .btn-share-record {
     background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
@@ -173,11 +265,22 @@
     box-shadow: 0 6px 20px rgba(236, 72, 153, 0.5);
     border-color: rgba(255, 255, 255, 0.5);
 }
-.btn-share-record:active {
-    transform: translateY(0) scale(0.96);
+
+/* Biometric Keyboard Heatmap */
+.heatmap-insights-bar {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 12px 18px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 14px;
+    font-size: 0.86rem;
 }
 
-/* Toast Notification for Milestone Sharing */
+/* Toast */
 #share-toast {
     position: fixed;
     bottom: 24px;
@@ -199,106 +302,218 @@
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Print Optimization */
+@media print {
+    .no-print, nav, .navbar, .timeframe-group, .btn-share-record, .showcase-share-banner, #share-toast {
+        display: none !important;
+    }
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    .analytics-hero, .telemetry-hud-card, .domain-card, .analytics-section {
+        border: 1px solid #ccc !important;
+        background: #fff !important;
+        color: #000 !important;
+        box-shadow: none !important;
+    }
+    .telemetry-val, .domain-score {
+        color: #0284c7 !important;
+    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="analytics-page">
-    
+
     <!-- Hero Header -->
     <div class="analytics-hero">
         <div>
             <h1>📊 Performance & Cognitive Analytics</h1>
-            <p>Comprehensive telemetry of motor cadence, error distribution, and multi-domain cognitive agility.</p>
+            <p>High-resolution telemetry of motor cadence, error distribution, biometric integrity, and 7-axis cognitive agility.</p>
         </div>
-        <div style="display:flex; gap:10px;">
-            <a href="{{ url_for('talent_profile_page') }}" class="btn btn-primary" style="font-weight:700;">🎯 7-Axis Talent Profile</a>
-            <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary">🌟 Parent Showcase</a>
+        <div class="no-print" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button onclick="window.print()" class="btn btn-secondary" style="font-weight:700;">
+                <span>📄</span> Export Dossier
+            </button>
+            <button onclick="exportJSONTelemetry()" class="btn btn-secondary" style="font-weight:700;">
+                <span>💾</span> Export JSON
+            </button>
+            <a href="{{ url_for("talent_profile_page") }}" class="btn btn-primary" style="font-weight:700;">
+                <span>🎯</span> 7-Axis Talent Radar
+            </a>
+        </div>
+    </div>
+
+    <!-- Context / Access State Banner -->
+    {% if is_guest %}
+    <div class="status-banner status-banner-guest no-print">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span class="status-badge">🏛️ Campus Telemetry</span>
+            <span style="font-size:0.9rem; color:var(--text);">
+                Viewing aggregate school-wide performance benchmarks. Log in or create a profile to record and calibrate your individual cognitive trajectory.
+            </span>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <a href="{{ url_for("login") }}" class="btn btn-primary btn-sm">Sign In</a>
+            <a href="{{ url_for("register") }}" class="btn btn-secondary btn-sm">Register</a>
+        </div>
+    </div>
+    {% elif not has_personal_data %}
+    <div class="status-banner status-banner-onboarding no-print">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span class="status-badge" style="background:rgba(168,85,247,0.2); color:#c084fc; border-color:rgba(192,132,252,0.4);">⚡ Calibrating Baseline</span>
+            <span style="font-size:0.9rem; color:var(--text);">
+                Welcome! Displaying campus cohort baseline alongside your profile. Complete typing drills or cognitive arenas to populate your personal cadence curves.
+            </span>
+        </div>
+        <a href="{{ url_for('typing_page') }}" class="btn btn-primary btn-sm">Start Typing Sprint &rarr;</a>
+    </div>
+    {% endif %}
+
+    <!-- 4-Card Telemetry HUD -->
+    <div class="telemetry-hud-grid">
+        <div class="telemetry-hud-card">
+            <div class="telemetry-label">🧠 Lumina Cognitive Talent Index (LTI)</div>
+            <div class="telemetry-val">{{ talent_profile.lti if talent_profile else 750 }}</div>
+            <div class="telemetry-sub">
+                <span style="color:var(--accent); font-weight:700;">Top {{ 100 - (talent_profile.overall_percentile if talent_profile else 85) }}%</span>
+                <span>• {{ talent_profile.archetype.badge if talent_profile else "🏛️" }} {{ talent_profile.archetype.title if talent_profile else "Algorithmic Architect" }}</span>
+            </div>
+        </div>
+        <div class="telemetry-hud-card">
+            <div class="telemetry-label">⚡ Peak Motor Velocity</div>
+            <div class="telemetry-val">{{ best_wpm }} <span style="font-size:1.1rem; color:var(--text-secondary);">WPM</span></div>
+            <div class="telemetry-sub">
+                <span style="color:#4ade80; font-weight:700;">{{ best_acc }}% Accuracy</span>
+                <span>• {{ total_tests }} tests recorded</span>
+            </div>
+        </div>
+        <div class="telemetry-hud-card">
+            <div class="telemetry-label">🎯 Rhythm Cadence Stability</div>
+            <div class="telemetry-val">{{ consistency_score }}%</div>
+            <div class="telemetry-sub">
+                <span style="color:var(--primary); font-weight:700;">Flight-Time Jitter: Low</span>
+                <span>• Consistent stroke rhythm</span>
+            </div>
+        </div>
+        <div class="telemetry-hud-card">
+            <div class="telemetry-label">🛡️ Biometric Anti-Cheat Score</div>
+            <div class="telemetry-val">{{ biometric_integrity }}%</div>
+            <div class="telemetry-sub">
+                <span style="color:#4ade80; font-weight:700;">100% Organic</span>
+                <span>• Verified physical keystrokes</span>
+            </div>
         </div>
     </div>
 
     <!-- Quick Milestone Share to Showcase -->
-    <div class="showcase-share-banner">
+    <div class="showcase-share-banner no-print">
         <div>
-            <h3>✨ Celebrate Records on the Parent Showcase</h3>
-            <p>Publish your high-water marks so parents, families, and mentors can view and cheer your milestones.</p>
+            <h3 style="margin:0 0 6px; font-size:1.18rem; font-weight:800; color:#fbcfe8; display:flex; align-items:center; gap:8px;">
+                <span>✨</span> Celebrate Records on the Parent Showcase
+            </h3>
+            <p style="margin:0; font-size:0.88rem; color:var(--text-secondary);">
+                Celebrate personal records so school faculty, mentors, and parents can applaud milestones.
+            </p>
         </div>
-        <div class="quick-share-buttons">
-            <button class="btn-share-record" onclick="quickShareShowcase('typing_record', 'Broke {{ best_wpm }} WPM Personal Record! ⚡', '{{ best_wpm }} WPM • {{ best_acc }}% Acc', 'Dedicated daily drill sprint with zero-distraction focus.')">
+        <div class="quick-share-buttons" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-share-record" onclick="quickShareShowcase("typing_record", "Broke {{ best_wpm }} WPM Personal Record! ⚡", "{{ best_wpm }} WPM • {{ best_acc }}% Acc", "High-cadence drill sprint with zero-distraction focus.")">
                 ⚡ Share {{ best_wpm }} WPM
             </button>
             {% if talent_profile and talent_profile.archetype %}
-            <button class="btn-share-record" style="background:linear-gradient(135deg, #38bdf8, #6366f1);" onclick="quickShareShowcase('cognitive_talent', 'Cognitive Milestone: {{ talent_profile.archetype.title }} 🏛️', 'LTI: {{ talent_profile.lti }} • Top {{ 100 - talent_profile.overall_percentile }}%', 'Synthesized 7 cognitive axes across arithmetic, sequence logic, and motor cadence.')">
+            <button class="btn-share-record" style="background:linear-gradient(135deg, #38bdf8, #6366f1);" onclick="quickShareShowcase("cognitive_talent", "Cognitive Milestone: {{ talent_profile.archetype.title }} 🏛️", "LTI: {{ talent_profile.lti }} • Top {{ 100 - talent_profile.overall_percentile }}%", "Synthesized 7 cognitive axes across arithmetic, sequence logic, and motor cadence.")">
                 🧠 Share LTI {{ talent_profile.lti }}
             </button>
             {% endif %}
             {% if chess_best and chess_best > 1200 %}
-            <button class="btn-share-record" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="quickShareShowcase('chess_win', 'Tactical Chess Breakthrough: {{ chess_best }} ELO! ♟️', '{{ chess_best }} Peak ELO', 'Defeated positional tactical engine through calculated endgame pawn promotion.')">
+            <button class="btn-share-record" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="quickShareShowcase("chess_win", "Tactical Chess Breakthrough: {{ chess_best }} ELO! ♟️", "{{ chess_best }} Peak ELO", "Defeated positional tactical engine through calculated endgame pawn promotion.")">
                 ♟️ Share {{ chess_best }} ELO
             </button>
             {% endif %}
         </div>
     </div>
 
-    <!-- Cognitive Talent Radar Summary Card -->
-    {% if talent_profile %}
-    <div class="cognitive-summary-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-            <div>
-                <h3 style="margin:0; font-size:1.2rem;">🧠 Lumina Cognitive Talent Index (LTI)</h3>
-                <span style="font-size:0.82rem; color:var(--muted);">Synthesized across 7 neural performance domains</span>
-            </div>
-            <a href="{{ url_for('talent_profile_page') }}" style="font-size:0.85rem; font-weight:700; color:var(--primary);">
-                Full Radar & Career Pathway &rarr;
-            </a>
-        </div>
-
-        <div class="lti-hud">
-            <div class="lti-box">
-                <div class="lti-val">{{ talent_profile.lti }}</div>
-                <div class="lti-sub">Cognitive LTI Index (200-1000)</div>
-            </div>
-            <div class="lti-box">
-                <div class="lti-val" style="color:var(--accent);">Top {{ 100 - talent_profile.overall_percentile }}%</div>
-                <div class="lti-sub">Global Percentile</div>
-            </div>
-            <div class="lti-box">
-                <div class="lti-val" style="font-size:1.4rem; color:#a855f7;">{{ talent_profile.archetype.badge }} {{ talent_profile.archetype.title }}</div>
-                <div class="lti-sub">Archetype Classification</div>
-            </div>
-        </div>
-
-        <div style="font-size:0.78rem; color:var(--muted); text-transform:uppercase; font-weight:700;">Domain Breakdown:</div>
-        <div class="domains-pill-grid">
-            {% for d in talent_profile.domains %}
-            <div class="domain-chip">
-                <span>{{ d.icon }}</span>
-                <strong>{{ d.name }}:</strong>
-                <span>{{ d.metric_label }}</span>
-                <span style="color:var(--primary); font-size:0.75rem;">({{ d.score }} pts)</span>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Progress Over Time -->
+    <!-- Progress Over Time Cadence Chart -->
     <section class="analytics-section">
-        <h2>📈 Typing Cadence & Accuracy History</h2>
-        <div style="position:relative;height:300px;">
-            <canvas id="progress-chart"></canvas>
+        <div class="section-header-bar">
+            <div>
+                <h2 style="margin:0; font-size:1.3rem;">📈 Motor Cadence & Accuracy Trajectory</h2>
+                <span style="font-size:0.82rem; color:var(--muted);">Verified Net WPM and precision tracking over time</span>
+            </div>
+            <div class="timeframe-group no-print">
+                <button class="btn-timeframe" onclick="filterTimeframe(7, this)">7 Days</button>
+                <button class="btn-timeframe" onclick="filterTimeframe(14, this)">14 Days</button>
+                <button class="btn-timeframe active" onclick="filterTimeframe(30, this)">30 Days</button>
+                <button class="btn-timeframe" onclick="filterTimeframe(0, this)">All History</button>
+            </div>
+        </div>
+        <div style="position:relative; height:320px; width:100%; border-radius:var(--radius); overflow:hidden;">
+            <canvas id="progress-chart" style="width:100%; height:100%;"></canvas>
         </div>
     </section>
 
-    <!-- Keyboard Error Heatmap -->
+    <!-- 7-Axis Cognitive Agility Matrix -->
     <section class="analytics-section">
-        <h2>⌨️ Keyboard Error Biometric Heatmap</h2>
+        <div class="section-header-bar">
+            <div>
+                <h2 style="margin:0; font-size:1.3rem;">🧠 7-Axis Cognitive Agility Matrix</h2>
+                <span style="font-size:0.82rem; color:var(--muted);">Multi-discipline breakdown synthesized by the Talent Discovery Engine</span>
+            </div>
+            <a href="{{ url_for("talent_profile_page") }}" class="no-print" style="font-size:0.85rem; font-weight:700; color:var(--primary);">
+                Full Interactive Radar & Career Pathways &rarr;
+            </a>
+        </div>
+
+        <div class="domain-matrix-grid">
+            {% if talent_profile and talent_profile.domains %}
+                {% for d in talent_profile.domains %}
+                <div class="domain-card">
+                    <div>
+                        <div class="domain-card-head">
+                            <div class="domain-name">
+                                <span>{{ d.icon }}</span>
+                                <span>{{ d.name }}</span>
+                            </div>
+                            <div class="domain-score">{{ d.score }}<span style="font-size:0.8rem; color:var(--muted);">/100</span></div>
+                        </div>
+                        <div class="domain-bar-bg">
+                            <div class="domain-bar-fill" style="width: {{ d.score }}%;"></div>
+                        </div>
+                    </div>
+                    <div class="domain-footer">
+                        <span>{{ d.metric_label }} (Top {{ 100 - d.percentile }}%)</span>
+                        {% if "Speed" in d.name %}<a href="{{ url_for('typing_page') }}" class="no-print">Train Cadence &rarr;</a>
+                        {% elif "Quantitative" in d.name %}<a href="{{ url_for('math_sprint') }}" class="no-print">Train Math &rarr;</a>
+                        {% elif "Memory" in d.name %}<a href="{{ url_for('memory_palace') }}" class="no-print">Train Memory &rarr;</a>
+                        {% elif "Reflex" in d.name %}<a href="{{ url_for('reaction_test') }}" class="no-print">Train Reflexes &rarr;</a>
+                        {% elif "Logic" in d.name %}<a href="{{ url_for('pattern_match') }}" class="no-print">Train Patterns &rarr;</a>
+                        {% elif "Strategic" in d.name %}<a href="{{ url_for('games_hub') }}" class="no-print">Train Chess &rarr;</a>
+                        {% elif "Verbal" in d.name %}<a href="{{ url_for('word_blitz') }}" class="no-print">Train Vocabulary &rarr;</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Keyboard Error Biometric Heatmap -->
+    <section class="analytics-section">
+        <div class="section-header-bar">
+            <div>
+                <h2 style="margin:0; font-size:1.3rem;">⌨️ Biometric Keystroke Error Heatmap</h2>
+                <span style="font-size:0.82rem; color:var(--muted);">Spatial error mapping to isolate finger dexterity and reach inaccuracies</span>
+            </div>
+        </div>
         <div class="heatmap-container" role="img" aria-label="Keyboard heatmap">
             {% set keys = [
-                ['`','1','2','3','4','5','6','7','8','9','0','-','='],
-                ['q','w','e','r','t','y','u','i','o','p','[',']','\\'],
-                ['a','s','d','f','g','h','j','k','l',';',"'"],
-                ['z','x','c','v','b','n','m',',','.','/']
+                ["`","1","2","3","4","5","6","7","8","9","0","-","="],
+                ["q","w","e","r","t","y","u","i","o","p","[","]","\\"],
+                ["a","s","d","f","g","h","j","k","l",";","'"],
+                ["z","x","c","v","b","n","m",",",".","/"]
             ] %}
             <div class="keyboard">
                 {% for row in keys %}
@@ -309,48 +524,83 @@
                     {% endfor %}
                 </div>
                 {% endfor %}
-                <div class="kb-row"><div class="kb-key kb-space {% if heatmap.get('space',0) > 20 %}heat-high{% elif heatmap.get('space',0) > 5 %}heat-med{% elif heatmap.get('space',0) > 0 %}heat-low{% endif %}">space</div></div>
+                <div class="kb-row">
+                    {% set space_val = heatmap.get("space", 0) %}
+                    <div class="kb-key kb-space {% if space_val > 20 %}heat-high{% elif space_val > 5 %}heat-med{% elif space_val > 0 %}heat-low{% endif %}">space</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="heatmap-insights-bar">
+            <div>
+                <span style="color:var(--muted);">Total Misses Tracked:</span>
+                <strong style="color:var(--text);">
+                    {% set total_errors = heatmap.values() | sum %}
+                    {{ total_errors if total_errors > 0 else "0 (Clean baseline)" }}
+                </strong>
+            </div>
+            <div>
+                <span style="color:var(--muted);">Top Slip Keycaps:</span>
+                <strong style="color:#f43f5e;">
+                    {% set sorted_errs = heatmap.items() | selectattr(1) | sort(attribute=1, reverse=True) %}
+                    {% if sorted_errs %}
+                        {% for k, v in sorted_errs[:3] %}
+                            '{{ k }}' ({{ v }}){% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        None detected (Flawless precision)
+                    {% endif %}
+                </strong>
+            </div>
+            <div>
+                <span style="color:var(--muted);">Remediation Prescription:</span>
+                <span style="color:var(--primary); font-weight:700;">Focus on outer-column pinky reach & home-row anchoring</span>
             </div>
         </div>
     </section>
 
-    <!-- Game High Scores -->
+    <!-- Multi-Discipline High Scores -->
     <section class="analytics-section">
-        <h2>🎮 Multi-Discipline High Scores</h2>
-        <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 18px;">
+        <div class="section-header-bar">
+            <div>
+                <h2 style="margin:0; font-size:1.3rem;">🎮 Multi-Discipline High Water Marks</h2>
+                <span style="font-size:0.82rem; color:var(--muted);">Verified institutional records across 8 cognitive arenas</span>
+            </div>
+        </div>
+        <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 16px;">
             <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
-                <div style="font-size:1.6rem; margin-bottom:4px;">⚡</div>
-                <div class="stat-value">{{ best_wpm }}</div>
+                <div style="font-size:1.5rem; margin-bottom:4px;">⚡</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ best_wpm }}</div>
                 <div class="stat-label">Best Net WPM</div>
             </div>
             <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
-                <div style="font-size:1.6rem; margin-bottom:4px;">🧮</div>
-                <div class="stat-value">{{ math_best }}</div>
+                <div style="font-size:1.5rem; margin-bottom:4px;">🧮</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ math_best }}</div>
                 <div class="stat-label">Math Sprint Best</div>
             </div>
             <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
-                <div style="font-size:1.6rem; margin-bottom:4px;">🧠</div>
-                <div class="stat-value">{{ memory_best }}</div>
+                <div style="font-size:1.5rem; margin-bottom:4px;">🧠</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ memory_best }}</div>
                 <div class="stat-label">Memory Level</div>
             </div>
             <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
-                <div style="font-size:1.6rem; margin-bottom:4px;">⏱️</div>
-                <div class="stat-value">{{ reaction_best }}ms</div>
-                <div class="stat-label">Reaction Best</div>
+                <div style="font-size:1.5rem; margin-bottom:4px;">⏱️</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ reaction_best }}ms</div>
+                <div class="stat-label">Reaction Latency</div>
             </div>
             <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
-                <div style="font-size:1.6rem; margin-bottom:4px;">🧩</div>
-                <div class="stat-value">{{ pattern_best }}</div>
+                <div style="font-size:1.5rem; margin-bottom:4px;">🧩</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ pattern_best }}</div>
                 <div class="stat-label">Patterns Solved</div>
             </div>
             <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
-                <div style="font-size:1.6rem; margin-bottom:4px;">📚</div>
-                <div class="stat-value">{{ word_best }}</div>
+                <div style="font-size:1.5rem; margin-bottom:4px;">📚</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ word_best }}</div>
                 <div class="stat-label">Word Blitz Best</div>
             </div>
             <div class="stat" style="background:var(--surface2); padding:18px 14px; border-radius:14px; border:1px solid var(--border);">
-                <div style="font-size:1.6rem; margin-bottom:4px;">♟️</div>
-                <div class="stat-value">{{ chess_best }}</div>
+                <div style="font-size:1.5rem; margin-bottom:4px;">♟️</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ chess_best }}</div>
                 <div class="stat-label">Chess Peak ELO</div>
             </div>
         </div>
@@ -364,49 +614,64 @@
 </div>
 
 <script>
-const ctx = document.getElementById('progress-chart');
-const rawData = {{ progress | tojson }} || [];
-if (rawData.length === 0) {
-    ctx.parentElement.innerHTML = '<div class="empty-state" style="padding:60px 20px;"><div class="empty-state-icon">📈</div><p>No typing data recorded yet. Complete some typing drills to unlock cadence graphs!</p></div>';
-} else {
-    const canvasContext = ctx.getContext('2d');
-    
-    // Gradient fills
-    const wpmGrad = canvasContext.createLinearGradient(0, 0, 0, 280);
-    wpmGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
-    wpmGrad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+// Data serialized safely from Python primitive lists
+const allCadenceData = {{ progress | tojson }} || [];
+let activeChartInstance = null;
 
-    const accGrad = canvasContext.createLinearGradient(0, 0, 0, 280);
-    accGrad.addColorStop(0, 'rgba(74, 222, 128, 0.25)');
-    accGrad.addColorStop(1, 'rgba(74, 222, 128, 0.0)');
+function renderCadenceChart(dataSubset) {
+    const canvas = document.getElementById("progress-chart");
+    if (!canvas) return;
 
-    if (typeof Chart !== 'undefined') {
-        new Chart(ctx, {
-            type: 'line',
+    if (!dataSubset || dataSubset.length === 0) {
+        canvas.parentElement.innerHTML = '<div class="empty-state" style="padding:60px 20px;"><div class="empty-state-icon">📈</div><p>No historical cadence data available for this timeframe.</p></div>';
+        return;
+    }
+
+    const labels = dataSubset.map(d => d[0]);
+    const wpmData = dataSubset.map(d => d[1] !== undefined ? Number(d[1]) : 0);
+    const accData = dataSubset.map(d => d[2] !== undefined ? Number(d[2]) : 0);
+
+    // If Chart.js is present (bundled locally at /static/chart.umd.min.js)
+    if (typeof Chart !== "undefined") {
+        if (activeChartInstance) {
+            activeChartInstance.destroy();
+        }
+
+        const ctx = canvas.getContext("2d");
+        const wpmGrad = ctx.createLinearGradient(0, 0, 0, 300);
+        wpmGrad.addColorStop(0, "rgba(56, 189, 248, 0.38)");
+        wpmGrad.addColorStop(1, "rgba(56, 189, 248, 0.0)");
+
+        const accGrad = ctx.createLinearGradient(0, 0, 0, 300);
+        accGrad.addColorStop(0, "rgba(74, 222, 128, 0.25)");
+        accGrad.addColorStop(1, "rgba(74, 222, 128, 0.0)");
+
+        activeChartInstance = new Chart(canvas, {
+            type: "line",
             data: {
-                labels: rawData.map(d => d[0]),
+                labels: labels,
                 datasets: [
                     {
-                        label: 'Avg Net WPM',
-                        data: rawData.map(d => d[1] ? Math.round(d[1]*10)/10 : 0),
-                        borderColor: '#38bdf8',
+                        label: "Net WPM",
+                        data: wpmData,
+                        borderColor: "#38bdf8",
                         borderWidth: 3,
                         backgroundColor: wpmGrad,
                         tension: 0.35,
                         fill: true,
-                        pointBackgroundColor: '#38bdf8',
+                        pointBackgroundColor: "#38bdf8",
                         pointRadius: 4,
                         pointHoverRadius: 7
                     },
                     {
-                        label: 'Avg Accuracy (%)',
-                        data: rawData.map(d => d[2] ? Math.round(d[2]*10)/10 : 0),
-                        borderColor: '#4ade80',
+                        label: "Accuracy (%)",
+                        data: accData,
+                        borderColor: "#4ade80",
                         borderWidth: 2,
                         backgroundColor: accGrad,
                         tension: 0.35,
                         fill: true,
-                        pointBackgroundColor: '#4ade80',
+                        pointBackgroundColor: "#4ade80",
                         pointRadius: 3,
                         pointHoverRadius: 6
                     }
@@ -415,35 +680,32 @@ if (rawData.length === 0) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
+                interaction: { mode: "index", intersect: false },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(255, 255, 255, 0.06)' },
-                        ticks: { color: '#94a3b8', font: { family: 'inherit', size: 12 } }
+                        grid: { color: "rgba(255, 255, 255, 0.06)" },
+                        ticks: { color: "#94a3b8", font: { family: "inherit", size: 12 } }
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#94a3b8', font: { family: 'inherit', size: 12 } }
+                        ticks: { color: "#94a3b8", font: { family: "inherit", size: 11 } }
                     }
                 },
                 plugins: {
                     legend: {
                         labels: {
-                            color: '#f8fafc',
-                            font: { family: 'inherit', size: 13, weight: 'bold' },
+                            color: "#f8fafc",
+                            font: { family: "inherit", size: 13, weight: "bold" },
                             usePointStyle: true,
-                            pointStyle: 'circle'
+                            pointStyle: "circle"
                         }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                        titleColor: '#38bdf8',
-                        bodyColor: '#f8fafc',
-                        borderColor: 'rgba(56, 189, 248, 0.3)',
+                        backgroundColor: "rgba(15, 23, 42, 0.95)",
+                        titleColor: "#38bdf8",
+                        bodyColor: "#f8fafc",
+                        borderColor: "rgba(56, 189, 248, 0.3)",
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 10
@@ -452,49 +714,167 @@ if (rawData.length === 0) {
             }
         });
     } else {
-        ctx.parentElement.innerHTML = '<div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">📈</div><p>Typing cadence history recorded. Connect online or view history tab for raw metrics.</p></div>';
+        // Pure Standalone HTML5 Canvas Fallback Renderer (Zero-dependency guarantee)
+        drawStandaloneCanvasChart(canvas, labels, wpmData, accData);
     }
 }
 
+// Standalone pure-canvas graph if Chart.js is ever unavailable
+function drawStandaloneCanvasChart(canvas, labels, wpmData, accData) {
+    const ctx = canvas.getContext("2d");
+    const width = canvas.parentElement.clientWidth || 800;
+    const height = 300;
+    canvas.width = width;
+    canvas.height = height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const padLeft = 40, padRight = 20, padTop = 30, padBottom = 40;
+    const plotW = width - padLeft - padRight;
+    const plotH = height - padTop - padBottom;
+
+    const maxVal = Math.max(100, ...wpmData, ...accData);
+
+    // Draw horizontal gridlines
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
+    ctx.lineWidth = 1;
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "11px sans-serif";
+
+    for (let step = 0; step <= 4; step++) {
+        const yVal = (maxVal / 4) * step;
+        const yPos = padTop + plotH - (step / 4) * plotH;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, yPos);
+        ctx.lineTo(width - padRight, yPos);
+        ctx.stroke();
+        ctx.fillText(Math.round(yVal), 8, yPos + 4);
+    }
+
+    function drawLine(data, color, fillGradColor) {
+        if (data.length === 0) return;
+        const stepX = plotW / (data.length - 1 || 1);
+
+        ctx.beginPath();
+        data.forEach((val, i) => {
+            const x = padLeft + i * stepX;
+            const y = padTop + plotH - (val / maxVal) * plotH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Points
+        data.forEach((val, i) => {
+            const x = padLeft + i * stepX;
+            const y = padTop + plotH - (val / maxVal) * plotH;
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        });
+    }
+
+    drawLine(wpmData, "#38bdf8", "rgba(56, 189, 248, 0.2)");
+    drawLine(accData, "#4ade80", "rgba(74, 222, 128, 0.2)");
+
+    // Date labels
+    ctx.fillStyle = "#94a3b8";
+    const stepX = plotW / (labels.length - 1 || 1);
+    labels.forEach((lbl, i) => {
+        if (labels.length <= 8 || i % Math.ceil(labels.length / 8) === 0) {
+            const x = padLeft + i * stepX;
+            ctx.fillText(lbl.substring(5), x - 12, height - 12);
+        }
+    });
+}
+
+function filterTimeframe(days, btn) {
+    document.querySelectorAll(".btn-timeframe").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+
+    let filtered = allCadenceData;
+    if (days > 0 && allCadenceData.length > days) {
+        filtered = allCadenceData.slice(-days);
+    }
+    renderCadenceChart(filtered);
+}
+
+function exportJSONTelemetry() {
+    const telemetryPayload = {
+        exported_at: new Date().toISOString(),
+        institution: "Lumina Autonomous Learning Ecosystem",
+        metrics: {
+            best_net_wpm: {{ best_wpm }},
+            best_accuracy: {{ best_acc }},
+            consistency_score: {{ consistency_score }},
+            biometric_integrity: {{ biometric_integrity }},
+            total_tests: {{ total_tests }},
+            math_best: {{ math_best }},
+            memory_best: {{ memory_best }},
+            reaction_best: {{ reaction_best }},
+            pattern_best: {{ pattern_best }},
+            chess_best: {{ chess_best }},
+            word_best: {{ word_best }}
+        },
+        cadence_history: allCadenceData,
+        error_heatmap: {{ heatmap | tojson }}
+    };
+
+    const blob = new Blob([JSON.stringify(telemetryPayload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lumina_telemetry_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function showToast(msg) {
-    const toast = document.getElementById('share-toast');
-    const toastMsg = document.getElementById('share-toast-msg');
+    const toast = document.getElementById("share-toast");
+    const toastMsg = document.getElementById("share-toast-msg");
     if (toast && toastMsg) {
         toastMsg.textContent = msg;
-        toast.style.display = 'flex';
-        setTimeout(() => {
-            toast.style.display = 'none';
-        }, 3500);
+        toast.style.display = "flex";
+        setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 }
 
 function quickShareShowcase(category, title, stat, story) {
-    if (!confirm('Publish milestone to Parent & Community Showcase?\n\n"' + title + '" (' + stat + ')')) return;
+    if (!confirm("Publish milestone to Parent & Community Showcase?\n\n\"" + title + "\" (" + stat + ")")) return;
 
-    fetch('/showcase/post', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+    fetch("/showcase/post", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
             title: title,
             achievement_type: category,
             stat_highlight: stat,
             content: story,
-            media_type: 'image',
-            media_url: ''
+            media_type: "image",
+            media_url: ""
         })
     })
     .then(r => r.json())
     .then(d => {
         if (d.success) {
-            showToast('🎉 Milestone is now live on the Parent Showcase!');
-            setTimeout(() => {
-                window.location.href = '/showcase';
-            }, 1200);
+            showToast("🎉 Milestone is now live on the Parent Showcase!");
+            setTimeout(() => { window.location.href = "/showcase"; }, 1200);
         } else {
-            alert(d.error || 'Failed to post to showcase.');
+            alert(d.error || "Failed to post to showcase. Please sign in first.");
         }
     })
-    .catch(e => alert('Error publishing milestone: ' + e));
+    .catch(e => alert("Error publishing milestone: " + e));
 }
+
+// Initial render
+document.addEventListener("DOMContentLoaded", () => {
+    renderCadenceChart(allCadenceData);
+});
 </script>
 {% endblock %}

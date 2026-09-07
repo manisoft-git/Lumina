@@ -7,6 +7,7 @@ const STATIC_ASSETS = [
     '/static/sound_fx.js',
     '/static/socket.io.min.js',
     '/static/qrcode.min.js',
+    '/static/chart.umd.min.js',
     '/static/manifest.json',
     '/offline-hub'
 ];

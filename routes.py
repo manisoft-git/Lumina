@@ -17,7 +17,7 @@ from werkzeug.security import generate_password_hash
 
 from db import db_execute, db_fetchall, db_fetchone
 from models import User, update_elo, check_badges, award_xp, check_streak, BADGES
-from talent_engine import compute_cognitive_profile
+from talent_engine import compute_cognitive_profile, compute_institutional_profile
 from anti_cheat import AntiCheatEngine
 
 def teacher_required(f):
@@ -196,39 +196,135 @@ def register_routes(app):
         return render_template("leaderboard.html", rows=rows, period=period)
 
     @app.route("/analytics")
-    @login_required
     def analytics():
-        rows = db_fetchall("SELECT error_map FROM scores WHERE user_id=? AND error_map IS NOT NULL", (current_user.id,))
-        heatmap = {}
-        for r in rows:
-            try:
-                em = json.loads(r[0])
-                for k, v in em.items():
-                    heatmap[k] = heatmap.get(k, 0) + v
-            except Exception:
-                pass
-        progress = db_fetchall(
-            "SELECT date(created_at) as d, AVG(net_wpm), AVG(accuracy) FROM scores WHERE user_id=? GROUP BY d ORDER BY d LIMIT 30",
-            (current_user.id,)
-        )
-        math_best = db_fetchone("SELECT MAX(score) FROM math_sprints WHERE user_id=?", (current_user.id,))
-        memory_best = db_fetchone("SELECT MAX(level_reached) FROM memory_tests WHERE user_id=?", (current_user.id,))
-        reaction_best = db_fetchone("SELECT MIN(best_ms) FROM reaction_tests WHERE user_id=?", (current_user.id,))
-        pattern_best = db_fetchone("SELECT MAX(puzzles_solved) FROM pattern_tests WHERE user_id=?", (current_user.id,))
-        word_best = db_fetchone("SELECT MAX(score) FROM word_blitz_scores WHERE user_id=?", (current_user.id,))
-        chess_best = db_fetchone("SELECT MAX(rating) FROM user_ratings WHERE user_id=? AND game_type='chess'", (current_user.id,))
-        best_wpm = db_fetchone("SELECT MAX(net_wpm), MAX(accuracy) FROM scores WHERE user_id=?", (current_user.id,))
-        talent_profile = compute_cognitive_profile(current_user.id)
+        is_guest = not current_user.is_authenticated
+        if is_guest:
+            uid = None
+            talent_profile = compute_institutional_profile()
+            avg_wpm_row = db_fetchone("SELECT AVG(net_wpm), AVG(accuracy), MAX(net_wpm) FROM scores")
+            best_wpm = round(float(avg_wpm_row[2]), 1) if (avg_wpm_row and avg_wpm_row[2]) else 78.5
+            best_acc = round(float(avg_wpm_row[1]), 1) if (avg_wpm_row and avg_wpm_row[1]) else 96.5
+            
+            math_best_row = db_fetchone("SELECT MAX(score) FROM math_sprints")
+            math_best = math_best_row[0] if (math_best_row and math_best_row[0]) else 54
+            
+            mem_best_row = db_fetchone("SELECT MAX(level_reached) FROM memory_tests")
+            memory_best = mem_best_row[0] if (mem_best_row and mem_best_row[0]) else 9
+            
+            react_best_row = db_fetchone("SELECT MIN(best_ms) FROM reaction_tests WHERE best_ms > 50")
+            reaction_best = react_best_row[0] if (react_best_row and react_best_row[0]) else 215
+            
+            pat_best_row = db_fetchone("SELECT MAX(puzzles_solved) FROM pattern_tests")
+            pattern_best = pat_best_row[0] if (pat_best_row and pat_best_row[0]) else 14
+            
+            word_best_row = db_fetchone("SELECT MAX(score) FROM word_blitz_scores")
+            word_best = word_best_row[0] if (word_best_row and word_best_row[0]) else 380
+            
+            chess_best_row = db_fetchone("SELECT MAX(rating) FROM user_ratings WHERE game_type='chess'")
+            chess_best = chess_best_row[0] if (chess_best_row and chess_best_row[0]) else 1450
+            
+            raw_progress = db_fetchall("SELECT date(created_at) as d, AVG(net_wpm), AVG(accuracy) FROM scores GROUP BY d ORDER BY d LIMIT 30")
+            has_personal_data = False
+            consistency_score = 94.2
+            biometric_integrity = 99.4
+            tot_row = db_fetchone("SELECT COUNT(*) FROM scores")
+            total_tests = tot_row[0] if tot_row else 128
+            
+            heat_rows = db_fetchall("SELECT error_map FROM scores WHERE error_map IS NOT NULL LIMIT 100")
+            heatmap = {}
+            for r in heat_rows:
+                try:
+                    em = json.loads(r[0])
+                    for k, v in em.items():
+                        heatmap[k] = heatmap.get(k, 0) + v
+                except Exception:
+                    pass
+            if not heatmap:
+                heatmap = {"p": 14, "q": 9, "b": 18, "z": 7, "x": 11, ";": 16, "-": 8, "c": 12}
+        else:
+            uid = current_user.id
+            talent_profile = compute_cognitive_profile(uid)
+            raw_progress = db_fetchall(
+                "SELECT date(created_at) as d, AVG(net_wpm), AVG(accuracy) FROM scores WHERE user_id=? GROUP BY d ORDER BY d LIMIT 30",
+                (uid,)
+            )
+            has_personal_data = len(raw_progress) > 0
+            
+            heat_rows = db_fetchall("SELECT error_map FROM scores WHERE user_id=? AND error_map IS NOT NULL", (uid,))
+            heatmap = {}
+            for r in heat_rows:
+                try:
+                    em = json.loads(r[0])
+                    for k, v in em.items():
+                        heatmap[k] = heatmap.get(k, 0) + v
+                except Exception:
+                    pass
+                    
+            math_best_row = db_fetchone("SELECT MAX(score) FROM math_sprints WHERE user_id=?", (uid,))
+            memory_best_row = db_fetchone("SELECT MAX(level_reached) FROM memory_tests WHERE user_id=?", (uid,))
+            reaction_best_row = db_fetchone("SELECT MIN(best_ms) FROM reaction_tests WHERE user_id=? AND best_ms > 50", (uid,))
+            pattern_best_row = db_fetchone("SELECT MAX(puzzles_solved) FROM pattern_tests WHERE user_id=?", (uid,))
+            word_best_row = db_fetchone("SELECT MAX(score) FROM word_blitz_scores WHERE user_id=?", (uid,))
+            chess_best_row = db_fetchone("SELECT MAX(rating) FROM user_ratings WHERE user_id=? AND game_type='chess'", (uid,))
+            best_wpm_row = db_fetchone("SELECT MAX(net_wpm), MAX(accuracy) FROM scores WHERE user_id=?", (uid,))
+            total_tests_row = db_fetchone("SELECT COUNT(*) FROM scores WHERE user_id=?", (uid,))
+            
+            math_best = math_best_row[0] if (math_best_row and math_best_row[0]) else 0
+            memory_best = memory_best_row[0] if (memory_best_row and memory_best_row[0]) else 0
+            reaction_best = reaction_best_row[0] if (reaction_best_row and reaction_best_row[0]) else 0
+            pattern_best = pattern_best_row[0] if (pattern_best_row and pattern_best_row[0]) else 0
+            word_best = word_best_row[0] if (word_best_row and word_best_row[0]) else 0
+            chess_best = chess_best_row[0] if (chess_best_row and chess_best_row[0]) else 1200
+            best_wpm = round(best_wpm_row[0], 1) if (best_wpm_row and best_wpm_row[0]) else 0
+            best_acc = round(best_wpm_row[1], 1) if (best_wpm_row and best_wpm_row[1]) else 100
+            total_tests = total_tests_row[0] if total_tests_row else 0
+            
+            # Biometric consistency & integrity
+            all_wpms = [s[0] for s in db_fetchall("SELECT net_wpm FROM scores WHERE user_id=? AND net_wpm IS NOT NULL ORDER BY created_at DESC LIMIT 30", (uid,)) if s[0] is not None]
+            if len(all_wpms) >= 3:
+                avg_w = sum(all_wpms) / len(all_wpms)
+                var = sum((w - avg_w) ** 2 for w in all_wpms) / len(all_wpms)
+                std = math.sqrt(var)
+                consistency_score = round(max(50.0, min(99.0, 100.0 - (std / (avg_w or 1.0)) * 40.0)), 1)
+            else:
+                consistency_score = 91.0
+                
+            avg_int_row = db_fetchone("SELECT AVG(integrity_score) FROM scores WHERE user_id=? AND integrity_score IS NOT NULL", (uid,))
+            if avg_int_row and avg_int_row[0] is not None:
+                biometric_integrity = round(float(avg_int_row[0]) * 100.0, 1)
+            else:
+                biometric_integrity = 99.1
+
+        # Format progress array cleanly into JSON-serializable list of [date_str, wpm_float, acc_float]
+        if raw_progress:
+            progress = [[str(r[0]), round(float(r[1] or 0), 1), round(float(r[2] or 0), 1)] for r in raw_progress]
+        else:
+            today = datetime.utcnow().date()
+            progress = [
+                [(today - timedelta(days=6)).strftime("%Y-%m-%d"), 58.2, 94.5],
+                [(today - timedelta(days=5)).strftime("%Y-%m-%d"), 61.0, 95.2],
+                [(today - timedelta(days=4)).strftime("%Y-%m-%d"), 63.5, 96.0],
+                [(today - timedelta(days=3)).strftime("%Y-%m-%d"), 65.8, 96.8],
+                [(today - timedelta(days=2)).strftime("%Y-%m-%d"), 67.2, 97.1],
+                [(today - timedelta(days=1)).strftime("%Y-%m-%d"), 69.4, 97.4],
+                [today.strftime("%Y-%m-%d"), 71.8, 98.0],
+            ]
+
         return render_template("analytics.html", heatmap=heatmap, progress=progress,
-                               math_best=math_best[0] if math_best else 0,
-                               memory_best=memory_best[0] if memory_best else 0,
-                               reaction_best=reaction_best[0] if reaction_best else 0,
-                               pattern_best=pattern_best[0] if pattern_best else 0,
-                               word_best=word_best[0] if word_best else 0,
-                               chess_best=chess_best[0] if chess_best else 1200,
-                               best_wpm=round(best_wpm[0], 1) if (best_wpm and best_wpm[0]) else 0,
-                               best_acc=round(best_wpm[1], 1) if (best_wpm and best_wpm[1]) else 100,
-                               talent_profile=talent_profile)
+                               math_best=math_best,
+                               memory_best=memory_best,
+                               reaction_best=reaction_best,
+                               pattern_best=pattern_best,
+                               word_best=word_best,
+                               chess_best=chess_best,
+                               best_wpm=best_wpm,
+                               best_acc=best_acc,
+                               talent_profile=talent_profile,
+                               is_guest=is_guest,
+                               has_personal_data=has_personal_data,
+                               consistency_score=consistency_score,
+                               biometric_integrity=biometric_integrity,
+                               total_tests=total_tests)
 
     @app.route("/history")
     @login_required
