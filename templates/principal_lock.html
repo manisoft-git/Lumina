@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}🏛️ Principal Briefing Authorization - Lumina{% endblock %}
+{% block head %}
+<style>
+.briefing-gate-card {
+    max-width: 480px;
+    margin: 80px auto;
+    background: var(--surface);
+    padding: 42px 36px;
+    border-radius: var(--radius);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+}
+.briefing-gate-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6366f1, #10b981, #f59e0b);
+}
+.briefing-seal {
+    width: 72px;
+    height: 72px;
+    line-height: 72px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.12);
+    border: 2px solid rgba(99, 102, 241, 0.3);
+    font-size: 2.4rem;
+    margin: 0 auto 20px;
+    box-shadow: 0 0 25px rgba(99, 102, 241, 0.2);
+}
+.briefing-title {
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+}
+.briefing-sub {
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin-bottom: 26px;
+}
+.briefing-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.briefing-input {
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 1.05rem;
+    text-align: center;
+    letter-spacing: 2px;
+    font-family: ui-monospace, monospace;
+    transition: all 0.2s;
+}
+.briefing-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+.briefing-hint {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 14px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="briefing-gate-card">
+    <div class="briefing-seal">🏛️</div>
+    <div style="font-size:0.75rem; letter-spacing:2px; font-weight:800; color:var(--primary); text-transform:uppercase; margin-bottom:6px;">Executive Academic Committee</div>
+    <h1 class="briefing-title">Principal Briefing Lock</h1>
+    <p class="briefing-sub">
+        This document contains the institutional laptop grant proposal, student talent telemetry, and budget savings audit submitted by <strong>Manifest Subeno Ogheneruaro</strong>.
+    </p>
+
+    <form method="POST" action="{{ url_for('principal_briefing') }}" class="briefing-form">
+        <input type="password" name="briefing_key" class="briefing-input" placeholder="Enter Briefing Password" required autofocus autocomplete="current-password">
+        <button type="submit" class="btn btn-primary" style="padding:14px; font-weight:800; font-size:1rem; letter-spacing:0.5px; background:linear-gradient(135deg, #6366f1, #4f46e5);">
+            🔓 Unlock Executive Proposal
+        </button>
+    </form>
+
+    <div class="briefing-hint">
+        🔒 Authorized access for School Principal & Technology Steering Committee
+    </div>
+</div>
+{% endblock %}

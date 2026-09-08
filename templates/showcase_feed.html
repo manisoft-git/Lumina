@@ -193,6 +193,53 @@
     color: rgba(255,255,255,0.7);
 }
 
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    backdrop-filter: blur(10px);
+    width: fit-content;
+}
+.rank-1 {
+    background: linear-gradient(135deg, rgba(234,179,8,0.4), rgba(245,158,11,0.6));
+    border: 1px solid #facc15;
+    color: #fef08a;
+    box-shadow: 0 0 16px rgba(250,204,21,0.5);
+    animation: goldGlow 2.5s infinite alternate;
+}
+.rank-2 {
+    background: linear-gradient(135deg, rgba(203,213,225,0.35), rgba(148,163,184,0.55));
+    border: 1px solid #e2e8f0;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(226,232,240,0.3);
+}
+.rank-3 {
+    background: linear-gradient(135deg, rgba(217,119,6,0.35), rgba(180,83,9,0.55));
+    border: 1px solid #fb923c;
+    color: #ffedd5;
+}
+.rank-top {
+    background: linear-gradient(135deg, rgba(168,85,247,0.35), rgba(99,102,241,0.45));
+    border: 1px solid #c084fc;
+    color: #f3e8ff;
+}
+.rank-merit {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #e2e8f0;
+}
+@keyframes goldGlow {
+    0% { box-shadow: 0 0 10px rgba(250,204,21,0.3); }
+    100% { box-shadow: 0 0 20px rgba(250,204,21,0.7); }
+}
+
 .reel-title {
     font-size: 1.25rem;
     font-weight: 800;
@@ -559,10 +606,22 @@
                 <div class="reel-author">
                     <div class="author-avatar">{{ (p[11] or p[10])[0] if (p[11] or p[10]) else '?' }}</div>
                     <div class="author-meta">
-                        <h4>{{ p[11] or p[10] }} <span style="font-size:0.75rem; background:rgba(236,72,153,0.3); border:1px solid #ec4899; color:#fbcfe8; padding:1px 6px; border-radius:10px;">Lv.{{ p[13] or 1 }}</span></h4>
+                        <h4>{{ p[11] or p[10] }} <span style="font-size:0.75rem; background:rgba(236,72,153,0.3); border:1px solid #ec4899; color:#fbcfe8; padding:1px 6px; border-radius:10px;">Lv.{{ p[12] or 1 }}</span></h4>
                         <span>@{{ p[10] }} • {{ p[9] }}</span>
                     </div>
                 </div>
+
+                {% if loop.index == 1 %}
+                    <div class="rank-badge rank-1">🥇 #1 PINNACLE TALENT • {{ p[14] }} PTS</div>
+                {% elif loop.index == 2 %}
+                    <div class="rank-badge rank-2">🥈 #2 ELITE TIER • {{ p[14] }} PTS</div>
+                {% elif loop.index == 3 %}
+                    <div class="rank-badge rank-3">🥉 #3 TOP SCHOLAR • {{ p[14] }} PTS</div>
+                {% elif loop.index <= 10 %}
+                    <div class="rank-badge rank-top">⭐ TOP 10 CAMPUS RECORD • {{ p[14] }} PTS</div>
+                {% else %}
+                    <div class="rank-badge rank-merit">🎖️ CAMPUS MERIT • {{ p[14] }} PTS</div>
+                {% endif %}
 
                 <div class="reel-title">{{ p[2] }}</div>
                 {% if p[3] %}
@@ -701,62 +760,85 @@
     </div>
 </div>
 
-<!-- === POST ACHIEVEMENT MODAL (For Students) === -->
+<!-- === POST ACHIEVEMENT MODAL (For Students - From Activity History Only) === -->
 {% if current_user.is_authenticated %}
 <div class="drawer-overlay" id="post-modal" onclick="if(event.target===this) closePostModal()">
-    <div class="drawer-modal">
+    <div class="drawer-modal" style="max-width:540px;">
         <div class="drawer-header">
             <div>
-                <h3>✨ Publish Milestone to Showcase</h3>
-                <p>Share your typing record, cognitive rank, or chess victory with parents & community</p>
+                <h3>✨ Publish Milestone from Activity History</h3>
+                <p>Only verified accomplishments from your Lumina activity record can be showcased</p>
             </div>
             <button class="drawer-close" onclick="closePostModal()">✕</button>
         </div>
 
+        {% if history_items %}
         <form id="create-post-form" onsubmit="submitShowcasePost(event)">
             <div class="modal-form-group">
-                <label for="post-title">Headline / Title *</label>
-                <input type="text" id="post-title" placeholder="e.g. Broke 130 WPM on Python Code Sprint! ⚡" required>
-            </div>
-
-            <div class="modal-form-group">
-                <label for="post-category">Category</label>
-                <select id="post-category" onchange="adjustHighlightDefault(this.value)">
-                    <option value="typing_record">⚡ Typing Speed & Accuracy Record</option>
-                    <option value="cognitive_talent">🧠 7-Axis Cognitive Talent / LTI Milestone</option>
-                    <option value="chess_win">♟️ Chess / Checkers Tactical Victory</option>
-                    <option value="certificate">📜 Certified Diplomas & Badges</option>
+                <label for="history-select">Choose Verified Achievement *</label>
+                <select id="history-select" required onchange="updateHistoryPreview(this)">
+                    {% for h in history_items %}
+                    <option value="{{ h[0] }}" 
+                            data-title="{{ h[2] }}" 
+                            data-metric="{{ h[4] }}" 
+                            data-unit="{{ h[5] }}" 
+                            data-tier="{{ h[7] }}" 
+                            data-score="{{ h[6] }}"
+                            data-arena="{{ h[1] }}">
+                        {{ '⭐' if h[8] else '✨' }} {{ h[2] }} — {{ h[4] }} ({{ h[7]|upper }} • {{ h[6] }} pts)
+                    </option>
+                    {% endfor %}
                 </select>
             </div>
 
-            <div class="modal-form-group">
-                <label for="post-stat">Highlight Statistic</label>
-                <input type="text" id="post-stat" value="{% if user_stats and user_stats.best_wpm %}{{ user_stats.best_wpm }} WPM Record{% else %}Personal Best{% endif %}" placeholder="e.g. 130 WPM • 99.4% Acc or LTI: 920 • Top 1%">
+            <!-- Milestone Verification Card Preview -->
+            <div id="history-preview-card" style="background:linear-gradient(135deg, rgba(56,189,248,0.1), rgba(236,72,153,0.1)); border:1px solid rgba(56,189,248,0.3); border-radius:12px; padding:14px 16px; margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span id="preview-arena-tag" style="font-size:0.75rem; text-transform:uppercase; font-weight:800; background:rgba(56,189,248,0.2); color:#38bdf8; padding:2px 8px; border-radius:10px;">VERIFIED ARENA RECORD</span>
+                    <span id="preview-score-tag" style="font-size:0.78rem; font-weight:800; color:#facc15;">🔥 <span id="preview-pts">0</span> Rank Pts</span>
+                </div>
+                <div id="preview-title" style="font-weight:700; font-size:1.05rem; color:#fff; margin-bottom:4px;">Achievement Title</div>
+                <div id="preview-stat" style="font-size:0.9rem; color:#f472b6; font-weight:700;">Metric Value</div>
             </div>
 
             <div class="modal-form-group">
-                <label for="post-story">Story / Reflection</label>
-                <textarea id="post-story" placeholder="Share what technique or drill helped you reach this breakthrough..."></textarea>
+                <label for="post-story">Personal Reflection or Strategy Note (Optional)</label>
+                <textarea id="post-story" rows="3" placeholder="Share what technique, drill, or focus method helped you reach this personal milestone..."></textarea>
             </div>
 
             <div class="modal-form-group">
-                <label for="post-media-url">Visual Media URL (Image or Video)</label>
-                <input type="url" id="post-media-url" placeholder="Paste image or mp4 video link (leave empty for custom badge graphic)">
-                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">
+                <label for="post-media-url">Celebration Visual Backdrop (Optional URL)</label>
+                <input type="url" id="post-media-url" placeholder="Paste image link or select one below">
+                <div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">
                     Presets: 
                     <a href="javascript:void(0)" onclick="setMediaUrl('https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80')">Coding Desk</a> •
                     <a href="javascript:void(0)" onclick="setMediaUrl('https://images.unsplash.com/photo-1529699211952-734e80c4d42b?w=800&q=80')">Chess Arena</a> •
-                    <a href="javascript:void(0)" onclick="setMediaUrl('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80')">Cognitive AI</a>
+                    <a href="javascript:void(0)" onclick="setMediaUrl('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80')">Cognitive AI</a> •
+                    <a href="javascript:void(0)" onclick="setMediaUrl('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80')">Gold Trophy</a>
                 </div>
             </div>
 
-            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
                 <button type="button" class="btn btn-secondary" onclick="closePostModal()">Cancel</button>
                 <button type="submit" id="post-submit-btn" class="btn btn-primary" style="background:linear-gradient(135deg, #ec4899, #8b5cf6); border:none; font-weight:700; color:#fff;">
                     🚀 Publish Milestone
                 </button>
             </div>
         </form>
+        {% else %}
+        <div style="text-align:center; padding:30px 16px;">
+            <div style="font-size:2.8rem; margin-bottom:12px;">🛡️</div>
+            <h4 style="margin:0 0 8px;">No Verified Achievements Yet</h4>
+            <p style="font-size:0.88rem; color:var(--muted); line-height:1.5; max-width:400px; margin:0 auto 20px;">
+                To preserve academic authenticity, Showcase posts must originate from verified activity history. Complete a drill in any arena to unlock your first verified post!
+            </p>
+            <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+                <a href="{{ url_for('typing_page') }}" class="btn btn-primary" style="font-size:0.85rem;">⌨️ Speed Typing</a>
+                <a href="{{ url_for('olympiad_arena') }}" class="btn btn-secondary" style="font-size:0.85rem;">🏆 STEM Olympiad</a>
+                <a href="{{ url_for('games_hub') }}" class="btn btn-secondary" style="font-size:0.85rem;">🎮 All 12 Arenas</a>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endif %}
@@ -910,10 +992,14 @@ function submitParentMessage(e) {
     });
 }
 
-// === POST MODAL CONTROLS (STUDENT) ===
+// === POST MODAL CONTROLS (STUDENT - VERIFIED ACTIVITY HISTORY ONLY) ===
 function openPostModal() {
     const m = document.getElementById('post-modal');
-    if (m) m.style.display = 'flex';
+    if (m) {
+        m.style.display = 'flex';
+        const sel = document.getElementById('history-select');
+        if (sel) updateHistoryPreview(sel);
+    }
 }
 function closePostModal() {
     const m = document.getElementById('post-modal');
@@ -923,35 +1009,48 @@ function setMediaUrl(url) {
     const input = document.getElementById('post-media-url');
     if (input) input.value = url;
 }
-function adjustHighlightDefault(cat) {
-    const statInput = document.getElementById('post-stat');
-    if (!statInput) return;
-    if (cat === 'chess_win') statInput.value = 'Checkmate Victory • ELO Boost';
-    else if (cat === 'cognitive_talent') statInput.value = 'Top 1% Cognitive Agility';
-    else if (cat === 'certificate') statInput.value = 'Certified Scholar';
-    else statInput.value = 'New WPM Record';
+function updateHistoryPreview(sel) {
+    if (!sel || !sel.options || sel.selectedIndex < 0) return;
+    const opt = sel.options[sel.selectedIndex];
+    const title = opt.getAttribute('data-title') || 'Milestone';
+    const metric = opt.getAttribute('data-metric') || '';
+    const score = opt.getAttribute('data-score') || '0';
+    const tier = opt.getAttribute('data-tier') || 'Standard';
+    const arena = opt.getAttribute('data-arena') || 'Arena';
+
+    const pArena = document.getElementById('preview-arena-tag');
+    const pScore = document.getElementById('preview-score-tag');
+    const pTitle = document.getElementById('preview-title');
+    const pStat = document.getElementById('preview-stat');
+
+    if (pArena) pArena.textContent = `${arena.toUpperCase()} • ${tier.toUpperCase()} TIER`;
+    if (pScore) pScore.innerHTML = `🔥 ${score} Rank Pts`;
+    if (pTitle) pTitle.textContent = title;
+    if (pStat) pStat.textContent = `Verified Result: ${metric}`;
 }
 
 function submitShowcasePost(e) {
     e.preventDefault();
-    const title = document.getElementById('post-title').value.trim();
-    const category = document.getElementById('post-category').value;
-    const stat = document.getElementById('post-stat').value.trim();
-    const story = document.getElementById('post-story').value.trim();
-    const mediaUrl = document.getElementById('post-media-url').value.trim();
+    const sel = document.getElementById('history-select');
+    if (!sel || !sel.value) {
+        alert('Please select a verified achievement from your activity history.');
+        return;
+    }
+    const historyId = sel.value;
+    const story = (document.getElementById('post-story')?.value || '').trim();
+    const mediaUrl = (document.getElementById('post-media-url')?.value || '').trim();
 
     const payload = {
-        title: title,
-        achievement_type: category,
-        stat_highlight: stat,
+        history_id: historyId,
         content: story,
-        media_url: mediaUrl,
-        media_type: (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm')) ? 'video' : 'image'
+        media_url: mediaUrl
     };
 
     const submitBtn = document.getElementById('post-submit-btn');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Publishing...';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Publishing...';
+    }
 
     fetch('/showcase/post', {
         method: 'POST',
@@ -960,8 +1059,10 @@ function submitShowcasePost(e) {
     })
     .then(r => r.json())
     .then(data => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = '🚀 Publish Milestone';
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '🚀 Publish Milestone';
+        }
         if (data.success) {
             closePostModal();
             window.location.reload();
@@ -970,8 +1071,10 @@ function submitShowcasePost(e) {
         }
     })
     .catch(err => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = '🚀 Publish Milestone';
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '🚀 Publish Milestone';
+        }
         alert('Failed to publish post: ' + err);
     });
 }

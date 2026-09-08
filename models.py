@@ -54,30 +54,36 @@ class User(UserMixin):
         self.last_active = g(10)
         self.parent_code = g(11)
         self.created_at = g(12)
+        self.is_locked = bool(g(13, 0))
+        self.parent_is_anonymous = bool(g(14, 1 if self.role == 'parent' else 0))
+        self.parent_alias = g(15, "Proud Parent")
+        self.linked_student_id = g(16, None)
 
     def check_password(self, pw):
         return check_password_hash(self.password_hash, pw)
 
     @staticmethod
-    def create(username, fullname, email, password, role="student"):
+    def create(username, fullname, email, password, role="student", is_anonymous=0, parent_alias="Proud Parent", linked_student_id=None):
         ph = generate_password_hash(password)
         code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        return db_execute_returning_id("INSERT INTO users (username, fullname, email, password_hash, role, parent_code) VALUES (?, ?, ?, ?, ?, ?)",
-                                      (username, fullname, email, ph, role, code))
+        return db_execute_returning_id(
+            "INSERT INTO users (username, fullname, email, password_hash, role, parent_code, is_locked, is_anonymous, parent_alias, linked_student_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)",
+            (username, fullname, email, ph, role, code, int(is_anonymous), parent_alias, linked_student_id)
+        )
 
     @staticmethod
     def get_by_id(user_id):
-        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at FROM users WHERE id=?", (user_id,))
+        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at, is_locked, is_anonymous, parent_alias, linked_student_id FROM users WHERE id=?", (user_id,))
         return User(row) if row else None
 
     @staticmethod
     def get_by_username(username):
-        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at FROM users WHERE username=?", (username,))
+        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at, is_locked, is_anonymous, parent_alias, linked_student_id FROM users WHERE username=?", (username,))
         return User(row) if row else None
 
     @staticmethod
     def get_by_parent_code(code):
-        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at FROM users WHERE parent_code=?", (code,))
+        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at, is_locked, is_anonymous, parent_alias, linked_student_id FROM users WHERE parent_code=?", (code,))
         return User(row) if row else None
 
 def award_xp(user_id, amount):
@@ -176,12 +182,18 @@ def ensure_columns():
         ("users", "longest_streak", "INTEGER DEFAULT 0"),
         ("users", "last_active", "DATE"),
         ("users", "parent_code", "TEXT"),
+        ("users", "is_locked", "INTEGER DEFAULT 0"),
+        ("users", "is_anonymous", "INTEGER DEFAULT 0"),
+        ("users", "parent_alias", "TEXT DEFAULT 'Proud Parent'"),
+        ("users", "linked_student_id", "INTEGER"),
         ("scores", "net_wpm", "REAL"),
         ("scores", "passage_category", "TEXT"),
         ("scores", "room_id", "TEXT"),
         ("scores", "error_map", "TEXT"),
         ("scores", "verified", "INTEGER DEFAULT 1"),
         ("scores", "integrity_score", "REAL DEFAULT 1.0"),
+        ("showcase_posts", "achievement_rank_score", "INTEGER DEFAULT 0"),
+        ("showcase_posts", "verified_history_id", "INTEGER"),
     ]
     for table, col, col_type in cols_to_add:
         try:
@@ -347,6 +359,32 @@ def init_db():
             {pk}, post_id INTEGER NOT NULL, user_ip_or_id TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""",
+        f"""CREATE TABLE IF NOT EXISTS blocked_emails (
+            {pk}, email TEXT UNIQUE NOT NULL, username TEXT,
+            reason TEXT, is_blocked INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS direct_messages (
+            {pk}, conversation_id TEXT NOT NULL,
+            sender_id INTEGER NOT NULL, receiver_id INTEGER,
+            sender_alias TEXT, is_anonymous INTEGER DEFAULT 0,
+            message TEXT NOT NULL, read_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS student_activity_history (
+            {pk}, user_id INTEGER NOT NULL,
+            arena_type TEXT NOT NULL, title TEXT NOT NULL,
+            description TEXT, metric_value TEXT NOT NULL,
+            metric_unit TEXT, score_points INTEGER DEFAULT 0,
+            tier TEXT DEFAULT 'bronze', is_posted INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS parent_students (
+            {pk}, parent_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            is_confirmed INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
     ]
 
     for sql in tables:
@@ -429,4 +467,73 @@ def init_db():
                 )
             except Exception:
                 pass
+
+def record_activity(user_id, arena_type, title, description, metric_value, metric_unit="", score_points=0, tier="bronze"):
+    """Records a verified achievement into the student's activity history."""
+    try:
+        return db_execute_returning_id(
+            """INSERT INTO student_activity_history 
+               (user_id, arena_type, title, description, metric_value, metric_unit, score_points, tier, is_posted)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)""",
+            (user_id, arena_type, title, description, str(metric_value), metric_unit, int(score_points), tier)
+        )
+    except Exception:
+        return None
+
+def sync_all_student_history(user_id):
+    """Backfills activity history for a student from verified scores, math sprints, chess, ratings, and badges."""
+    existing_count = (db_fetchone("SELECT COUNT(*) FROM student_activity_history WHERE user_id=?", (user_id,)) or [0])[0]
+    if existing_count > 0:
+        return
+    # 1. Best verified typing scores
+    top_scores = db_fetchall("SELECT wpm, accuracy, net_wpm, created_at FROM scores WHERE user_id=? AND (verified=1 OR verified IS NULL) AND wpm <= 260 ORDER BY net_wpm DESC LIMIT 5", (user_id,))
+    for s in top_scores:
+        wpm = round(s[0], 1)
+        acc = round(s[1], 1)
+        tier = "legendary" if wpm >= 80 else ("gold" if wpm >= 60 else "silver")
+        points = int(wpm * 10)
+        record_activity(
+            user_id=user_id,
+            arena_type="typing",
+            title=f"Typing Velocity Milestone: {wpm} WPM",
+            description=f"Achieved {wpm} Net WPM with {acc}% biometric precision in Speed Typing Arena.",
+            metric_value=f"{wpm} WPM",
+            metric_unit="WPM",
+            score_points=points,
+            tier=tier
+        )
+
+    # 2. Chess & Checkers ratings
+    ratings = db_fetchall("SELECT game_type, rating, games_played FROM user_ratings WHERE user_id=? AND games_played > 0", (user_id,))
+    for r in ratings:
+        gtype = r[0]
+        elo = r[1]
+        tier = "legendary" if elo >= 1600 else ("gold" if elo >= 1400 else "silver")
+        record_activity(
+            user_id=user_id,
+            arena_type=gtype,
+            title=f"{gtype.capitalize()} Strategic Rating: {elo} ELO",
+            description=f"Ranked competitive rating in tactical {gtype} arena across {r[2]} matches.",
+            metric_value=f"{elo} ELO",
+            metric_unit="ELO",
+            score_points=int(elo / 2),
+            tier=tier
+        )
+
+    # 3. Badges
+    badges = db_fetchall("SELECT badge_id, awarded_at FROM user_badges WHERE user_id=?", (user_id,))
+    for b in badges:
+        bid = b[0]
+        meta = BADGES.get(bid, {})
+        record_activity(
+            user_id=user_id,
+            arena_type="badge",
+            title=f"Badge Unlocked: {meta.get('name', bid)}",
+            description=meta.get('desc', 'Earned merit badge in Lumina Talent Ecosystem.'),
+            metric_value=meta.get('name', 'Badge'),
+            metric_unit="Badge",
+            score_points=meta.get('xp', 50),
+            tier="gold"
+        )
+
 

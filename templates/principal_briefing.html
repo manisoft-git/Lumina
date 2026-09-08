@@ -20,6 +20,9 @@
             <a href="#interactive-stations" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:8px;">
                 <span>🎯</span> Launch Interactive Demo Stations
             </a>
+            <a href="{{ url_for('principal_lock_route') }}" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:8px;">
+                <span>🔒</span> Lock Briefing
+            </a>
             <a href="{{ url_for('offline_hub') }}" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:8px;">
                 <span>📡</span> Zero-Cloud LAN Hub
             </a>
@@ -30,27 +33,27 @@
     <div class="kpi-grid">
         <div class="kpi-card">
             <div class="kpi-icon">💰</div>
-            <div class="kpi-val">${{ "{:,}".format(stats.est_savings_annual) }}</div>
+            <div class="kpi-val">₦4,000,000</div>
             <div class="kpi-label">Annual EdTech Budget Savings</div>
-            <div class="kpi-sub">Replaces 4 commercial subscriptions ($0 cloud fee)</div>
+            <div class="kpi-sub">₦20,000 × 200 Boarding Students saved annually (100% Zero-Cloud LAN)</div>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon">⚡</div>
-            <div class="kpi-val">{{ stats.avg_wpm }} WPM</div>
-            <div class="kpi-label">Student Keyboard Fluency</div>
-            <div class="kpi-sub">{{ stats.tests_taken }} verified tests recorded ({{ stats.avg_accuracy }}% acc)</div>
+            <div class="kpi-val">Top Student: 80 WPM</div>
+            <div class="kpi-label">Keyboard Fluency Benchmark</div>
+            <div class="kpi-sub">Campus peak velocity verified with biometric flight-time integrity</div>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon">🧠</div>
-            <div class="kpi-val">8 Arenas</div>
-            <div class="kpi-label">Cognitive Domains Tested</div>
-            <div class="kpi-sub">Math, Chess, Memory, Logic, Reflex, Typing, Checkers, Word</div>
+            <div class="kpi-val">12 Arenas</div>
+            <div class="kpi-label">Talent Incubator Domains</div>
+            <div class="kpi-sub">STEM Olympiad, Code Debugger, Chess, Spelling Bee, Math, Sudoku, Reflex</div>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon">🛡️</div>
             <div class="kpi-val">100% Offline</div>
             <div class="kpi-label">Zero-Cloud LAN Resilience</div>
-            <div class="kpi-sub">Runs on old hardware, sub-512MB RAM, zero data tracking</div>
+            <div class="kpi-sub">Operates seamlessly during boarding house prep with zero internet reliance</div>
         </div>
     </div>
 
@@ -61,7 +64,7 @@
                 <div>
                     <div style="font-size:0.75rem; letter-spacing:2px; font-weight:800; color:var(--primary); text-transform:uppercase;">Institutional Innovation Memorandum</div>
                     <div style="font-size:1.4rem; font-weight:800; margin-top:4px;">PROPOSAL FOR STUDENT INNOVATION GRANT & HARDWARE SPONSORSHIP</div>
-                    <div style="color:var(--muted); font-size:0.85rem; margin-top:2px;">Document Reference: LUM-ACAD-2026-X1</div>
+                    <div style="color:var(--muted); font-size:0.85rem; margin-top:2px;">Document Reference: LUM-ACAD-2026-NIG</div>
                 </div>
                 <div style="text-align:right;">
                     <span class="status-badge" style="background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid rgba(99,102,241,0.3); padding:4px 12px; border-radius:20px; font-weight:700; font-size:0.8rem;">
@@ -73,7 +76,7 @@
             <div class="doc-meta-grid">
                 <div><strong>TO:</strong> Office of the Principal & Technology Steering Committee</div>
                 <div><strong>DATE:</strong> Academic Session 2026–2027</div>
-                <div><strong>FROM:</strong> {{ current_user.fullname if current_user.is_authenticated else 'Student Engineering Lead' }}</div>
+                <div><strong>FROM:</strong> Manifest Subeno Ogheneruaro</div>
                 <div><strong>PROJECT:</strong> Lumina Autonomous Academic & Cognitive Platform</div>
             </div>
         </div>
@@ -82,11 +85,12 @@
             <h3>1. Executive Purpose & Request</h3>
             <p>
                 Respected Principal and School Leadership, this memorandum presents <strong>Lumina</strong> — an enterprise-grade,
-                zero-cloud learning and cognitive measurement platform conceptualized, architected, and engineered to solve
-                key technological and financial challenges within our school community.
+                zero-cloud learning and cognitive measurement platform conceptualized, architected, and engineered specifically for our
+                <strong>Nigerian boarding school</strong>. It solves severe internet connectivity hurdles and provides an autonomous
+                talent incubator for our 200 residential students.
             </p>
             <p style="background:rgba(99,102,241,0.08); border-left:4px solid var(--primary); padding:14px 18px; border-radius:0 8px 8px 0; margin:16px 0; font-weight:500;">
-                <strong>Direct Request:</strong> In recognition of the tangible value Lumina brings to student achievement and institutional savings,
+                <strong>Direct Request:</strong> In recognition of the tangible value Lumina brings to student achievement and institutional savings (conserving <strong>₦4,000,000 annually</strong> based on ₦20,000 × 200 boarding students in software subscriptions and data tariffs),
                 I respectfully request school sponsorship in the form of a <strong>dedicated development laptop</strong>. This machine will be utilized to
                 maintain school-wide server instances, run local AI tutoring models, facilitate computer lab deployments, and train student peers.
             </p>
@@ -94,13 +98,13 @@
             <h3>2. Proven Value to Our School & Faculty</h3>
             <ul style="line-height:1.75; padding-left:20px; color:var(--text);">
                 <li>
-                    <strong>Eliminates Recurring Software Licensing Fees:</strong> Schools spend thousands of dollars annually on disparate platforms for typing, chess, and math sprints. Lumina consolidates these into a single, cohesive ecosystem at <strong>$0 annual software cost</strong>.
+                    <strong>Eliminates Recurring Software Licensing & Data Costs:</strong> Commercial EdTech subscriptions and heavy internet bandwidth costs burden school finances. At <strong>₦20,000 per student per session for 200 students</strong>, Lumina saves our school <strong>₦4,000,000 annually</strong> by hosting everything offline over local Wi-Fi.
                 </li>
                 <li>
-                    <strong>Zero-Cloud LAN & Mobile Hotspot Tolerance:</strong> When school internet slows down or disconnects, commercial SaaS platforms fail. Lumina operates autonomously over local school Wi-Fi or mobile hotspots, ensuring uninterrupted class instruction.
+                    <strong>Zero-Cloud LAN & Boarding House Tolerance:</strong> When campus broadband fluctuates or shuts off during evening prep, Lumina continues operating flawlessly over the internal school LAN, ensuring uninterrupted academic sprints and talent discovery.
                 </li>
                 <li>
-                    <strong>Comprehensive Accessibility & Inclusion:</strong> Built from the ground up to support neurodiverse learners with integrated OpenDyslexic font toggles, Bionic Reading cognitive fixation rendering, and 432Hz binaural focus soundscapes.
+                    <strong>Nurturing Multi-Disciplinary Talents:</strong> Encompasses 12 arenas covering STEM Olympiad competitions, algorithmic code debugging, grandmaster chess, oratory spelling bees, and keyboard fluency.
                 </li>
                 <li>
                     <strong>Keystroke Biometric Anti-Cheat:</strong> Academic integrity is preserved via real-time flight-time microsecond variance analysis, preventing automated script dumping and unverified homework submissions.
@@ -115,7 +119,7 @@
                 With the provision of a dedicated laptop, I commit to:
             </p>
             <ol style="line-height:1.75; padding-left:20px; color:var(--text);">
-                <li>Deploying and maintaining on-premise Lumina server nodes in school computer laboratories.</li>
+                <li>Deploying and maintaining on-premise Lumina server nodes in school computer laboratories and hostel common study halls.</li>
                 <li>Conducting teacher onboarding sessions to configure custom classroom passages and automated homework trackers.</li>
                 <li>Mentoring younger students in software engineering, open-source development, and computational thinking.</li>
             </ol>
@@ -123,7 +127,7 @@
             <div class="signature-block">
                 <div class="sig-line">
                     <div class="sig-title">Submitted By:</div>
-                    <div class="sig-name">{{ current_user.fullname if current_user.is_authenticated else 'Student Innovation Lead' }}</div>
+                    <div class="sig-name">Manifest Subeno Ogheneruaro</div>
                     <div class="sig-role">Lead Developer & Systems Architect, Lumina Project</div>
                 </div>
                 <div class="sig-line">

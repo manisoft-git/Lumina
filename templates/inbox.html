@@ -1,222 +1,818 @@
 {% extends "base.html" %}
-{% block title %}💌 Encouragement Inbox — Lumina{% endblock %}
+{% block title %}💬 Messaging Center — Lumina{% endblock %}
 {% block head %}
 <style>
-.inbox-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 24px 16px 60px;
-}
-.inbox-header {
-    background: linear-gradient(135deg, rgba(236,72,153,0.1), rgba(56,189,248,0.1));
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 28px;
-    margin-bottom: 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-.inbox-header h1 {
-    font-size: 1.6rem;
-    font-weight: 800;
-    margin: 0 0 6px;
-    background: linear-gradient(135deg, #ec4899, #8b5cf6, #38bdf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.inbox-header p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.9rem;
+/* === WHATSAPP WEB UI EXPERIENCE === */
+:root {
+    --wa-bg: #0b141a;
+    --wa-panel-bg: #111b21;
+    --wa-header-bg: #202c33;
+    --wa-hover-bg: #202c33;
+    --wa-active-bg: #2a3942;
+    --wa-border: #222d34;
+    --wa-green: #00a884;
+    --wa-green-hover: #06cf9c;
+    --wa-outgoing: #005c4b;
+    --wa-incoming: #202c33;
+    --wa-text: #e9edef;
+    --wa-muted: #8696a0;
+    --wa-check-read: #53bdeb;
 }
 
-.message-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 22px;
-    margin-bottom: 16px;
-    transition: all 0.25s ease;
-    position: relative;
+.wa-wrapper {
+    max-width: 1200px;
+    height: calc(100vh - 120px);
+    min-height: 600px;
+    margin: 10px auto 30px;
+    background: var(--wa-panel-bg);
+    border: 1px solid var(--wa-border);
+    border-radius: 12px;
+    display: flex;
     overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+    color: var(--wa-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-.message-card:hover {
-    transform: translateY(-2px);
-    border-color: #ec4899;
-    box-shadow: 0 8px 24px rgba(236,72,153,0.15);
-}
-.message-top {
+
+/* === LEFT SIDEBAR === */
+.wa-sidebar {
+    width: 380px;
+    min-width: 320px;
+    border-right: 1px solid var(--wa-border);
     display: flex;
+    flex-direction: column;
+    background: var(--wa-panel-bg);
+}
+
+.wa-sidebar-header {
+    height: 64px;
+    background: var(--wa-header-bg);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 12px;
+    border-bottom: 1px solid var(--wa-border);
 }
-.message-sender {
+
+.wa-my-profile {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
-.sender-avatar {
-    width: 38px; height: 38px;
+
+.wa-avatar {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #f59e0b, #ec4899);
+    background: linear-gradient(135deg, #00a884, #38bdf8);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    color: #fff;
-    font-size: 0.95rem;
-}
-.sender-name {
     font-size: 1rem;
-    font-weight: 700;
-    color: var(--text);
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.wa-sidebar-tools {
     display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.sender-time {
-    font-size: 0.78rem;
-    color: var(--muted);
+    gap: 12px;
 }
 
-.message-post-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.82rem;
-    color: #ec4899;
-    background: rgba(236,72,153,0.1);
-    border: 1px solid rgba(236,72,153,0.25);
-    padding: 3px 10px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    text-decoration: none;
-}
-.message-post-link:hover {
-    text-decoration: underline;
-}
-
-.message-bubble {
-    background: var(--surface2);
-    border-left: 3px solid #ec4899;
-    border-radius: 4px 12px 12px 4px;
-    padding: 14px 18px;
-    font-size: 0.95rem;
-    line-height: 1.6;
-    color: var(--text);
-    margin-bottom: 12px;
-}
-
-.message-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
-.btn-react {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 0.8rem;
-    color: var(--text);
+.wa-icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--wa-muted);
+    font-size: 1.25rem;
     cursor: pointer;
-    display: inline-flex;
+    padding: 6px;
+    border-radius: 50%;
+    display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
     transition: all 0.2s;
 }
-.btn-react:hover {
-    background: rgba(236,72,153,0.2);
-    border-color: #ec4899;
+.wa-icon-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: var(--wa-text);
+}
+
+.wa-search-box {
+    padding: 8px 12px;
+    background: var(--wa-panel-bg);
+    border-bottom: 1px solid var(--wa-border);
+}
+.wa-search-input-wrap {
+    background: var(--wa-header-bg);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    gap: 8px;
+}
+.wa-search-input-wrap input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--wa-text);
+    font-size: 0.9rem;
+    width: 100%;
+}
+.wa-search-input-wrap input::placeholder {
+    color: var(--wa-muted);
+}
+
+.wa-threads-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.wa-thread-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 14px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.15s;
+}
+.wa-thread-item:hover {
+    background: var(--wa-hover-bg);
+}
+.wa-thread-item.active {
+    background: var(--wa-active-bg);
+}
+
+.wa-thread-info {
+    flex: 1;
+    min-width: 0;
+}
+.wa-thread-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+.wa-thread-title {
+    font-size: 0.98rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--wa-text);
+}
+.wa-thread-time {
+    font-size: 0.75rem;
+    color: var(--wa-muted);
+}
+.wa-thread-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.wa-thread-snippet {
+    font-size: 0.85rem;
+    color: var(--wa-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 210px;
+}
+.wa-unread-badge {
+    background: var(--wa-green);
+    color: #0b141a;
+    font-size: 0.72rem;
+    font-weight: 800;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+}
+
+/* === RIGHT CHAT PANE === */
+.wa-chat-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--wa-bg);
+    position: relative;
+}
+
+.wa-chat-header {
+    height: 64px;
+    background: var(--wa-header-bg);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--wa-border);
+    z-index: 2;
+}
+
+.wa-chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.wa-header-details h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+.wa-header-details p {
+    margin: 2px 0 0;
+    font-size: 0.78rem;
+    color: var(--wa-muted);
+}
+
+/* Messages stream */
+.wa-messages-stream {
+    flex: 1;
+    padding: 20px 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: #0b141a;
+    background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 0);
+    background-size: 24px 24px;
+    position: relative;
+}
+
+.wa-date-divider {
+    align-self: center;
+    background: #182229;
+    color: var(--wa-muted);
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 8px;
+    margin: 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.wa-msg {
+    max-width: 65%;
+    min-width: 120px;
+    padding: 8px 12px 6px;
+    border-radius: 8px;
+    position: relative;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    word-break: break-word;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+}
+
+.wa-msg.outgoing {
+    align-self: flex-end;
+    background: var(--wa-outgoing);
+    border-top-right-radius: 2px;
+}
+
+.wa-msg.incoming {
+    align-self: flex-start;
+    background: var(--wa-incoming);
+    border-top-left-radius: 2px;
+}
+
+.wa-msg-sender {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #f59e0b;
+    margin-bottom: 3px;
+}
+.wa-msg-sender.producer { color: #38bdf8; }
+.wa-msg-sender.parent { color: #ec4899; }
+
+.wa-msg-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.55);
+    margin-top: 4px;
+}
+.wa-check {
+    color: var(--wa-check-read);
+    font-weight: 800;
+}
+
+/* === INPUT BAR === */
+.wa-input-bar {
+    min-height: 62px;
+    background: var(--wa-header-bg);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid var(--wa-border);
+}
+
+.wa-emoji-quick {
+    display: flex;
+    gap: 6px;
+}
+.wa-emoji-pill {
+    background: transparent;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: transform 0.15s;
+}
+.wa-emoji-pill:hover {
+    transform: scale(1.3);
+}
+
+.wa-input-wrap {
+    flex: 1;
+}
+.wa-input-wrap input {
+    width: 100%;
+    background: #2a3942;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    color: var(--wa-text);
+    outline: none;
+}
+.wa-input-wrap input::placeholder {
+    color: var(--wa-muted);
+}
+
+.wa-send-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--wa-green);
+    border: none;
+    color: #0b141a;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.wa-send-btn:hover {
+    background: var(--wa-green-hover);
+    transform: scale(1.05);
+}
+
+/* Modal for New Chat */
+.wa-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+.wa-modal-content {
+    background: var(--wa-panel-bg);
+    border: 1px solid var(--wa-border);
+    border-radius: 12px;
+    width: 460px;
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.wa-modal-header {
+    background: var(--wa-header-bg);
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--wa-border);
+}
+.wa-contact-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+.wa-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.wa-contact-item:hover {
+    background: var(--wa-hover-bg);
+}
+
+@media (max-width: 768px) {
+    .wa-wrapper {
+        height: calc(100vh - 90px);
+        margin: 0;
+        border-radius: 0;
+        border: none;
+    }
+    .wa-sidebar {
+        width: 100%;
+        display: flex;
+    }
+    .wa-chat-pane {
+        display: none;
+    }
+    .wa-wrapper.chat-open .wa-sidebar {
+        display: none;
+    }
+    .wa-wrapper.chat-open .wa-chat-pane {
+        display: flex;
+    }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="inbox-container">
-    <div class="inbox-header">
-        <div>
-            <h1>💌 Encouragement Inbox</h1>
-            <p>Direct compliments and notes from proud parents, mentors, and community supporters.</p>
+<div class="wa-wrapper" id="wa-app">
+    
+    <!-- LEFT SIDEBAR -->
+    <div class="wa-sidebar">
+        <div class="wa-sidebar-header">
+            <div class="wa-my-profile">
+                <div class="wa-avatar">
+                    {{ current_user.fullname[0] if current_user.fullname else current_user.username[0] }}
+                </div>
+                <div>
+                    <div style="font-weight:700; font-size:0.92rem;">
+                        {% if current_user.role == 'parent' and current_user.parent_is_anonymous %}
+                            {{ current_user.parent_alias or 'Anonymous Parent' }}
+                        {% else %}
+                            {{ current_user.fullname or current_user.username }}
+                        {% endif %}
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--wa-muted); text-transform:capitalize;">
+                        {{ current_user.role }} • Lumina Network
+                    </div>
+                </div>
+            </div>
+            <div class="wa-sidebar-tools">
+                <button class="wa-icon-btn" onclick="openNewChatModal()" title="Start New Chat">💬</button>
+                <button class="wa-icon-btn" onclick="loadConversations()" title="Refresh">🔄</button>
+            </div>
         </div>
-        <div>
-            <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary" style="font-size:0.85rem;">🌟 View Showcase Feed</a>
+
+        <div class="wa-search-box">
+            <div class="wa-search-input-wrap">
+                <span>🔍</span>
+                <input type="text" id="thread-search" placeholder="Search chats..." oninput="filterThreads(this.value)">
+            </div>
+        </div>
+
+        <div class="wa-threads-list" id="threads-container">
+            <div style="padding:20px; text-align:center; color:var(--wa-muted);">Loading conversations...</div>
         </div>
     </div>
 
-    {% if messages %}
-        {% for m in messages %}
-        <div class="message-card">
-            <div class="message-top">
-                <div class="message-sender">
-                    <div class="sender-avatar">
-                        {% if m[4] %}🔒{% else %}{{ (m[10] or m[9])[0] if (m[10] or m[9]) else 'P' }}{% endif %}
-                    </div>
-                    <div>
-                        <div class="sender-name">
-                            {% if m[4] %}
-                                <span>{{ m[5] or 'Proud Parent' }}</span>
-                                <span style="font-size:0.72rem; padding:1px 8px; border-radius:10px; background:rgba(245,158,11,0.2); color:#f59e0b; border:1px solid rgba(245,158,11,0.4);">
-                                    🔒 Anonymous Supporter
-                                </span>
-                            {% else %}
-                                <span>{{ m[10] or m[9] }}</span>
-                                <span style="font-size:0.72rem; padding:1px 8px; border-radius:10px; background:rgba(56,189,248,0.2); color:#38bdf8; border:1px solid rgba(56,189,248,0.4);">
-                                    👨‍👩‍👧 Parent Supporter
-                                </span>
-                            {% endif %}
-                        </div>
-                        <div class="sender-time">{{ m[6] }}</div>
-                    </div>
-                </div>
-                <div>
-                    <span style="font-size:0.75rem; color:var(--muted);">Status: Read</span>
+    <!-- RIGHT CHAT PANE -->
+    <div class="wa-chat-pane">
+        <!-- Header -->
+        <div class="wa-chat-header">
+            <div class="wa-chat-header-info">
+                <button class="wa-icon-btn" id="mobile-back-btn" onclick="closeMobileChat()" style="display:none; margin-right:4px;">←</button>
+                <div class="wa-avatar" id="active-chat-avatar">🏛️</div>
+                <div class="wa-header-details">
+                    <h3 id="active-chat-title">Campus Broadcast</h3>
+                    <p id="active-chat-subtitle">School Producer Announcement Channel</p>
                 </div>
             </div>
-
-            {% if m[8] %}
-                <div>
-                    <a href="{{ url_for('showcase_feed') }}#reel-post-{{ m[1] }}" class="message-post-link">
-                        🎯 Post: {{ m[8] }}
-                    </a>
-                </div>
-            {% endif %}
-
-            <div class="message-bubble">
-                "{{ m[3] }}"
-            </div>
-
-            <div class="message-actions">
-                <button class="btn-react" onclick="sendThanks(this)">❤️ Send Thanks</button>
+            <div class="wa-sidebar-tools">
+                <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary" style="font-size:0.78rem; padding:4px 10px; background:rgba(255,255,255,0.06); border:1px solid var(--wa-border); color:var(--wa-text);">🌟 Showcase Feed</a>
             </div>
         </div>
-        {% endfor %}
-    {% else %}
-        <div style="text-align:center; padding:80px 20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);">
-            <div style="font-size:3.2rem; margin-bottom:12px;">📬</div>
-            <h3>No parent messages yet</h3>
-            <p style="color:var(--muted); max-width:440px; margin:8px auto 20px;">
-                Keep publishing your high scores, typing personal bests, and chess checkmates to the Showcase Feed to receive encouraging notes!
-            </p>
-            <a href="{{ url_for('showcase_feed') }}" class="btn btn-primary" style="background:linear-gradient(135deg, #ec4899, #8b5cf6); border:none; color:#fff;">
-                🌟 Go to Showcase Feed
-            </a>
+
+        <!-- Messages Stream -->
+        <div class="wa-messages-stream" id="messages-container">
+            <div class="wa-date-divider">Today</div>
+            <div style="text-align:center; color:var(--wa-muted); font-size:0.85rem; padding:20px;">
+                Connecting to encrypted real-time channel...
+            </div>
         </div>
-    {% endif %}
+
+        <!-- Input Bar -->
+        <div class="wa-input-bar">
+            <div class="wa-emoji-quick">
+                <button class="wa-emoji-pill" onclick="insertEmoji('👏')">👏</button>
+                <button class="wa-emoji-pill" onclick="insertEmoji('🌟')">🌟</button>
+                <button class="wa-emoji-pill" onclick="insertEmoji('🔥')">🔥</button>
+                <button class="wa-emoji-pill" onclick="insertEmoji('🚀')">🚀</button>
+                <button class="wa-emoji-pill" onclick="insertEmoji('💯')">💯</button>
+            </div>
+            <div class="wa-input-wrap">
+                <input type="text" id="msg-input" placeholder="Type a message..." onkeydown="handleInputKey(event)">
+            </div>
+            <button class="wa-send-btn" onclick="sendMessage()" title="Send Message">➤</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- NEW CHAT MODAL -->
+<div class="wa-modal-overlay" id="new-chat-modal" onclick="if(event.target===this) closeNewChatModal()">
+    <div class="wa-modal-content">
+        <div class="wa-modal-header">
+            <h3 style="margin:0; font-size:1.1rem;">New Direct Chat</h3>
+            <button class="wa-icon-btn" onclick="closeNewChatModal()">✕</button>
+        </div>
+        <div style="padding:10px 16px; border-bottom:1px solid var(--wa-border);">
+            <div class="wa-search-input-wrap">
+                <span>🔍</span>
+                <input type="text" id="contact-search" placeholder="Search contacts..." oninput="filterContacts(this.value)">
+            </div>
+        </div>
+        <div class="wa-contact-list" id="contacts-container">
+            <div style="padding:20px; text-align:center; color:var(--wa-muted);">Loading contacts...</div>
+        </div>
+    </div>
 </div>
 
 <script>
-function sendThanks(btn) {
-    btn.innerHTML = '❤️ Thanks Sent!';
-    btn.style.background = 'rgba(236,72,153,0.3)';
-    btn.style.borderColor = '#ec4899';
-    btn.disabled = true;
+let currentConvId = "{{ active_conv or 'broadcast' }}";
+let activePartnerId = null;
+let conversationsData = [];
+let contactsData = [];
+let pollInterval = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadConversations();
+    // Auto-poll messages every 3.5 seconds
+    pollInterval = setInterval(refreshActiveThread, 3500);
+});
+
+function loadConversations() {
+    fetch('/api/messages/conversations')
+        .then(r => r.json())
+        .then(convs => {
+            conversationsData = convs;
+            renderConversations(convs);
+            // Select active thread
+            if (currentConvId) {
+                selectConversation(currentConvId, false);
+            } else if (convs.length > 0) {
+                selectConversation(convs[0].id, false);
+            }
+        })
+        .catch(err => console.error("Failed to load conversations:", err));
+}
+
+function renderConversations(convs) {
+    const cont = document.getElementById('threads-container');
+    if (!convs || convs.length === 0) {
+        cont.innerHTML = '<div style="padding:20px; text-align:center; color:var(--wa-muted);">No chats yet. Click 💬 to message someone!</div>';
+        return;
+    }
+
+    cont.innerHTML = convs.map(c => `
+        <div class="wa-thread-item ${c.id === currentConvId ? 'active' : ''}" onclick="selectConversation('${c.id}')" id="thread-item-${c.id}">
+            <div class="wa-avatar" style="${c.id === 'broadcast' ? 'background:linear-gradient(135deg,#f59e0b,#ef4444);' : (c.id === 'parents_channel' ? 'background:linear-gradient(135deg,#ec4899,#8b5cf6);' : '')}">
+                ${c.avatar || c.name[0]}
+            </div>
+            <div class="wa-thread-info">
+                <div class="wa-thread-top">
+                    <div class="wa-thread-title">${c.name}</div>
+                    <div class="wa-thread-time">${formatTime(c.last_time)}</div>
+                </div>
+                <div class="wa-thread-bottom">
+                    <div class="wa-thread-snippet">${escapeHtml(c.last_message || 'Tap to chat')}</div>
+                    ${c.unread > 0 ? `<div class="wa-unread-badge">${c.unread}</div>` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectConversation(convId, autoFocus = true) {
+    currentConvId = convId;
+    
+    // Highlight sidebar
+    document.querySelectorAll('.wa-thread-item').forEach(el => el.classList.remove('active'));
+    const item = document.getElementById(`thread-item-${convId}`);
+    if (item) item.classList.add('active');
+
+    // Update header
+    const conv = conversationsData.find(c => c.id === convId);
+    if (conv) {
+        document.getElementById('active-chat-avatar').textContent = conv.avatar || conv.name[0];
+        document.getElementById('active-chat-title').textContent = conv.name;
+        document.getElementById('active-chat-subtitle').textContent = conv.alias || (conv.role ? `${conv.role} channel` : '');
+        activePartnerId = conv.partner_id || null;
+    }
+
+    // Check mobile responsive view
+    if (window.innerWidth <= 768) {
+        document.getElementById('wa-app').classList.add('chat-open');
+        document.getElementById('mobile-back-btn').style.display = 'inline-flex';
+    }
+
+    loadThreadMessages(convId, autoFocus);
+}
+
+function closeMobileChat() {
+    document.getElementById('wa-app').classList.remove('chat-open');
+    document.getElementById('mobile-back-btn').style.display = 'none';
+}
+
+function loadThreadMessages(convId, autoFocus = true) {
+    fetch(`/api/messages/thread/${encodeURIComponent(convId)}`)
+        .then(r => r.json())
+        .then(data => {
+            renderMessages(data.messages);
+            if (autoFocus) {
+                const inp = document.getElementById('msg-input');
+                if (inp) inp.focus();
+            }
+        })
+        .catch(err => console.error("Error loading thread:", err));
+}
+
+function refreshActiveThread() {
+    if (!currentConvId) return;
+    fetch(`/api/messages/thread/${encodeURIComponent(currentConvId)}`)
+        .then(r => r.json())
+        .then(data => {
+            renderMessages(data.messages, false);
+        })
+        .catch(() => {});
+}
+
+function renderMessages(msgs, autoScroll = true) {
+    const cont = document.getElementById('messages-container');
+    if (!msgs || msgs.length === 0) {
+        cont.innerHTML = `
+            <div class="wa-date-divider">Today</div>
+            <div style="text-align:center; color:var(--wa-muted); font-size:0.85rem; padding:40px 20px;">
+                No messages yet in this conversation.<br>Say hello and share encouragement! 👋
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div class="wa-date-divider">Today</div>';
+    msgs.forEach(m => {
+        const isOut = m.is_me;
+        const senderRoleClass = m.role === 'producer' || m.role === 'admin' ? 'producer' : (m.role === 'parent' ? 'parent' : '');
+        html += `
+            <div class="wa-msg ${isOut ? 'outgoing' : 'incoming'}">
+                ${!isOut ? `<div class="wa-msg-sender ${senderRoleClass}">${escapeHtml(m.sender_name)}</div>` : ''}
+                <div class="wa-msg-text">${escapeHtml(m.message)}</div>
+                <div class="wa-msg-meta">
+                    <span>${formatTime(m.time)}</span>
+                    ${isOut ? `<span class="wa-check">✓✓</span>` : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    cont.innerHTML = html;
+    if (autoScroll) {
+        cont.scrollTop = cont.scrollHeight;
+    }
+}
+
+function sendMessage() {
+    const input = document.getElementById('msg-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    input.value = '';
+
+    const payload = {
+        conversation_id: currentConvId,
+        message: msg,
+        receiver_id: activePartnerId
+    };
+
+    fetch('/api/messages/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            loadThreadMessages(currentConvId, true);
+            loadConversations();
+        } else {
+            alert(data.error || 'Failed to send message.');
+        }
+    })
+    .catch(err => {
+        console.error('Send error:', err);
+    });
+}
+
+function handleInputKey(e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+function insertEmoji(emoji) {
+    const input = document.getElementById('msg-input');
+    input.value += emoji;
+    input.focus();
+}
+
+function filterThreads(query) {
+    const q = query.toLowerCase();
+    const filtered = conversationsData.filter(c => 
+        c.name.toLowerCase().includes(q) || 
+        (c.last_message && c.last_message.toLowerCase().includes(q))
+    );
+    renderConversations(filtered);
+}
+
+/* === NEW CHAT MODAL === */
+function openNewChatModal() {
+    const modal = document.getElementById('new-chat-modal');
+    modal.style.display = 'flex';
+    fetch('/api/messages/contacts')
+        .then(r => r.json())
+        .then(contacts => {
+            contactsData = contacts;
+            renderContacts(contacts);
+        });
+}
+
+function closeNewChatModal() {
+    document.getElementById('new-chat-modal').style.display = 'none';
+}
+
+function renderContacts(contacts) {
+    const cont = document.getElementById('contacts-container');
+    if (!contacts || contacts.length === 0) {
+        cont.innerHTML = '<div style="padding:20px; text-align:center; color:var(--wa-muted);">No contacts available.</div>';
+        return;
+    }
+    cont.innerHTML = contacts.map(c => `
+        <div class="wa-contact-item" onclick="startChatWith(${c.id}, '${escapeHtml(c.name)}')">
+            <div class="wa-avatar">${c.name[0]}</div>
+            <div>
+                <div style="font-weight:600; font-size:0.95rem;">${escapeHtml(c.name)}</div>
+                <div style="font-size:0.78rem; color:var(--wa-muted);">${escapeHtml(c.role)} • ${escapeHtml(c.alias || '')}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterContacts(query) {
+    const q = query.toLowerCase();
+    const filtered = contactsData.filter(c => 
+        c.name.toLowerCase().includes(q) || 
+        (c.role && c.role.toLowerCase().includes(q)) ||
+        (c.alias && c.alias.toLowerCase().includes(q))
+    );
+    renderContacts(filtered);
+}
+
+function startChatWith(contactId, name) {
+    closeNewChatModal();
+    const myId = {{ current_user.id }};
+    const cid = `direct_${Math.min(myId, contactId)}_${Math.max(myId, contactId)}`;
+    currentConvId = cid;
+    activePartnerId = contactId;
+
+    document.getElementById('active-chat-avatar').textContent = name[0];
+    document.getElementById('active-chat-title').textContent = name;
+    document.getElementById('active-chat-subtitle').textContent = "Direct Conversation";
+
+    loadThreadMessages(cid, true);
+    loadConversations();
+}
+
+function formatTime(timeStr) {
+    if (!timeStr) return '';
+    try {
+        const parts = timeStr.split(' ');
+        if (parts.length > 1) {
+            return parts[1].substring(0, 5);
+        }
+        return timeStr.substring(11, 16) || timeStr;
+    } catch(e) {
+        return timeStr;
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 {% endblock %}
