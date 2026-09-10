@@ -195,17 +195,25 @@ def ensure_columns():
         ("showcase_posts", "achievement_rank_score", "INTEGER DEFAULT 0"),
         ("showcase_posts", "verified_history_id", "INTEGER"),
     ]
+    is_pg = bool(__import__("config").DATABASE_URL)
+    db = get_db()
     for table, col, col_type in cols_to_add:
         try:
+            if not is_pg:
+                cur = db.execute(f"PRAGMA table_info({table})")
+                cols = [row[1] for row in cur.fetchall()]
+                if col in cols:
+                    continue
             db_execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
         except Exception:
-            pass
+            try:
+                db.rollback()
+            except Exception:
+                pass
 
 def init_db():
     is_pg = bool(__import__("config").DATABASE_URL)
     pk = "id SERIAL PRIMARY KEY" if is_pg else "id INTEGER PRIMARY KEY AUTOINCREMENT"
-
-    ensure_columns()
 
     tables = [
         f"""CREATE TABLE IF NOT EXISTS users (
@@ -214,6 +222,8 @@ def init_db():
             role TEXT DEFAULT 'student', xp INTEGER DEFAULT 0, level INTEGER DEFAULT 1,
             streak INTEGER DEFAULT 0, longest_streak INTEGER DEFAULT 0,
             last_active DATE, parent_code TEXT UNIQUE,
+            is_locked INTEGER DEFAULT 0, is_anonymous INTEGER DEFAULT 0,
+            parent_alias TEXT DEFAULT 'Proud Parent', linked_student_id INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""",
         f"""CREATE TABLE IF NOT EXISTS classrooms (
@@ -347,6 +357,7 @@ def init_db():
             content TEXT, media_type TEXT DEFAULT 'card',
             media_url TEXT, achievement_type TEXT DEFAULT 'typing_record',
             stat_highlight TEXT, likes_count INTEGER DEFAULT 0,
+            achievement_rank_score INTEGER DEFAULT 0, verified_history_id INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""",
         f"""CREATE TABLE IF NOT EXISTS parent_student_messages (
@@ -389,6 +400,8 @@ def init_db():
 
     for sql in tables:
         db_execute(sql)
+
+    ensure_columns()
 
     cnt = db_fetchone("SELECT COUNT(*) FROM passages")
     if not cnt or cnt[0] == 0:
