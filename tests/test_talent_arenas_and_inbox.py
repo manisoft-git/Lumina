@@ -31,12 +31,14 @@ class TestTalentArenasAndInbox(unittest.TestCase):
             self.pid = User.create(p_uname, f'Parent {rand}', f'{p_uname}@school.edu', 'pass123', role='parent')
 
     def test_briefing_navbar_button(self):
-        """Verify navbar has 'Briefing' instead of 'Principal Briefing'."""
+        """Verify navbar and command palette use 'Briefing' instead of 'Principal Briefing'."""
         resp = self.client.get('/')
         self.assertEqual(resp.status_code, 200)
         html = resp.data.decode('utf-8')
         self.assertIn('🎓 Briefing', html)
         self.assertNotIn('🎓 Principal Briefing', html)
+        self.assertNotIn('Principal Briefing & Laptop Grant Proposal', html)
+        self.assertIn('Briefing & Laptop Grant Proposal', html)
 
     def test_games_hub_seventeen_domains(self):
         """Verify Games Hub displays all 17 domains including Spatial 3D Rotation, ChronoLogix, NeuroBeat, Daily Triad, and Battle Royale."""

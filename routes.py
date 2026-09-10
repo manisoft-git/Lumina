@@ -2547,7 +2547,7 @@ def register_routes(app):
                 key = (request.form.get("briefing_key") or "").strip()
                 if key == "$$manisoft11briefing":
                     session["principal_unlocked"] = True
-                    flash("Principal Briefing unlocked.", "success")
+                    flash("Briefing unlocked.", "success")
                     return redirect(url_for("principal_briefing"))
                 else:
                     flash("Invalid briefing security password.", "error")
@@ -2588,7 +2588,7 @@ def register_routes(app):
     @app.route("/principal/lock")
     def principal_lock_route():
         session.pop("principal_unlocked", None)
-        flash("Principal Briefing locked.", "info")
+        flash("Briefing locked.", "info")
         return redirect(url_for("principal_briefing"))
 
     @app.route("/forgot-password", methods=["GET", "POST"])
