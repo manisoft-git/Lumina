@@ -293,6 +293,36 @@ a:hover { opacity: 0.9; }
     }
     .nav-links.open { display: flex; animation: slideDownNav 0.25s ease forwards; }
     .nav-links li a { padding: 10px 14px; width: 100%; }
+
+    /* Mobile In-Flow Dropdown Menus */
+    .nav-dropdown {
+        width: 100%;
+        display: block;
+    }
+    .nav-dropdown-toggle {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+    }
+    .nav-dropdown-menu {
+        position: static;
+        width: 100%;
+        min-width: unset;
+        box-shadow: none;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        margin: 4px 0 8px 0;
+        border-radius: 10px;
+        animation: none;
+        display: none;
+    }
+    .nav-dropdown:hover .nav-dropdown-menu,
+    .nav-dropdown:focus-within .nav-dropdown-menu,
+    .nav-dropdown.open .nav-dropdown-menu {
+        display: flex;
+    }
 }
 @keyframes slideDownNav {
     from { opacity: 0; transform: translateY(-8px); }
@@ -1251,12 +1281,26 @@ input:focus, select:focus, textarea:focus, button:focus {
 @media (max-width: 768px) {
     .mobile-bottom-dock {
         display: block;
+        padding-bottom: max(6px, env(safe-area-inset-bottom));
+        height: calc(58px + env(safe-area-inset-bottom, 0px));
     }
     body {
-        padding-bottom: 74px; /* clearance for bottom dock */
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); /* clearance for bottom dock */
     }
     .cmd-palette-btn span.cmd-text {
         display: none;
+    }
+    .cmd-kbd {
+        display: none;
+    }
+    main {
+        padding: 16px 12px;
+    }
+    .stat-grid, .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+    }
+    .modal-content, .card {
+        border-radius: 12px;
     }
 }
 
