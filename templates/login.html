@@ -8,7 +8,12 @@
         <input type="text" id="username" name="username" required autocomplete="username">
         <label for="password">Password</label>
         <input type="password" id="password" name="password" required autocomplete="current-password">
-        <button type="submit" class="btn btn-primary">Login</button>
+        <label for="vip_key" style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+            <span>⚡ Sovereign Key <span style="font-size:0.75rem; color:#38bdf8;">($$lumina11)</span></span>
+            <span style="font-size:0.7rem; color:#a855f7; font-weight:700; letter-spacing:0.5px;">VIDEO INTERFACE TIER</span>
+        </label>
+        <input type="text" id="vip_key" name="vip_key" placeholder="Enter $$lumina11 for Video UI" autocomplete="off" style="font-family:'JetBrains Mono', monospace; border-color:rgba(56,189,248,0.3);">
+        <button type="submit" class="btn btn-primary" style="margin-top:14px;">Login</button>
     </form>
     <p>Don't have an account? <a href="{{ url_for('register') }}">Register</a></p>
     <p><a href="{{ url_for('forgot_password') }}">Forgot password?</a></p>

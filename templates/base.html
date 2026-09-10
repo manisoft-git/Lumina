@@ -28,6 +28,11 @@
                 <span style="font-weight:900; letter-spacing:-0.5px;">Lumina</span>
                 <span style="font-size:0.68rem; background:linear-gradient(135deg,#38bdf8,#818cf8); color:#fff; padding:2px 7px; border-radius:10px; font-weight:800; margin-left:4px;">v5.2</span>
             </a>
+            {% if session.get('video_ui_unlocked') %}
+            <a href="{{ url_for('sovereign_video_dashboard') }}" title="Sovereign Video UI Active" style="text-decoration:none; display:inline-flex; align-items:center; gap:5px; background:linear-gradient(135deg,rgba(56,189,248,0.25),rgba(168,85,247,0.25)); border:1px solid #38bdf8; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:800; color:#ffffff; box-shadow:0 0 12px rgba(56,189,248,0.4); margin-left:8px;">
+                <span>💎</span><span>VIDEO UI</span>
+            </a>
+            {% endif %}
             <button class="cmd-palette-btn" onclick="openCommandPalette()" aria-label="Quick jump search" style="margin-left:14px;">
                 <span>🔍</span>
                 <span class="cmd-text">Jump...</span>
