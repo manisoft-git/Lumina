@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from db import db_execute, db_fetchone, db_fetchall, db_execute_returning_id
+from db import get_db, db_execute, db_fetchone, db_fetchall, db_execute_returning_id
 
 K_NEW, K_EST, K_MAST = 40, 20, 10
 
