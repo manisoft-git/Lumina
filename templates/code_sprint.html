@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block title %}Code Debugger & Logic Sprint — Lumina{% endblock %}
+{% block head %}
+<style>
+.code-container { max-width: 820px; margin: 20px auto 40px; padding: 0 16px; }
+.code-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 30px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+}
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+}
+.code-badge {
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.code-snippet-box {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #e6edf3;
+    overflow-x: auto;
+    margin-bottom: 24px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+}
+.options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.code-opt-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    text-align: left;
+    color: var(--text);
+    font-size: 0.96rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: ui-monospace, monospace;
+}
+.code-opt-btn:hover:not(:disabled) {
+    border-color: #38bdf8;
+    background: rgba(56,189,248,0.1);
+    transform: translateX(4px);
+}
+.code-opt-btn.correct {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border-color: #10b981 !important;
+    color: #34d399 !important;
+    font-weight: 700;
+}
+.code-opt-btn.wrong {
+    background: rgba(239, 68, 68, 0.2) !important;
+    border-color: #ef4444 !important;
+    color: #f87171 !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="code-container">
+    <div class="code-card">
+        <!-- Start Screen -->
+        <div id="start-screen" style="text-align:center; padding:30px 10px;">
+            <div style="font-size:3.5rem; margin-bottom:12px;">💻</div>
+            <span class="code-badge">Arena 10: Algorithmic Logic & Debugging</span>
+            <h1 style="font-size:2.2rem; font-weight:900; margin:14px 0 8px;">Code Debugger & Sprint</h1>
+            <p style="color:var(--muted); font-size:1.05rem; max-width:580px; margin:0 auto 24px; line-height:1.5;">
+                Test your computational intuition and algorithmic tracing. Predict code outputs, diagnose scope mutability, and catch runtime boundary conditions!
+            </p>
+            <button class="btn btn-primary" onclick="startSprint()" style="padding:12px 36px; font-size:1.1rem; font-weight:800; background:linear-gradient(135deg,#0284c7,#38bdf8); border:none;">
+                ⚡ Launch Code Sprint
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" style="display:none;">
+            <div class="code-header">
+                <div>
+                    <span class="code-badge" id="lang-badge">Python 3</span>
+                    <span style="margin-left:10px; font-weight:700; font-size:0.9rem; color:var(--muted);" id="q-counter">Puzzle 1/8</span>
+                </div>
+                <div style="display:flex; gap:16px; font-weight:700;">
+                    <div style="color:var(--accent);">⏱️ <span id="timer-val">25</span>s</div>
+                    <div style="color:#38bdf8;">Streak: <span id="streak-val">0</span> 🔥</div>
+                    <div style="color:var(--primary);">Solved: <span id="current-score">0</span></div>
+                </div>
+            </div>
+
+            <div style="font-size:1.1rem; font-weight:700; margin-bottom:12px;" id="q-prompt">What will this code print?</div>
+            <pre class="code-snippet-box" id="code-snippet"></pre>
+
+            <div class="options-list" id="options-container"></div>
+
+            <div id="explanation-box" style="display:none; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:14px 18px; margin-bottom:20px; font-size:0.92rem; color:var(--text-secondary);">
+                <strong style="color:var(--primary);">💡 Compiler Analysis:</strong> <span id="explanation-text"></span>
+            </div>
+
+            <div style="text-align:right;">
+                <button class="btn btn-primary" id="next-btn" onclick="nextPuzzle()" style="display:none; font-weight:700;">
+                    Next Puzzle ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" style="display:none; text-align:center; padding:20px 0;">
+            <div style="font-size:3.2rem;">🚀</div>
+            <h2 style="font-size:1.8rem; font-weight:800; margin:10px 0 4px;">Code Sprint Complete!</h2>
+            <p style="color:var(--muted); font-size:0.95rem;">Algorithmic Logic Calibration Certified</p>
+
+            <div style="font-size:3.5rem; font-weight:900; background:linear-gradient(135deg,#0284c7,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:10px 0;" id="final-score-val">0 Solved</div>
+            <div id="tier-badge" style="display:inline-block; padding:4px 14px; border-radius:12px; font-weight:800; font-size:0.85rem; margin-bottom:20px;"></div>
+
+            <div style="display:flex; justify-content:center; gap:24px; margin-bottom:28px;">
+                <div><div style="font-weight:800; font-size:1.25rem; color:#10b981;" id="xp-val">+0 XP</div><div style="font-size:0.78rem; color:var(--muted);">Experience Earned</div></div>
+                <div><div style="font-weight:800; font-size:1.25rem; color:#38bdf8;" id="max-streak-val">0</div><div style="font-size:0.78rem; color:var(--muted);">Max Streak</div></div>
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="startSprint()" style="padding:10px 24px;">🔄 Try Again</button>
+                <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary" style="padding:10px 24px;">🌟 Share on Showcase</a>
+                <a href="{{ url_for('games_hub') }}" class="btn btn-secondary" style="padding:10px 24px;">🎮 All Arenas</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const PUZZLES = [
+    {
+        lang: "Python 3",
+        prompt: "What is the output of the following list comprehension?",
+        code: "nums = [1, 2, 3, 4, 5]\nres = [x * 2 for x in nums if x % 2 != 0]\nprint(res)",
+        opts: ["[2, 6, 10]", "[2, 4, 6, 8, 10]", "[4, 8]", "[1, 3, 5]"],
+        ans: 0,
+        exp: "The condition `if x % 2 != 0` filters for odd numbers: [1, 3, 5]. Then `x * 2` doubles each element yielding [2, 6, 10]."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What is the return value of this dictionary operation?",
+        code: "data = {'a': 1, 'b': 2}\nval = data.get('c', 42)\nprint(val)",
+        opts: ["None", "KeyError: 'c'", "42", "0"],
+        ans: 2,
+        exp: "`dict.get(key, default)` returns the fallback default value (42) if the key is not present in the dictionary."
+    },
+    {
+        lang: "JavaScript",
+        prompt: "What does this JavaScript snippet output in node / browser?",
+        code: "const arr = [1, 2, 3];\narr.push(4);\nconsole.log(arr.length);",
+        opts: ["TypeError: Assignment to constant variable", "4", "3", "undefined"],
+        ans: 1,
+        exp: "`const` prevents reassignment of the variable binding `arr`, but the underlying array object remains mutable. `.push(4)` expands length to 4."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What will this recursion print?",
+        code: "def f(n):\n    if n <= 1: return 1\n    return n + f(n - 1)\nprint(f(4))",
+        opts: ["10", "24", "7", "4"],
+        ans: 0,
+        exp: "f(4) = 4 + f(3) = 4 + 3 + f(2) = 4 + 3 + 2 + f(1) = 4 + 3 + 2 + 1 = 10."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What is the output of this string slicing?",
+        code: "s = 'Lumina'\nprint(s[::-1].upper())",
+        opts: ["ANIMUL", "LUMINA", "ANIMUL_REV", "IndexError"],
+        ans: 0,
+        exp: "`s[::-1]` reverses the string into 'animuL'. `.upper()` transforms all characters to uppercase: 'ANIMUL'."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What is the result of set intersection?",
+        code: "a = {1, 2, 3, 4}\nb = {3, 4, 5, 6}\nprint(sorted(list(a & b)))",
+        opts: ["[3, 4]", "[1, 2, 5, 6]", "[1, 2, 3, 4, 5, 6]", "None"],
+        ans: 0,
+        exp: "`a & b` evaluates the set intersection of common elements: {3, 4}."
+    },
+    {
+        lang: "JavaScript",
+        prompt: "What is the value of `x` after the ternary operator?",
+        code: "let score = 85;\nlet x = score >= 90 ? 'A' : score >= 80 ? 'B' : 'C';\nconsole.log(x);",
+        opts: ["'A'", "'B'", "'C'", "85"],
+        ans: 1,
+        exp: "85 >= 90 is false, advancing to the second condition: 85 >= 80 is true, evaluating to 'B'."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What does this lambda function produce?",
+        code: "sq = lambda x, y=2: x ** y\nprint(sq(3))",
+        opts: ["6", "9", "27", "TypeError: missing required argument"],
+        ans: 1,
+        exp: "`sq(3)` uses the default argument `y=2`, computing 3 ** 2 = 9."
+    }
+];
+
+let cur = 0, score = 0, streak = 0, maxStreak = 0, timer = 25, timerId = null, answered = false;
+
+function startSprint() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('results-screen').style.display = 'none';
+    document.getElementById('quiz-screen').style.display = 'block';
+    cur = 0; score = 0; streak = 0; maxStreak = 0;
+    loadPuzzle(0);
+}
+
+function loadPuzzle(idx) {
+    if (idx >= PUZZLES.length) { finishSprint(); return; }
+    answered = false;
+    const p = PUZZLES[idx];
+    document.getElementById('lang-badge').textContent = p.lang;
+    document.getElementById('q-counter').textContent = `Puzzle ${idx + 1} / ${PUZZLES.length}`;
+    document.getElementById('current-score').textContent = score;
+    document.getElementById('streak-val').textContent = streak;
+    document.getElementById('q-prompt').textContent = p.prompt;
+    document.getElementById('code-snippet').textContent = p.code;
+    document.getElementById('explanation-box').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+
+    const list = document.getElementById('options-container');
+    list.innerHTML = p.opts.map((opt, i) => `
+        <button class="code-opt-btn" onclick="selectCodeAnswer(${i})">
+            ${opt}
+        </button>
+    `).join('');
+
+    clearInterval(timerId);
+    timer = 25;
+    document.getElementById('timer-val').textContent = timer;
+    timerId = setInterval(() => {
+        timer--;
+        document.getElementById('timer-val').textContent = timer;
+        if (timer <= 0) { clearInterval(timerId); selectCodeAnswer(-1); }
+    }, 1000);
+}
+
+function selectCodeAnswer(choiceIdx) {
+    if (answered) return;
+    answered = true;
+    clearInterval(timerId);
+
+    const p = PUZZLES[cur];
+    const isCorrect = choiceIdx === p.ans;
+    if (isCorrect) {
+        score++;
+        streak++;
+        if (streak > maxStreak) maxStreak = streak;
+        document.getElementById('current-score').textContent = score;
+        document.getElementById('streak-val').textContent = streak;
+        if (window.LuminaAudio) LuminaAudio.playKey();
+    } else {
+        streak = 0;
+        document.getElementById('streak-val').textContent = streak;
+        if (window.LuminaAudio) LuminaAudio.playError();
+    }
+
+    const btns = document.querySelectorAll('.code-opt-btn');
+    btns.forEach((b, i) => {
+        b.disabled = true;
+        if (i === p.ans) b.classList.add('correct');
+        else if (i === choiceIdx) b.classList.add('wrong');
+    });
+
+    document.getElementById('explanation-text').textContent = p.exp;
+    document.getElementById('explanation-box').style.display = 'block';
+    document.getElementById('next-btn').style.display = 'inline-block';
+}
+
+function nextPuzzle() {
+    cur++;
+    loadPuzzle(cur);
+}
+
+function finishSprint() {
+    clearInterval(timerId);
+    document.getElementById('quiz-screen').style.display = 'none';
+    document.getElementById('results-screen').style.display = 'block';
+
+    const xp = score * 20;
+    document.getElementById('final-score-val').textContent = `${score} / ${PUZZLES.length} Solved`;
+    document.getElementById('xp-val').textContent = `+${xp} XP`;
+    document.getElementById('max-streak-val').textContent = maxStreak;
+
+    const badge = document.getElementById('tier-badge');
+    if (score >= 8) {
+        badge.textContent = "🌟 LEGENDARY ALGORITHMIC ARCHITECT";
+        badge.style.background = "linear-gradient(135deg, #0284c7, #38bdf8)";
+        badge.style.color = "#fff";
+    } else if (score >= 5) {
+        badge.textContent = "🥇 GOLD LOGICIAN TIER";
+        badge.style.background = "linear-gradient(135deg, #eab308, #ca8a04)";
+        badge.style.color = "#000";
+    } else {
+        badge.textContent = "🥈 SILVER DEBUGGER TIER";
+        badge.style.background = "linear-gradient(135deg, #94a3b8, #64748b)";
+        badge.style.color = "#fff";
+    }
+
+    if (window.LuminaConfetti && score >= 5) LuminaConfetti();
+    if (window.LuminaAudio) LuminaAudio.playFanfare();
+
+    fetch('/api/code_sprint/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score: score })
+    }).catch(e => console.error(e));
+}
+</script>
+{% endblock %}

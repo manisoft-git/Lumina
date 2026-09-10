@@ -42,9 +42,13 @@ def create_app():
         from db import db_fetchone
         if current_user.is_authenticated:
             try:
-                row = db_fetchone("SELECT COUNT(*) FROM parent_student_messages WHERE student_id=? AND read_at IS NULL", (current_user.id,))
-                if row and row[0]:
-                    unread = row[0]
+                dm_row = db_fetchone("SELECT COUNT(*) FROM direct_messages WHERE receiver_id=? AND read_at IS NULL", (current_user.id,))
+                dm_count = dm_row[0] if dm_row and dm_row[0] else 0
+
+                ps_row = db_fetchone("SELECT COUNT(*) FROM parent_student_messages WHERE student_id=? AND read_at IS NULL", (current_user.id,))
+                ps_count = ps_row[0] if ps_row and ps_row[0] else 0
+
+                unread = max(dm_count, ps_count) if (dm_count and ps_count) else (dm_count + ps_count)
             except Exception:
                 pass
         return {

@@ -5,7 +5,7 @@
     <div style="text-align:center; margin-bottom:32px;">
         <h1 style="font-size:2.4rem; font-weight:900; letter-spacing:-0.5px;">Cognitive & Strategy Arenas</h1>
         <p style="color:var(--muted); font-size:1.05rem; max-width:650px; margin:8px auto 0;">
-            Calibrate your mind across 7 standardized cognitive domains. Every game session feeds your verified Lumina Talent Index (LTI) profile and earns XP.
+            Calibrate your mind across 12 standardized cognitive domains and talent arenas. Every session feeds your verified Lumina Talent Index (LTI) profile and earns XP.
         </p>
     </div>
 
@@ -138,6 +138,70 @@
             </div>
             <div style="margin-top:16px;">
                 <a href="{{ url_for('word_blitz') }}" class="btn btn-primary" style="width:100%; text-align:center;">Launch Word Blitz</a>
+            </div>
+        </div>
+
+        <!-- STEM Olympiad (Arena 9) -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #f59e0b;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🏆 STEM Olympiad</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(245,158,11,0.15); color:#f59e0b; padding:4px 10px; border-radius:12px;">Cowbellpedia STEM</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    National high-school Olympiad bowl. 10 rapid-fire questions covering Mathematics, Physics, Chemistry, Biology, and Computing.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('olympiad_arena') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#f59e0b; color:#000; font-weight:800;">Launch STEM Olympiad</a>
+            </div>
+        </div>
+
+        <!-- Code Debugger & Sprint (Arena 10) -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #0284c7;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">💻 Code Debugger</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(2,132,199,0.15); color:#38bdf8; padding:4px 10px; border-radius:12px;">Algorithmic Logic</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Trace compiler outputs and catch edge-case bugs in Python & JavaScript algorithms under clock pressure.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('code_sprint_arena') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#0284c7; color:#fff; font-weight:800;">Launch Code Sprint</a>
+            </div>
+        </div>
+
+        <!-- Oratory Spelling Bee (Arena 11) -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #eab308;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🐝 Spelling Bee</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(234,179,8,0.15); color:#eab308; padding:4px 10px; border-radius:12px;">Oratory & Lexicon</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Listen to audio pronunciation, inspect phonetics and etymological roots, and master advanced academic vocabulary.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('spelling_bee_arena') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#eab308; color:#000; font-weight:800;">Enter Spelling Bee</a>
+            </div>
+        </div>
+
+        <!-- Deductive Sudoku Grid (Arena 12) -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #ec4899;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🔢 Sudoku Grid</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(236,72,153,0.15); color:#ec4899; padding:4px 10px; border-radius:12px;">Deductive Matrices</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Fast 4x4 Mini-Sudoku sprints and 9x9 Classic deductive grids. Solve numerical matrix constraints without collisions.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('sudoku_arena') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#ec4899; color:#fff; font-weight:800;">Play Sudoku</a>
             </div>
         </div>
 

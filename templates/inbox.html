@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}💬 Messaging Center — Lumina{% endblock %}
+{% block title %}💬 Messaging Center & Encouragement Inbox — Lumina{% endblock %}
 {% block head %}
 <style>
-/* === WHATSAPP WEB UI EXPERIENCE === */
+/* === WHATSAPP WEB WORLD-CLASS EXPERIENCE === */
 :root {
     --wa-bg: #0b141a;
     --wa-panel-bg: #111b21;
@@ -17,26 +17,29 @@
     --wa-text: #e9edef;
     --wa-muted: #8696a0;
     --wa-check-read: #53bdeb;
+    --wa-check-gray: #8696a0;
+    --wa-filter-bg: #202c33;
+    --wa-filter-active: #00a884;
 }
 
 .wa-wrapper {
-    max-width: 1200px;
+    max-width: 1240px;
     height: calc(100vh - 120px);
-    min-height: 600px;
+    min-height: 620px;
     margin: 10px auto 30px;
     background: var(--wa-panel-bg);
     border: 1px solid var(--wa-border);
-    border-radius: 12px;
+    border-radius: 14px;
     display: flex;
     overflow: hidden;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+    box-shadow: 0 16px 45px rgba(0,0,0,0.65);
     color: var(--wa-text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* === LEFT SIDEBAR === */
 .wa-sidebar {
-    width: 380px;
+    width: 390px;
     min-width: 320px;
     border-right: 1px solid var(--wa-border);
     display: flex;
@@ -61,22 +64,24 @@
 }
 
 .wa-avatar {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     background: linear-gradient(135deg, #00a884, #38bdf8);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    font-size: 1rem;
+    font-size: 1.05rem;
     color: #fff;
     flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
 .wa-sidebar-tools {
     display: flex;
-    gap: 12px;
+    align-items: center;
+    gap: 8px;
 }
 
 .wa-icon-btn {
@@ -97,18 +102,19 @@
     color: var(--wa-text);
 }
 
+/* Search Box & Filters */
 .wa-search-box {
-    padding: 8px 12px;
+    padding: 10px 14px 6px;
     background: var(--wa-panel-bg);
-    border-bottom: 1px solid var(--wa-border);
 }
 .wa-search-input-wrap {
     background: var(--wa-header-bg);
     border-radius: 8px;
     display: flex;
     align-items: center;
-    padding: 6px 12px;
-    gap: 8px;
+    padding: 7px 12px;
+    gap: 10px;
+    border: 1px solid rgba(255,255,255,0.05);
 }
 .wa-search-input-wrap input {
     background: transparent;
@@ -122,6 +128,38 @@
     color: var(--wa-muted);
 }
 
+/* WhatsApp Filter Pills */
+.wa-filter-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 6px 14px 10px;
+    border-bottom: 1px solid var(--wa-border);
+    overflow-x: auto;
+    background: var(--wa-panel-bg);
+}
+.wa-filter-pill {
+    background: var(--wa-filter-bg);
+    color: var(--wa-muted);
+    border: none;
+    border-radius: 16px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.wa-filter-pill:hover {
+    color: var(--wa-text);
+    background: #2a3942;
+}
+.wa-filter-pill.active {
+    background: var(--wa-filter-active);
+    color: #0b141a;
+    font-weight: 700;
+}
+
+/* Threads List */
 .wa-threads-list {
     flex: 1;
     overflow-y: auto;
@@ -135,6 +173,7 @@
     cursor: pointer;
     border-bottom: 1px solid rgba(255,255,255,0.04);
     transition: background 0.15s;
+    position: relative;
 }
 .wa-thread-item:hover {
     background: var(--wa-hover-bg);
@@ -176,7 +215,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 210px;
+    max-width: 220px;
 }
 .wa-unread-badge {
     background: var(--wa-green);
@@ -190,6 +229,12 @@
     align-items: center;
     justify-content: center;
     padding: 0 6px;
+    box-shadow: 0 2px 5px rgba(0,168,132,0.4);
+    animation: badgePulse 1.5s infinite alternate;
+}
+@keyframes badgePulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.08); }
 }
 
 /* === RIGHT CHAT PANE === */
@@ -221,11 +266,25 @@
     margin: 0;
     font-size: 1.05rem;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 .wa-header-details p {
     margin: 2px 0 0;
     font-size: 0.78rem;
     color: var(--wa-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.wa-online-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #00a884;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #00a884;
 }
 
 /* Messages stream */
@@ -237,7 +296,7 @@
     flex-direction: column;
     gap: 8px;
     background-color: #0b141a;
-    background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 0);
+    background-image: radial-gradient(rgba(255,255,255,0.035) 1px, transparent 0);
     background-size: 24px 24px;
     position: relative;
 }
@@ -247,7 +306,7 @@
     background: #182229;
     color: var(--wa-muted);
     font-size: 0.75rem;
-    padding: 4px 12px;
+    padding: 4px 14px;
     border-radius: 8px;
     margin: 8px 0;
     text-transform: uppercase;
@@ -255,8 +314,20 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
+.wa-msg-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-width: 68%;
+    position: relative;
+}
+.wa-msg-wrapper.outgoing {
+    align-self: flex-end;
+}
+.wa-msg-wrapper.incoming {
+    align-self: flex-start;
+}
+
 .wa-msg {
-    max-width: 65%;
     min-width: 120px;
     padding: 8px 12px 6px;
     border-radius: 8px;
@@ -264,17 +335,15 @@
     font-size: 0.92rem;
     line-height: 1.45;
     word-break: break-word;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
 
-.wa-msg.outgoing {
-    align-self: flex-end;
+.wa-msg-wrapper.outgoing .wa-msg {
     background: var(--wa-outgoing);
     border-top-right-radius: 2px;
 }
 
-.wa-msg.incoming {
-    align-self: flex-start;
+.wa-msg-wrapper.incoming .wa-msg {
     background: var(--wa-incoming);
     border-top-left-radius: 2px;
 }
@@ -297,9 +366,100 @@
     color: rgba(255,255,255,0.55);
     margin-top: 4px;
 }
+
+/* Authentic WhatsApp Tick Styling */
 .wa-check {
-    color: var(--wa-check-read);
     font-weight: 800;
+    font-size: 0.85rem;
+    letter-spacing: -2.5px;
+    margin-left: 2px;
+    display: inline-flex;
+    align-items: center;
+}
+.wa-check-delivered {
+    color: var(--wa-check-gray);
+}
+.wa-check-read {
+    color: var(--wa-check-read);
+    text-shadow: 0 0 5px rgba(83, 189, 235, 0.4);
+}
+
+/* Floating Hover Reactions Pill */
+.wa-reactions-bar {
+    display: none;
+    position: absolute;
+    top: -34px;
+    background: #202c33;
+    border: 1px solid var(--wa-border);
+    border-radius: 18px;
+    padding: 2px 8px;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    z-index: 10;
+}
+.wa-msg-wrapper:hover .wa-reactions-bar {
+    display: flex;
+}
+.wa-msg-wrapper.outgoing .wa-reactions-bar {
+    right: 0;
+}
+.wa-msg-wrapper.incoming .wa-reactions-bar {
+    left: 0;
+}
+.wa-react-btn {
+    background: transparent;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 2px 3px;
+    transition: transform 0.15s;
+}
+.wa-react-btn:hover {
+    transform: scale(1.35);
+}
+
+/* Active message reaction badges */
+.wa-msg-reaction-pill {
+    align-self: flex-start;
+    margin-top: -8px;
+    margin-left: 8px;
+    background: #182229;
+    border: 1px solid var(--wa-border);
+    border-radius: 12px;
+    padding: 1px 6px;
+    font-size: 0.82rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.wa-msg-wrapper.outgoing .wa-msg-reaction-pill {
+    align-self: flex-end;
+    margin-right: 8px;
+    margin-left: 0;
+}
+
+/* Quick Smart Encouragement Chips */
+.wa-quick-chips {
+    display: flex;
+    gap: 6px;
+    padding: 6px 16px;
+    background: var(--wa-panel-bg);
+    border-top: 1px solid var(--wa-border);
+    overflow-x: auto;
+}
+.wa-chip-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--wa-border);
+    border-radius: 14px;
+    color: var(--wa-text);
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+.wa-chip-btn:hover {
+    background: rgba(0, 168, 132, 0.2);
+    border-color: var(--wa-green);
+    color: #34d399;
 }
 
 /* === INPUT BAR === */
@@ -309,13 +469,13 @@
     padding: 10px 16px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     border-top: 1px solid var(--wa-border);
 }
 
 .wa-emoji-quick {
     display: flex;
-    gap: 6px;
+    gap: 4px;
 }
 .wa-emoji-pill {
     background: transparent;
@@ -342,6 +502,7 @@
     font-size: 0.95rem;
     color: var(--wa-text);
     outline: none;
+    box-sizing: border-box;
 }
 .wa-input-wrap input::placeholder {
     color: var(--wa-muted);
@@ -414,6 +575,28 @@
     background: var(--wa-hover-bg);
 }
 
+/* Toast notification */
+.wa-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #202c33;
+    border: 1px solid var(--wa-green);
+    color: var(--wa-text);
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    z-index: 99999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+.wa-toast.show {
+    opacity: 1;
+}
+
 @media (max-width: 768px) {
     .wa-wrapper {
         height: calc(100vh - 90px);
@@ -457,7 +640,7 @@
                         {% endif %}
                     </div>
                     <div style="font-size:0.75rem; color:var(--wa-muted); text-transform:capitalize;">
-                        {{ current_user.role }} • Lumina Network
+                        {{ current_user.role }} • Lumina Encouragement Inbox
                     </div>
                 </div>
             </div>
@@ -470,8 +653,16 @@
         <div class="wa-search-box">
             <div class="wa-search-input-wrap">
                 <span>🔍</span>
-                <input type="text" id="thread-search" placeholder="Search chats..." oninput="filterThreads(this.value)">
+                <input type="text" id="thread-search" placeholder="Search or start new chat..." oninput="filterThreads(this.value)">
             </div>
+        </div>
+
+        <!-- WhatsApp Filter Tabs -->
+        <div class="wa-filter-tabs">
+            <button class="wa-filter-pill active" onclick="setFilter('all', this)">All</button>
+            <button class="wa-filter-pill" onclick="setFilter('unread', this)">Unread</button>
+            <button class="wa-filter-pill" onclick="setFilter('direct', this)">Direct</button>
+            <button class="wa-filter-pill" onclick="setFilter('channels', this)">Channels</button>
         </div>
 
         <div class="wa-threads-list" id="threads-container">
@@ -488,10 +679,14 @@
                 <div class="wa-avatar" id="active-chat-avatar">🏛️</div>
                 <div class="wa-header-details">
                     <h3 id="active-chat-title">Campus Broadcast</h3>
-                    <p id="active-chat-subtitle">School Producer Announcement Channel</p>
+                    <p id="active-chat-subtitle">
+                        <span class="wa-online-dot"></span>
+                        <span id="active-chat-status-text">Encouragement Inbox Channel</span>
+                    </p>
                 </div>
             </div>
             <div class="wa-sidebar-tools">
+                <button class="wa-icon-btn" onclick="markCurrentChatRead()" title="Mark Thread Read">✓✓</button>
                 <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary" style="font-size:0.78rem; padding:4px 10px; background:rgba(255,255,255,0.06); border:1px solid var(--wa-border); color:var(--wa-text);">🌟 Showcase Feed</a>
             </div>
         </div>
@@ -502,6 +697,14 @@
             <div style="text-align:center; color:var(--wa-muted); font-size:0.85rem; padding:20px;">
                 Connecting to encrypted real-time channel...
             </div>
+        </div>
+
+        <!-- Quick Smart Chips -->
+        <div class="wa-quick-chips">
+            <button class="wa-chip-btn" onclick="insertSmartReply('🌟 Incredible progress! Keep shining!')">🌟 Incredible progress!</button>
+            <button class="wa-chip-btn" onclick="insertSmartReply('👏 Thank you so much for the encouragement!')">👏 Thank you so much!</button>
+            <button class="wa-chip-btn" onclick="insertSmartReply('🔥 Locked in and focused on mastering this arena!')">🔥 Locked in & focused</button>
+            <button class="wa-chip-btn" onclick="insertSmartReply('🚀 Full speed ahead!')">🚀 Full speed ahead!</button>
         </div>
 
         <!-- Input Bar -->
@@ -516,11 +719,15 @@
             <div class="wa-input-wrap">
                 <input type="text" id="msg-input" placeholder="Type a message..." onkeydown="handleInputKey(event)">
             </div>
+            <button class="wa-icon-btn" onclick="simulateVoiceNote()" title="Record / Send Voice Note" style="color:var(--wa-muted); font-size:1.3rem;">🎙️</button>
             <button class="wa-send-btn" onclick="sendMessage()" title="Send Message">➤</button>
         </div>
     </div>
 
 </div>
+
+<!-- Toast Notification -->
+<div id="wa-toast" class="wa-toast">Copied to clipboard</div>
 
 <!-- NEW CHAT MODAL -->
 <div class="wa-modal-overlay" id="new-chat-modal" onclick="if(event.target===this) closeNewChatModal()">
@@ -547,6 +754,58 @@ let activePartnerId = null;
 let conversationsData = [];
 let contactsData = [];
 let pollInterval = null;
+let activeFilter = 'all';
+let messageReactions = {};
+
+// === WEB AUDIO API NATIVE WHATSAPP SYNTHESIZER ===
+const WA_Audio = (function() {
+    let ctx = null;
+    function getContext() {
+        if (!ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) ctx = new AudioCtx();
+        }
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+        return ctx;
+    }
+
+    return {
+        playSend() {
+            try {
+                const c = getContext();
+                if (!c) return;
+                const osc = c.createOscillator();
+                const gain = c.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(520, c.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(840, c.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.2, c.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, c.currentTime + 0.09);
+                osc.connect(gain);
+                gain.connect(c.destination);
+                osc.start();
+                osc.stop(c.currentTime + 0.1);
+            } catch(e) {}
+        },
+        playReceive() {
+            try {
+                const c = getContext();
+                if (!c) return;
+                const osc = c.createOscillator();
+                const gain = c.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, c.currentTime);
+                osc.frequency.setValueAtTime(1174, c.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.18, c.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, c.currentTime + 0.2);
+                osc.connect(gain);
+                gain.connect(c.destination);
+                osc.start();
+                osc.stop(c.currentTime + 0.22);
+            } catch(e) {}
+        }
+    };
+})();
 
 document.addEventListener('DOMContentLoaded', () => {
     loadConversations();
@@ -554,18 +813,40 @@ document.addEventListener('DOMContentLoaded', () => {
     pollInterval = setInterval(refreshActiveThread, 3500);
 });
 
+function setFilter(filter, btn) {
+    activeFilter = filter;
+    document.querySelectorAll('.wa-filter-pill').forEach(el => el.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    applyThreadFilter();
+}
+
+function applyThreadFilter() {
+    const query = (document.getElementById('thread-search').value || '').toLowerCase();
+    let filtered = conversationsData.filter(c => {
+        const matchesQuery = c.name.toLowerCase().includes(query) || (c.last_message && c.last_message.toLowerCase().includes(query));
+        if (!matchesQuery) return false;
+
+        if (activeFilter === 'unread') return (c.unread || 0) > 0;
+        if (activeFilter === 'direct') return c.id.startsWith('direct_');
+        if (activeFilter === 'channels') return !c.id.startsWith('direct_');
+        return true;
+    });
+    renderConversations(filtered);
+}
+
 function loadConversations() {
     fetch('/api/messages/conversations')
         .then(r => r.json())
         .then(convs => {
             conversationsData = convs;
-            renderConversations(convs);
+            applyThreadFilter();
             // Select active thread
             if (currentConvId) {
-                selectConversation(currentConvId, false);
+                selectConversation(currentConvId, false, false);
             } else if (convs.length > 0) {
-                selectConversation(convs[0].id, false);
+                selectConversation(convs[0].id, false, false);
             }
+            syncGlobalBadges();
         })
         .catch(err => console.error("Failed to load conversations:", err));
 }
@@ -573,44 +854,69 @@ function loadConversations() {
 function renderConversations(convs) {
     const cont = document.getElementById('threads-container');
     if (!convs || convs.length === 0) {
-        cont.innerHTML = '<div style="padding:20px; text-align:center; color:var(--wa-muted);">No chats yet. Click 💬 to message someone!</div>';
+        cont.innerHTML = '<div style="padding:24px; text-align:center; color:var(--wa-muted); font-size:0.88rem;">No chats found in this view. Click 💬 to message someone!</div>';
         return;
     }
 
     cont.innerHTML = convs.map(c => `
-        <div class="wa-thread-item ${c.id === currentConvId ? 'active' : ''}" onclick="selectConversation('${c.id}')" id="thread-item-${c.id}">
+        <div class="wa-thread-item ${c.id === currentConvId ? 'active' : ''}" onclick="selectConversation('${c.id}', true, true)" id="thread-item-${c.id}">
             <div class="wa-avatar" style="${c.id === 'broadcast' ? 'background:linear-gradient(135deg,#f59e0b,#ef4444);' : (c.id === 'parents_channel' ? 'background:linear-gradient(135deg,#ec4899,#8b5cf6);' : '')}">
                 ${c.avatar || c.name[0]}
             </div>
             <div class="wa-thread-info">
                 <div class="wa-thread-top">
-                    <div class="wa-thread-title">${c.name}</div>
+                    <div class="wa-thread-title">${escapeHtml(c.name)}</div>
                     <div class="wa-thread-time">${formatTime(c.last_time)}</div>
                 </div>
                 <div class="wa-thread-bottom">
                     <div class="wa-thread-snippet">${escapeHtml(c.last_message || 'Tap to chat')}</div>
-                    ${c.unread > 0 ? `<div class="wa-unread-badge">${c.unread}</div>` : ''}
+                    ${c.unread > 0 ? `<div class="wa-unread-badge" id="badge-${c.id}">${c.unread}</div>` : ''}
                 </div>
             </div>
         </div>
     `).join('');
 }
 
-function selectConversation(convId, autoFocus = true) {
+function selectConversation(convId, autoFocus = true, triggerRead = true) {
     currentConvId = convId;
     
-    // Highlight sidebar
+    // Highlight active sidebar item
     document.querySelectorAll('.wa-thread-item').forEach(el => el.classList.remove('active'));
     const item = document.getElementById(`thread-item-${convId}`);
     if (item) item.classList.add('active');
 
-    // Update header
+    // === CRITICAL BUG FIX: IMMEDIATELY ZERO OUT UNREAD BADGES IN DOM & STATE ===
     const conv = conversationsData.find(c => c.id === convId);
     if (conv) {
+        conv.unread = 0;
+        const badgeEl = document.getElementById(`badge-${convId}`);
+        if (badgeEl) badgeEl.remove();
+
         document.getElementById('active-chat-avatar').textContent = conv.avatar || conv.name[0];
         document.getElementById('active-chat-title').textContent = conv.name;
-        document.getElementById('active-chat-subtitle').textContent = conv.alias || (conv.role ? `${conv.role} channel` : '');
+        
+        const statusText = document.getElementById('active-chat-status-text');
+        if (conv.id === 'broadcast') {
+            statusText.textContent = 'Official Campus Broadcast Channel';
+        } else if (conv.id === 'parents_channel') {
+            statusText.textContent = 'Guardian & Faculty Council';
+        } else {
+            statusText.textContent = 'online';
+        }
         activePartnerId = conv.partner_id || null;
+    }
+
+    syncGlobalBadges();
+
+    // Notify backend to mark conversation read in database
+    if (triggerRead) {
+        fetch('/api/messages/mark_read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conversation_id: convId })
+        }).then(r => r.json()).then(data => {
+            syncGlobalBadges();
+        }).catch(() => {});
     }
 
     // Check mobile responsive view
@@ -620,6 +926,48 @@ function selectConversation(convId, autoFocus = true) {
     }
 
     loadThreadMessages(convId, autoFocus);
+}
+
+function markCurrentChatRead() {
+    if (!currentConvId) return;
+    const conv = conversationsData.find(c => c.id === currentConvId);
+    if (conv) conv.unread = 0;
+    const badgeEl = document.getElementById(`badge-${currentConvId}`);
+    if (badgeEl) badgeEl.remove();
+
+    fetch('/api/messages/mark_read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: currentConvId })
+    }).then(() => {
+        showToast('Marked as read');
+        syncGlobalBadges();
+        loadThreadMessages(currentConvId, false);
+    });
+}
+
+function syncGlobalBadges() {
+    const totalUnread = conversationsData.reduce((acc, c) => acc + (c.unread || 0), 0);
+    // Update floating WhatsApp launcher badge
+    const floatBadge = document.querySelector('#whatsapp-floating-btn .whatsapp-unread-badge');
+    if (floatBadge) {
+        if (totalUnread <= 0) {
+            floatBadge.style.display = 'none';
+        } else {
+            floatBadge.style.display = 'flex';
+            floatBadge.textContent = totalUnread;
+        }
+    }
+    // Update navbar Inbox badge
+    const navBadge = document.querySelector('.inbox-badge');
+    if (navBadge) {
+        if (totalUnread <= 0) {
+            navBadge.style.display = 'none';
+        } else {
+            navBadge.style.display = 'inline-block';
+            navBadge.textContent = totalUnread;
+        }
+    }
 }
 
 function closeMobileChat() {
@@ -640,12 +988,20 @@ function loadThreadMessages(convId, autoFocus = true) {
         .catch(err => console.error("Error loading thread:", err));
 }
 
+let lastMessageCount = 0;
 function refreshActiveThread() {
     if (!currentConvId) return;
     fetch(`/api/messages/thread/${encodeURIComponent(currentConvId)}`)
         .then(r => r.json())
         .then(data => {
-            renderMessages(data.messages, false);
+            if (data.messages && data.messages.length > lastMessageCount) {
+                const lastMsg = data.messages[data.messages.length - 1];
+                if (!lastMsg.is_me) WA_Audio.playReceive();
+                renderMessages(data.messages, false);
+                lastMessageCount = data.messages.length;
+            } else if (data.messages) {
+                renderMessages(data.messages, false);
+            }
         })
         .catch(() => {});
 }
@@ -655,25 +1011,51 @@ function renderMessages(msgs, autoScroll = true) {
     if (!msgs || msgs.length === 0) {
         cont.innerHTML = `
             <div class="wa-date-divider">Today</div>
-            <div style="text-align:center; color:var(--wa-muted); font-size:0.85rem; padding:40px 20px;">
-                No messages yet in this conversation.<br>Say hello and share encouragement! 👋
+            <div style="text-align:center; color:var(--wa-muted); font-size:0.88rem; padding:45px 20px;">
+                No messages yet in this conversation.<br>
+                Say hello, ask a mentor question, or share milestone encouragement! 👋
             </div>
         `;
         return;
     }
 
+    lastMessageCount = msgs.length;
     let html = '<div class="wa-date-divider">Today</div>';
     msgs.forEach(m => {
         const isOut = m.is_me;
         const senderRoleClass = m.role === 'producer' || m.role === 'admin' ? 'producer' : (m.role === 'parent' ? 'parent' : '');
+        
+        // === WHATSAPP TICK SYSTEM ===
+        // If read by recipient: Double Blue Ticks
+        // If not read yet: Double Grey Ticks
+        const tickClass = m.read ? 'wa-check-read' : 'wa-check-delivered';
+        const tickTitle = m.read ? 'Read by recipient' : 'Delivered';
+
+        const reaction = messageReactions[m.id];
+
         html += `
-            <div class="wa-msg ${isOut ? 'outgoing' : 'incoming'}">
-                ${!isOut ? `<div class="wa-msg-sender ${senderRoleClass}">${escapeHtml(m.sender_name)}</div>` : ''}
-                <div class="wa-msg-text">${escapeHtml(m.message)}</div>
-                <div class="wa-msg-meta">
-                    <span>${formatTime(m.time)}</span>
-                    ${isOut ? `<span class="wa-check">✓✓</span>` : ''}
+            <div class="wa-msg-wrapper ${isOut ? 'outgoing' : 'incoming'}" id="msg-wrap-${m.id}">
+                <!-- Floating Reaction Bar on Hover -->
+                <div class="wa-reactions-bar">
+                    <button class="wa-react-btn" onclick="reactToMessage(${m.id}, '👍')">👍</button>
+                    <button class="wa-react-btn" onclick="reactToMessage(${m.id}, '❤️')">❤️</button>
+                    <button class="wa-react-btn" onclick="reactToMessage(${m.id}, '😂')">😂</button>
+                    <button class="wa-react-btn" onclick="reactToMessage(${m.id}, '😮')">😮</button>
+                    <button class="wa-react-btn" onclick="reactToMessage(${m.id}, '👏')">👏</button>
+                    <button class="wa-react-btn" onclick="reactToMessage(${m.id}, '🔥')">🔥</button>
+                    <button class="wa-react-btn" onclick="copyMessageText('${escapeAttr(m.message)}')" title="Copy message">📋</button>
                 </div>
+
+                <div class="wa-msg">
+                    ${!isOut ? `<div class="wa-msg-sender ${senderRoleClass}">${escapeHtml(m.sender_name)}</div>` : ''}
+                    <div class="wa-msg-text">${escapeHtml(m.message)}</div>
+                    <div class="wa-msg-meta">
+                        <span>${formatTime(m.time)}</span>
+                        ${isOut ? `<span class="wa-check ${tickClass}" title="${tickTitle}">✓✓</span>` : ''}
+                    </div>
+                </div>
+
+                ${reaction ? `<div class="wa-msg-reaction-pill">${reaction}</div>` : ''}
             </div>
         `;
     });
@@ -684,12 +1066,59 @@ function renderMessages(msgs, autoScroll = true) {
     }
 }
 
+function reactToMessage(msgId, emoji) {
+    messageReactions[msgId] = emoji;
+    const wrap = document.getElementById(`msg-wrap-${msgId}`);
+    if (wrap) {
+        let pill = wrap.querySelector('.wa-msg-reaction-pill');
+        if (!pill) {
+            pill = document.createElement('div');
+            pill.className = 'wa-msg-reaction-pill';
+            wrap.appendChild(pill);
+        }
+        pill.textContent = emoji;
+        showToast(`Reacted ${emoji}`);
+        WA_Audio.playSend();
+    }
+}
+
+function copyMessageText(text) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showToast('Message copied to clipboard!'));
+    } else {
+        showToast('Message copied!');
+    }
+}
+
+function showToast(text) {
+    const t = document.getElementById('wa-toast');
+    if (!t) return;
+    t.textContent = text;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+}
+
 function sendMessage() {
     const input = document.getElementById('msg-input');
     const msg = input.value.trim();
     if (!msg) return;
 
     input.value = '';
+
+    // Clear any active unread for this thread immediately!
+    const conv = conversationsData.find(c => c.id === currentConvId);
+    if (conv) {
+        conv.unread = 0;
+        conv.last_message = 'You: ' + msg;
+        conv.last_time = new Date().toISOString();
+        // Move thread to top of conversations
+        conversationsData = [conv, ...conversationsData.filter(c => c.id !== currentConvId)];
+        applyThreadFilter();
+    }
+    syncGlobalBadges();
+
+    // Play WhatsApp Send Sound
+    WA_Audio.playSend();
 
     const payload = {
         conversation_id: currentConvId,
@@ -706,7 +1135,8 @@ function sendMessage() {
     .then(data => {
         if (data.status === 'ok') {
             loadThreadMessages(currentConvId, true);
-            loadConversations();
+            // Simulate brief typing reaction from partner if in direct chat
+            simulatePartnerTyping();
         } else {
             alert(data.error || 'Failed to send message.');
         }
@@ -714,6 +1144,29 @@ function sendMessage() {
     .catch(err => {
         console.error('Send error:', err);
     });
+}
+
+function simulatePartnerTyping() {
+    const statusText = document.getElementById('active-chat-status-text');
+    if (!statusText || currentConvId === 'broadcast') return;
+    setTimeout(() => {
+        statusText.innerHTML = '<span style="color:var(--wa-green); font-weight:700;">typing...</span>';
+        setTimeout(() => {
+            statusText.textContent = 'online';
+        }, 2200);
+    }, 600);
+}
+
+function simulateVoiceNote() {
+    const input = document.getElementById('msg-input');
+    input.value = '🎤 [Voice Note 0:04] "Great job on the competition sprint! Proud of you!"';
+    sendMessage();
+}
+
+function insertSmartReply(text) {
+    const input = document.getElementById('msg-input');
+    input.value = text;
+    sendMessage();
 }
 
 function handleInputKey(e) {
@@ -729,12 +1182,7 @@ function insertEmoji(emoji) {
 }
 
 function filterThreads(query) {
-    const q = query.toLowerCase();
-    const filtered = conversationsData.filter(c => 
-        c.name.toLowerCase().includes(q) || 
-        (c.last_message && c.last_message.toLowerCase().includes(q))
-    );
-    renderConversations(filtered);
+    applyThreadFilter();
 }
 
 /* === NEW CHAT MODAL === */
@@ -813,6 +1261,11 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function escapeAttr(text) {
+    if (!text) return '';
+    return text.replace(/'/g, "\'").replace(/"/g, '&quot;');
 }
 </script>
 {% endblock %}

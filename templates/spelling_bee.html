@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block title %}Oratory Spelling Bee — Lumina{% endblock %}
+{% block head %}
+<style>
+.bee-container { max-width: 820px; margin: 20px auto 40px; padding: 0 16px; }
+.bee-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+    text-align: center;
+}
+.bee-badge {
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+    color: #000;
+    font-size: 0.8rem;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.audio-speak-btn {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    color: #000;
+    font-size: 2.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin: 20px 0 16px;
+}
+.audio-speak-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 30px rgba(245, 158, 11, 0.6);
+}
+.bee-input {
+    max-width: 440px;
+    width: 100%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    text-align: center;
+    color: var(--text);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    outline: none;
+    margin: 16px auto 20px;
+    display: block;
+    box-sizing: border-box;
+}
+.bee-input:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+}
+.hint-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    max-width: 550px;
+    margin: 10px auto;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    text-align: left;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bee-container">
+    <div class="bee-card">
+        <!-- Start Screen -->
+        <div id="start-screen" style="padding:20px 10px;">
+            <div style="font-size:3.5rem; margin-bottom:12px;">🐝</div>
+            <span class="bee-badge">Arena 11: Oratory & Lexical Mastery</span>
+            <h1 style="font-size:2.2rem; font-weight:900; margin:14px 0 8px;">Oratory Spelling Bee</h1>
+            <p style="color:var(--muted); font-size:1.05rem; max-width:580px; margin:0 auto 24px; line-height:1.5;">
+                Listen to the institutional audio pronunciation, examine linguistic etymology and definitions, then enter the exact spelling under the timer!
+            </p>
+            <button class="btn btn-primary" onclick="startBee()" style="padding:12px 36px; font-size:1.1rem; font-weight:800; background:linear-gradient(135deg,#eab308,#ca8a04); color:#000; border:none;">
+                ⚡ Launch Spelling Bee
+            </button>
+        </div>
+
+        <!-- In-Quiz Screen -->
+        <div id="quiz-screen" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:20px;">
+                <span class="bee-badge">Word <span id="word-idx">1</span> of 10</span>
+                <div style="display:flex; gap:16px; font-weight:700;">
+                    <span style="color:var(--primary);">Score: <span id="current-score">0</span></span>
+                    <span style="color:var(--accent);">⏱️ <span id="timer-val">25</span>s</span>
+                </div>
+            </div>
+
+            <p style="color:var(--muted); font-size:0.9rem; margin-bottom:4px;">Tap the speaker button to hear the word pronounced aloud:</p>
+            <button class="audio-speak-btn" onclick="speakCurrentWord()" title="Listen to pronunciation">🔊</button>
+
+            <div class="hint-pill">
+                <div><strong>Phonetic Guide:</strong> <span id="phonetic-val" style="font-family:monospace; color:#38bdf8;">/ ... /</span></div>
+                <div style="margin-top:4px;"><strong>Part of Speech:</strong> <em id="pos-val">noun</em></div>
+                <div style="margin-top:4px;"><strong>Definition:</strong> <span id="def-val">...</span></div>
+                <div style="margin-top:4px;"><strong>Etymology Hint:</strong> <span id="origin-val">...</span></div>
+            </div>
+
+            <form onsubmit="submitSpelling(event)">
+                <input type="text" id="spell-input" class="bee-input" placeholder="TYPE SPELLING" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button type="button" class="btn btn-secondary" onclick="speakCurrentWord()">🔊 Replay Word</button>
+                    <button type="submit" class="btn btn-primary" style="background:#f59e0b; color:#000; font-weight:800;">Verify Spelling ➤</button>
+                </div>
+            </form>
+
+            <div id="feedback-box" style="display:none; margin-top:20px; font-weight:800; font-size:1.15rem;"></div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" style="display:none; padding:20px 0;">
+            <div style="font-size:3.5rem;">👑</div>
+            <h2 style="font-size:1.8rem; font-weight:800; margin:10px 0 4px;">Spelling Bee Complete!</h2>
+            <p style="color:var(--muted); font-size:0.95rem;">Lexical Accuracy & Oratory Precision Certified</p>
+
+            <div style="font-size:3.5rem; font-weight:900; background:linear-gradient(135deg,#eab308,#f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:10px 0;" id="final-score-val">0 / 10</div>
+            <div id="tier-badge" style="display:inline-block; padding:4px 14px; border-radius:12px; font-weight:800; font-size:0.85rem; margin-bottom:20px;"></div>
+
+            <div style="display:flex; justify-content:center; gap:24px; margin-bottom:28px;">
+                <div><div style="font-weight:800; font-size:1.25rem; color:#10b981;" id="xp-val">+0 XP</div><div style="font-size:0.78rem; color:var(--muted);">Experience Earned</div></div>
+                <div><div style="font-weight:800; font-size:1.25rem; color:#f59e0b;" id="words-mastered-val">0</div><div style="font-size:0.78rem; color:var(--muted);">Mastered Words</div></div>
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="startBee()" style="padding:10px 24px; background:#f59e0b; color:#000; font-weight:800;">🔄 Play Again</button>
+                <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary" style="padding:10px 24px;">🌟 Share on Showcase</a>
+                <a href="{{ url_for('games_hub') }}" class="btn btn-secondary" style="padding:10px 24px;">🎮 All Arenas</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const BEE_WORDS = [
+    { word: "ALGORITHM", pos: "noun", phonetic: "/ˈæl.ɡə.rɪ.ðəm/", def: "A step-by-step procedure or set of rules for solving a computational problem.", origin: "From Medieval Latin algorismus, honoring Persian polymath al-Khwārizmī." },
+    { word: "HEURISTIC", pos: "adjective / noun", phonetic: "/hjʊəˈrɪs.tɪk/", def: "Enabling a person to discover or learn something for themselves; a practical shortcut method.", origin: "Greek heuriskein, meaning to find or discover." },
+    { word: "SYNTHESIS", pos: "noun", phonetic: "/ˈsɪn.θə.sɪs/", def: "The combination of components or elements to form a connected whole.", origin: "Greek sun- (together) + tithenai (to place)." },
+    { word: "PARADIGM", pos: "noun", phonetic: "/ˈpær.ə.daɪm/", def: "A typical example or pattern of something; a distinct set of concepts or thought patterns.", origin: "Greek paradeigma, from para- (beside) + deiknunai (to show)." },
+    { word: "COGNITIVE", pos: "adjective", phonetic: "/ˈkɒɡ.nɪ.tɪv/", def: "Relating to the mental process of acquiring knowledge and understanding through thought and perception.", origin: "Latin cognoscere, meaning to recognize or learn." },
+    { word: "EQUILIBRIUM", pos: "noun", phonetic: "/ˌiː.kwɪˈlɪb.ri.əm/", def: "A state in which opposing forces or influences are balanced.", origin: "Latin aequus (equal) + libra (balance, scale)." },
+    { word: "OSCILLATION", pos: "noun", phonetic: "/ˌɒs.ɪˈleɪ.ʃən/", def: "Repetitive variation, typically in time, of some measure about a central value.", origin: "Latin oscillare, meaning to swing." },
+    { word: "POLYMORPHISM", pos: "noun", phonetic: "/ˌpɒl.iˈmɔː.fɪ.zəm/", def: "The condition of occurring in several different forms, especially in object-oriented programming.", origin: "Greek polus (many) + morphe (form)." },
+    { word: "AMORTIZATION", pos: "noun", phonetic: "/əˌmɔː.tɪˈzeɪ.ʃən/", def: "The action or process of gradually writing off the initial cost of an asset.", origin: "Old French amortir, meaning to extinguish." },
+    { word: "UBIQUITOUS", pos: "adjective", phonetic: "/juːˈbɪk.wɪ.təs/", def: "Present, appearing, or found everywhere simultaneously.", origin: "Latin ubique, meaning everywhere." }
+];
+
+let curIdx = 0, score = 0, timer = 25, timerId = null;
+
+function startBee() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('results-screen').style.display = 'none';
+    document.getElementById('quiz-screen').style.display = 'block';
+    curIdx = 0; score = 0;
+    loadWord(0);
+}
+
+function loadWord(idx) {
+    if (idx >= BEE_WORDS.length) { finishBee(); return; }
+    const w = BEE_WORDS[idx];
+    document.getElementById('word-idx').textContent = `${idx + 1}`;
+    document.getElementById('current-score').textContent = score;
+    document.getElementById('phonetic-val').textContent = w.phonetic;
+    document.getElementById('pos-val').textContent = w.pos;
+    document.getElementById('def-val').textContent = w.def;
+    document.getElementById('origin-val').textContent = w.origin;
+
+    const inp = document.getElementById('spell-input');
+    inp.value = '';
+    inp.disabled = false;
+    inp.focus();
+
+    const fb = document.getElementById('feedback-box');
+    fb.style.display = 'none';
+
+    speakWord(w.word);
+
+    clearInterval(timerId);
+    timer = 25;
+    document.getElementById('timer-val').textContent = timer;
+    timerId = setInterval(() => {
+        timer--;
+        document.getElementById('timer-val').textContent = timer;
+        if (timer <= 0) {
+            clearInterval(timerId);
+            evaluateSpelling(''); // Timeout
+        }
+    }, 1000);
+}
+
+function speakCurrentWord() {
+    if (curIdx < BEE_WORDS.length) {
+        speakWord(BEE_WORDS[curIdx].word);
+    }
+}
+
+function speakWord(text) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text.toLowerCase());
+        utter.rate = 0.85;
+        window.speechSynthesis.speak(utter);
+    }
+}
+
+function submitSpelling(e) {
+    e.preventDefault();
+    const val = document.getElementById('spell-input').value.trim();
+    evaluateSpelling(val);
+}
+
+function evaluateSpelling(submitted) {
+    clearInterval(timerId);
+    const target = BEE_WORDS[curIdx].word;
+    const isCorrect = submitted.toUpperCase() === target;
+
+    const inp = document.getElementById('spell-input');
+    inp.disabled = true;
+
+    const fb = document.getElementById('feedback-box');
+    fb.style.display = 'block';
+
+    if (isCorrect) {
+        score++;
+        document.getElementById('current-score').textContent = score;
+        fb.style.color = '#10b981';
+        fb.innerHTML = `✓ Correct! "${target}"`;
+        if (window.LuminaAudio) LuminaAudio.playKey();
+    } else {
+        fb.style.color = '#ef4444';
+        fb.innerHTML = `✕ Incorrect! Correct spelling was: <span style="text-decoration:underline; letter-spacing:2px;">${target}</span>`;
+        if (window.LuminaAudio) LuminaAudio.playError();
+    }
+
+    setTimeout(() => {
+        curIdx++;
+        loadWord(curIdx);
+    }, 2000);
+}
+
+function finishBee() {
+    clearInterval(timerId);
+    document.getElementById('quiz-screen').style.display = 'none';
+    document.getElementById('results-screen').style.display = 'block';
+
+    const xp = score * 15;
+    document.getElementById('final-score-val').textContent = `${score} / ${BEE_WORDS.length}`;
+    document.getElementById('xp-val').textContent = `+${xp} XP`;
+    document.getElementById('words-mastered-val').textContent = score;
+
+    const badge = document.getElementById('tier-badge');
+    if (score >= 10) {
+        badge.textContent = "🌟 LEGENDARY ORATORY CHAMPION";
+        badge.style.background = "linear-gradient(135deg, #eab308, #f59e0b)";
+        badge.style.color = "#000";
+    } else if (score >= 6) {
+        badge.textContent = "🥇 GOLD LEXICAL MERIT";
+        badge.style.background = "linear-gradient(135deg, #ca8a04, #a16207)";
+        badge.style.color = "#fff";
+    } else {
+        badge.textContent = "🥈 SILVER SPELLER";
+        badge.style.background = "linear-gradient(135deg, #94a3b8, #64748b)";
+        badge.style.color = "#fff";
+    }
+
+    if (window.LuminaConfetti && score >= 6) LuminaConfetti();
+    if (window.LuminaAudio) LuminaAudio.playFanfare();
+
+    fetch('/api/spelling_bee/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score: score })
+    }).catch(e => console.error(e));
+}
+</script>
+{% endblock %}

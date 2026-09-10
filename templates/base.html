@@ -72,8 +72,8 @@
                         <a href="{{ url_for('games_hub') }}" class="nav-dropdown-item">
                             <span class="item-icon">🎮</span>
                             <div>
-                                <div class="item-title">All 8 Cognitive Arenas</div>
-                                <div class="item-desc">Chess, Checkers, Math, Memory, etc.</div>
+                                <div class="item-title">All 12 Cognitive Arenas</div>
+                                <div class="item-desc">Chess, Math, Olympiad, Code, Sudoku, etc.</div>
                             </div>
                         </a>
                         <a href="{{ url_for('tournament_list') }}" class="nav-dropdown-item">
@@ -189,10 +189,10 @@
                 <li><a href="{{ url_for('register') }}" class="{% if request.path == '/register' %}active{% endif %}" style="background:var(--primary-gradient); color:#fff; font-weight:700;">Get Started</a></li>
             {% endif %}
 
-            <!-- Flagship Principal Briefing Button -->
+            <!-- Flagship Briefing Button -->
             <li>
                 <a href="{{ url_for('principal_briefing') }}" class="{% if request.path in ['/principal', '/executive-briefing'] %}active{% endif %}" style="background:linear-gradient(135deg, rgba(99,102,241,0.25), rgba(168,85,247,0.25)); border:1px solid rgba(168,85,247,0.5); border-radius:18px; padding:5px 12px; font-weight:800; color:#c084fc; text-shadow:0 0 10px rgba(168,85,247,0.3); font-size:0.85rem;" title="Executive Briefing & Student Innovation Proposal">
-                    🎓 Principal Briefing
+                    🎓 Briefing
                 </a>
             </li>
             <!-- Sound FX Toggle Button -->
@@ -281,6 +281,10 @@
             { title: "Reaction Test", category: "Play & Compete", icon: "⚡", url: "{{ url_for('reaction_test') }}", badge: "Reflexes" },
             { title: "Pattern Match", category: "Play & Compete", icon: "🔷", url: "{{ url_for('pattern_match') }}", badge: "Inductive Logic" },
             { title: "Word Blitz", category: "Play & Compete", icon: "🔤", url: "{{ url_for('word_blitz') }}", badge: "Lexical" },
+            { title: "STEM Olympiad (Cowbellpedia)", category: "Play & Compete", icon: "🏆", url: "{{ url_for('olympiad_arena') }}", badge: "Science & Math" },
+            { title: "Code Debugger & Algorithmic Sprint", category: "Play & Compete", icon: "💻", url: "{{ url_for('code_sprint_arena') }}", badge: "Algorithms" },
+            { title: "Oratory Spelling Bee", category: "Play & Compete", icon: "🐝", url: "{{ url_for('spelling_bee_arena') }}", badge: "Lexicon" },
+            { title: "Sudoku Deductive Grid", category: "Play & Compete", icon: "🔢", url: "{{ url_for('sudoku_arena') }}", badge: "Logic" },
             { title: "Tournaments Bracket", category: "Play & Compete", icon: "🏆", url: "{{ url_for('tournament_list') }}", badge: "Bracket" },
             { title: "7-Axis Talent Profile", category: "Talent & Growth", icon: "🎯", url: "{{ url_for('talent_profile_page') }}", badge: "LTI Radar" },
             { title: "Performance Analytics", category: "Talent & Growth", icon: "📊", url: "{{ url_for('analytics') }}", badge: "Telemetry" },
