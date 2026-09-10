@@ -268,6 +268,11 @@ def register_routes(app):
         bot = request.args.get("bot", "0")
         return render_template("chess.html", room_id=room_id, bot=bot)
 
+    @app.route("/chess/bot", endpoint="chess_bot_page")
+    @login_required
+    def chess_bot_page():
+        return redirect(url_for("chess_page", room_id="solo_bot", bot="1"))
+
     @app.route("/checkers/<room_id>")
     @login_required
     def checkers_page(room_id):
@@ -465,8 +470,16 @@ def register_routes(app):
         return render_template("badges.html", badges=all_badges)
 
     @app.route("/profile/<int:user_id>")
-    def profile(user_id):
-        user = User.get_by_id(user_id)
+    @app.route("/profile/user/<username>")
+    def profile(user_id=None, username=None):
+        if user_id is not None:
+            user = User.get_by_id(user_id)
+        elif username:
+            user = User.get_by_username(username)
+        elif current_user.is_authenticated:
+            user = current_user
+        else:
+            user = None
         if not user:
             flash("User not found.", "error")
             return redirect(url_for("leaderboard"))
@@ -549,6 +562,7 @@ def register_routes(app):
         return render_template("games_hub.html")
 
     @app.route("/games/math")
+    @app.route("/games/math/sprint", endpoint="math_sprint_page")
     @login_required
     def math_sprint():
         return render_template("math_sprint.html")
@@ -1698,6 +1712,7 @@ def register_routes(app):
     # === WHATSAPP-STYLE MESSAGING CENTER ===
 
     @app.route("/inbox")
+    @app.route("/inbox/view", endpoint="inbox_view")
     @login_required
     def inbox_page():
         """WhatsApp-style Messaging Center"""

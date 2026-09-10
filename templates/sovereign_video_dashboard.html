@@ -545,11 +545,11 @@ body {
 
     <!-- Right Profile / Alerts -->
     <div class="sov-user-actions">
-      <a href="{{ url_for('inbox_view') }}" class="sov-alert-bell" title="Parent & Classroom Inboxes">
+      <a href="{{ url_for('inbox_page') }}" class="sov-alert-bell" title="Parent & Classroom Inboxes">
         <span>🔔</span>
         <span class="sov-bell-dot"></span>
       </a>
-      <a href="{{ url_for('profile', username=current_user.username) }}" style="text-decoration:none;">
+      <a href="{{ url_for('profile', user_id=current_user.id) }}" style="text-decoration:none;">
         <div class="sov-avatar-chip">
           <div class="sov-avatar-img">{{ current_user.username[:2]|upper }}</div>
           <span style="font-size:0.82rem; font-weight:700; color:#f8fafc;">{{ current_user.fullname }}</span>
@@ -689,11 +689,11 @@ body {
         <div class="sov-card-title">Cognitive Arena</div>
       </div>
       <div class="arena-tiles-row">
-        <a href="{{ url_for('chess_bot_page') }}" class="arena-tile chess">
+        <a href="{{ url_for('chess_page', room_id='solo_bot', bot='1') }}" class="arena-tile chess">
           <span class="arena-tile-icon">♟️</span>
           <span class="arena-tile-name">Chess AI</span>
         </a>
-        <a href="{{ url_for('math_sprint_page') }}" class="arena-tile math">
+        <a href="{{ url_for('math_sprint') }}" class="arena-tile math">
           <span class="arena-tile-icon">➕</span>
           <span class="arena-tile-name">Math Sprint</span>
         </a>
