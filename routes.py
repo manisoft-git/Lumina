@@ -2263,7 +2263,7 @@ def register_routes(app):
         xp = score * 15
         tier = "legendary" if score >= 9 else ("gold" if score >= 7 else "silver")
 
-        record_activity(
+        hist_id = record_activity(
             user_id=current_user.id,
             arena_type="geo_quest",
             title=f"GeoQuest Global Mastery: {score}/{total}",
@@ -2275,7 +2275,7 @@ def register_routes(app):
         )
         award_xp(current_user.id, xp)
         check_badges(current_user.id)
-        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier})
+        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier, "history_id": hist_id})
 
     @app.route("/grammar_scalpel")
     def grammar_scalpel_arena():
@@ -2292,7 +2292,7 @@ def register_routes(app):
         xp = score * 15
         tier = "legendary" if score >= 9 else ("gold" if score >= 7 else "silver")
 
-        record_activity(
+        hist_id = record_activity(
             user_id=current_user.id,
             arena_type="grammar_scalpel",
             title=f"Grammar & Syntax Precision: {score}/{total}",
@@ -2304,7 +2304,7 @@ def register_routes(app):
         )
         award_xp(current_user.id, xp)
         check_badges(current_user.id)
-        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier})
+        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier, "history_id": hist_id})
 
     @app.route("/spatial_rotation")
     def spatial_rotation_arena():
@@ -2321,7 +2321,7 @@ def register_routes(app):
         xp = score * 15
         tier = "legendary" if score >= 9 else ("gold" if score >= 7 else "silver")
 
-        record_activity(
+        hist_id = record_activity(
             user_id=current_user.id,
             arena_type="spatial_rotation",
             title=f"3D Spatial Rotation: {score}/{total}",
@@ -2333,7 +2333,7 @@ def register_routes(app):
         )
         award_xp(current_user.id, xp)
         check_badges(current_user.id)
-        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier})
+        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier, "history_id": hist_id})
 
     @app.route("/chronologix")
     def chronologix_arena():
@@ -2350,7 +2350,7 @@ def register_routes(app):
         xp = score * 20
         tier = "legendary" if score >= 7 else ("gold" if score >= 5 else "silver")
 
-        record_activity(
+        hist_id = record_activity(
             user_id=current_user.id,
             arena_type="chronologix",
             title=f"ChronoLogix Sequence: {score}/{total}",
@@ -2362,7 +2362,67 @@ def register_routes(app):
         )
         award_xp(current_user.id, xp)
         check_badges(current_user.id)
-        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier})
+        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier, "history_id": hist_id})
+
+    @app.route("/neurobeat")
+    def neurobeat_arena():
+        """Arena 17: NeuroBeat Auditory Pitch & Rhythmic Working Memory Span"""
+        return render_template("neurobeat.html")
+
+    @app.route("/api/neurobeat/submit", methods=["POST"])
+    @login_required
+    def api_neurobeat_submit():
+        data = request.get_json() or {}
+        max_span = int(data.get("max_span", 0))
+        rounds_cleared = int(data.get("rounds_cleared", 0))
+        xp = rounds_cleared * 25
+        tier = "legendary" if max_span >= 9 else ("gold" if max_span >= 6 else "silver")
+
+        hist_id = record_activity(
+            user_id=current_user.id,
+            arena_type="neurobeat",
+            title=f"NeuroBeat Auditory Span: {max_span} Notes",
+            description=f"Acoustic frequency discrimination and pitch memory span across {rounds_cleared} rounds.",
+            metric_value=f"Span {max_span} ({rounds_cleared} rds)",
+            metric_unit="Acoustic",
+            score_points=rounds_cleared * 60,
+            tier=tier
+        )
+        award_xp(current_user.id, xp)
+        check_badges(current_user.id)
+        return jsonify({
+            "status": "ok",
+            "max_span": max_span,
+            "rounds_cleared": rounds_cleared,
+            "xp_earned": xp,
+            "tier": tier,
+            "history_id": hist_id
+        })
+
+    @app.route("/api/arena/<arena_type>/leaderboard")
+    def api_arena_leaderboard(arena_type):
+        """Returns the top 5 high scores for a specific arena across the campus cohort."""
+        rows = db_fetchall("""
+            SELECT u.id, u.username, u.fullname, sah.metric_value, sah.score_points, sah.tier, sah.id
+            FROM student_activity_history sah
+            JOIN users u ON sah.user_id = u.id
+            WHERE sah.arena_type = ?
+            ORDER BY sah.score_points DESC, sah.created_at DESC
+            LIMIT 5
+        """, (arena_type,))
+        leaders = []
+        for rank, r in enumerate(rows, start=1):
+            leaders.append({
+                "rank": rank,
+                "user_id": r[0],
+                "username": r[1],
+                "fullname": r[2] or r[1],
+                "metric": r[3],
+                "score": r[4],
+                "tier": r[5] or "bronze",
+                "history_id": r[6]
+            })
+        return jsonify({"status": "ok", "arena": arena_type, "leaders": leaders})
 
     @app.route("/daily_triad")
     @login_required

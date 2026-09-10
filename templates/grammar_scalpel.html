@@ -152,6 +152,14 @@
             <button class="btn btn-primary" onclick="startGrammarScalpel()" style="padding:12px 36px; font-size:1.1rem; font-weight:800; background:linear-gradient(135deg,#6366f1,#4f46e5); border:none;">
                 🔬 Enter Grammar Scalpel
             </button>
+
+            <!-- Live Cohort Leaderboard Widget -->
+            <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:18px; max-width:480px; margin:28px auto 0; text-align:left;">
+                <div style="font-weight:800; font-size:0.95rem; color:#f59e0b; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                    <span>🏆</span><span>Top Cohort Syntactic Champions</span>
+                </div>
+                <div id="cohort-leaders-list" style="color:var(--muted); font-size:0.88rem;">Loading leaderboard...</div>
+            </div>
         </div>
 
         <!-- Quiz Screen -->
@@ -207,9 +215,22 @@
 
             <div id="res-feedback" style="font-size:1.1rem; font-weight:700; color:var(--text); margin-bottom:24px;"></div>
 
+            <!-- Socratic Mistake Review -->
+            <div id="grammar-mistake-section" style="display:none; max-width:620px; margin:0 auto 24px; text-align:left;">
+                <details style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px 18px;">
+                    <summary style="font-weight:800; color:#818cf8; cursor:pointer; font-size:1rem;">
+                        📖 Review Missed Syntactic Rules & Explanations (<span id="grammar-mistake-count">0</span>)
+                    </summary>
+                    <div id="grammar-mistakes-list" style="margin-top:14px; display:flex; flex-direction:column; gap:12px;"></div>
+                </details>
+            </div>
+
             <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
                 <button class="btn btn-primary" onclick="startGrammarScalpel()" style="padding:10px 24px; font-weight:700; background:#6366f1;">
                     🔄 Retest Syntax
+                </button>
+                <button id="grammar-showcase-btn" class="btn btn-secondary" onclick="postGrammarShowcase()" style="padding:10px 24px; font-weight:700; background:#f472b6; color:#000;">
+                    🌟 Post to School Showcase
                 </button>
                 <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary" style="padding:10px 24px; font-weight:700;">
                     🌟 View Showcase Feed
@@ -357,6 +378,8 @@ let score = 0;
 let timer = null;
 let timeLeft = 15;
 let answered = false;
+let missedQuestions = [];
+let latestHistoryId = null;
 
 function playSound(type) {
     if (window.soundFx && window.soundFx.play) {
@@ -386,6 +409,8 @@ function startGrammarScalpel() {
     sessionQuestions = [...GRAMMAR_QUESTIONS].sort(() => 0.5 - Math.random()).slice(0, 10);
     currentQIndex = 0;
     score = 0;
+    missedQuestions = [];
+    latestHistoryId = null;
     
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('results-screen').style.display = 'none';
@@ -451,6 +476,13 @@ function selectAnswer(selectedIdx) {
         buttons[selectedIdx].classList.add('wrong');
         buttons[q.ans].classList.add('correct');
         playSound('wrong');
+        missedQuestions.push({
+            sentence: q.sentence,
+            cat: q.cat,
+            selected: q.options[selectedIdx],
+            correct: q.options[q.ans],
+            exp: q.exp
+        });
     }
     
     const expBox = document.getElementById('explanation-box');
@@ -469,6 +501,14 @@ function timeOut() {
     buttons[q.ans].classList.add('correct');
     playSound('wrong');
     
+    missedQuestions.push({
+        sentence: q.sentence,
+        cat: q.cat,
+        selected: 'Time Expired',
+        correct: q.options[q.ans],
+        exp: q.exp
+    });
+
     const expBox = document.getElementById('explanation-box');
     expBox.innerHTML = `<strong>⏱️ Time Expired!</strong> Correct: <strong>${q.options[q.ans]}</strong>. ${q.exp}`;
     expBox.style.display = 'block';
@@ -514,12 +554,97 @@ function finishGrammarScalpel() {
     document.getElementById('res-feedback').textContent = feedback;
     document.getElementById('res-icon').textContent = icon;
     
+    // Display Socratic Mistake Review
+    const mistakeSec = document.getElementById('grammar-mistake-section');
+    const mistakeList = document.getElementById('grammar-mistakes-list');
+    const mistakeCount = document.getElementById('grammar-mistake-count');
+    if (missedQuestions.length > 0) {
+        mistakeCount.textContent = missedQuestions.length;
+        mistakeList.innerHTML = missedQuestions.map((m, i) => `
+            <div style="background:var(--surface); border-left:4px solid #ef4444; padding:12px; border-radius:8px;">
+                <div style="font-size:0.75rem; color:#818cf8; font-weight:800; text-transform:uppercase;">${m.cat}</div>
+                <div style="font-weight:700; margin:4px 0;">Sentence: "${m.sentence}"</div>
+                <div style="font-size:0.85rem; color:#ef4444;">Your Choice: ${m.selected}</div>
+                <div style="font-size:0.85rem; color:#10b981; font-weight:600;">Correct Form: ${m.correct}</div>
+                <div style="font-size:0.85rem; color:var(--muted); margin-top:4px; font-style:italic;">💡 ${m.exp}</div>
+            </div>
+        `).join('');
+        mistakeSec.style.display = 'block';
+    } else {
+        mistakeSec.style.display = 'none';
+    }
+
     // Submit results to server
     fetch('/api/grammar_scalpel/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ score: score, total: 10 })
-    }).catch(e => console.log('Score submit offline or cached', e));
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data && data.history_id) {
+            latestHistoryId = data.history_id;
+        }
+    })
+    .catch(e => console.log('Score submit offline or cached', e));
 }
+
+function postGrammarShowcase() {
+    const btn = document.getElementById('grammar-showcase-btn');
+    if (!latestHistoryId) {
+        btn.textContent = 'Recording Milestone...';
+        setTimeout(postGrammarShowcase, 400);
+        return;
+    }
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'Publishing...';
+
+    fetch('/showcase/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            history_id: latestHistoryId,
+            content: `Achieved ${score}/10 in Grammar & Concord Scalpel! Calibrating syntactic precision and English mechanics.`
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success || data.post_id) {
+            btn.textContent = '✅ Published to Showcase!';
+            btn.style.background = '#10b981';
+            btn.style.color = '#fff';
+        } else {
+            btn.textContent = data.message || data.error || 'Already Published';
+        }
+    })
+    .catch(e => {
+        btn.textContent = '❌ Failed to publish';
+        btn.disabled = false;
+    });
+}
+
+async function loadCohortLeaderboard() {
+    try {
+        const res = await fetch("/api/arena/grammar_scalpel/leaderboard");
+        const data = await res.json();
+        const box = document.getElementById("cohort-leaders-list");
+        if (!data.leaders || data.leaders.length === 0) {
+            box.textContent = "Be the first in your school to set a Grammar Scalpel record!";
+            return;
+        }
+        box.innerHTML = data.leaders.map(l => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9rem;">
+                <div>
+                    <span style="font-weight:800; color:#f59e0b; width:20px; display:inline-block;">#${l.rank}</span>
+                    <strong style="color:var(--text);">${l.fullname}</strong>
+                </div>
+                <span style="color:#818cf8; font-weight:700;">${l.metric}</span>
+            </div>
+        `).join("");
+    } catch(e) {}
+}
+
+document.addEventListener("DOMContentLoaded", loadCohortLeaderboard);
 </script>
 {% endblock %}

@@ -38,12 +38,12 @@ class TestTalentArenasAndInbox(unittest.TestCase):
         self.assertIn('🎓 Briefing', html)
         self.assertNotIn('🎓 Principal Briefing', html)
 
-    def test_games_hub_sixteen_domains(self):
-        """Verify Games Hub displays all 16 domains including Spatial 3D Rotation, ChronoLogix, Daily Triad, and Battle Royale."""
+    def test_games_hub_seventeen_domains(self):
+        """Verify Games Hub displays all 17 domains including Spatial 3D Rotation, ChronoLogix, NeuroBeat, Daily Triad, and Battle Royale."""
         resp = self.client.get('/games')
         self.assertEqual(resp.status_code, 200)
         html = resp.data.decode('utf-8')
-        self.assertIn('16 standardized cognitive & academic domains', html)
+        self.assertIn('17 standardized cognitive & academic domains', html)
         self.assertIn('/olympiad', html)
         self.assertIn('/code_sprint', html)
         self.assertIn('/spelling_bee', html)
@@ -52,6 +52,7 @@ class TestTalentArenasAndInbox(unittest.TestCase):
         self.assertIn('/grammar_scalpel', html)
         self.assertIn('/spatial_rotation', html)
         self.assertIn('/chronologix', html)
+        self.assertIn('/neurobeat', html)
         self.assertIn('/daily_triad', html)
         self.assertIn('/battle_royale', html)
 
@@ -258,15 +259,15 @@ class TestTalentArenasAndInbox(unittest.TestCase):
         self.assertIn('GeoQuest', html)
         self.assertIn('Grammar Scalpel', html)
 
-    def test_principal_briefing_inter_house_and_sixteen_arenas(self):
-        """Verify Principal Briefing presents 16 arenas and Good Shepherd House Championship."""
+    def test_principal_briefing_inter_house_and_seventeen_arenas(self):
+        """Verify Principal Briefing presents 17 arenas and Good Shepherd House Championship."""
         with self.client.session_transaction() as sess:
             sess['principal_unlocked'] = True
 
         resp = self.client.get('/principal')
         self.assertEqual(resp.status_code, 200)
         html = resp.data.decode('utf-8')
-        self.assertIn('16 Arenas', html)
+        self.assertIn('17 Arenas', html)
         self.assertIn('Inter-House Cognitive & Academic Championship', html)
         self.assertIn('St. Michael House', html)
 
@@ -367,4 +368,40 @@ class TestTalentArenasAndInbox(unittest.TestCase):
         sw_resp = self.client.get('/sw.js')
         self.assertEqual(sw_resp.status_code, 200)
         self.assertIn(b'CACHE_NAME', sw_resp.data)
+
+    def test_neurobeat_arena_and_submit(self):
+        """Verify Arena 17 NeuroBeat Auditory Span loads and submits score."""
+        with self.client.session_transaction() as sess:
+            sess['_user_id'] = str(self.uid)
+
+        resp = self.client.get('/neurobeat')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'NeuroBeat Auditory Span', resp.data)
+
+        sub_resp = self.client.post('/api/neurobeat/submit', json={
+            'max_span': 7,
+            'rounds_cleared': 5
+        })
+        self.assertEqual(sub_resp.status_code, 200)
+        data = sub_resp.get_json()
+        self.assertEqual(data.get('status'), 'ok')
+        self.assertEqual(data.get('max_span'), 7)
+        self.assertEqual(data.get('tier'), 'gold')
+        self.assertIsNotNone(data.get('history_id'))
+
+    def test_arena_cohort_leaderboard(self):
+        """Verify cohort leaderboard returns top scores for an arena."""
+        with self.client.session_transaction() as sess:
+            sess['_user_id'] = str(self.uid)
+
+        self.client.post('/api/geo_quest/submit', json={'score': 9, 'total': 10})
+
+        resp = self.client.get('/api/arena/geo_quest/leaderboard')
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertEqual(data.get('status'), 'ok')
+        self.assertEqual(data.get('arena'), 'geo_quest')
+        self.assertIsInstance(data.get('leaders'), list)
+        self.assertGreaterEqual(len(data.get('leaders')), 1)
+
 
