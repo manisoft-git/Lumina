@@ -14,6 +14,7 @@
                 <option value="easy">Easy (+, -)</option>
                 <option value="medium" selected>Medium (+, -, ×)</option>
                 <option value="hard">Hard (+, -, ×, ÷)</option>
+                <option value="procedural">⚡ Infinite Procedural (Algebra & Modulo)</option>
             </select>
         </label>
     </div>
@@ -42,6 +43,33 @@
     function rand(n) { return Math.floor(Math.random() * n) + 1; }
     function genProblem() {
         const diff = document.getElementById('math-difficulty').value;
+        if (diff === 'procedural') {
+            const types = ['algebra', 'modulo', 'percentage'];
+            const t = types[Math.floor(Math.random() * types.length)];
+            if (t === 'algebra') {
+                const x = rand(12) + 1;
+                const a = rand(7) + 2;
+                const b = rand(20) + 1;
+                const c = a * x + b;
+                currentAnswer = x;
+                problemEl.textContent = a + 'x + ' + b + ' = ' + c + ' (x = ?)';
+            } else if (t === 'modulo') {
+                const m = rand(7) + 3;
+                const mult = rand(8) + 1;
+                const rem = rand(m - 1);
+                const val = m * mult + rem;
+                currentAnswer = rem;
+                problemEl.textContent = val + ' mod ' + m + ' = ?';
+            } else {
+                const pcts = [10, 20, 25, 50];
+                const p = pcts[Math.floor(Math.random() * pcts.length)];
+                const base = rand(15) * 10;
+                currentAnswer = Math.round(base * (p / 100));
+                problemEl.textContent = p + '% of ' + base + ' = ?';
+            }
+            input.value = ''; input.focus();
+            return;
+        }
         let a = rand(20), b = rand(20), op = '+';
         if (diff === 'medium') { const ops = ['+', '-', '×']; op = ops[Math.floor(Math.random() * ops.length)]; }
         else if (diff === 'hard') { const ops = ['+', '-', '×', '÷']; op = ops[Math.floor(Math.random() * ops.length)]; }

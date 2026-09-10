@@ -6,6 +6,20 @@
         <h1>Welcome, {{ current_user.fullname }}</h1>
         <div class="level-badge">Lv. {{ current_user.level }} • {{ current_user.xp }} XP • 🔥 {{ current_user.streak }} day streak</div>
     </div>
+
+    <!-- Daily Cognitive Triad Callout -->
+    <div style="background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(236,72,153,0.15)); border:1px solid #f59e0b; border-radius:12px; padding:16px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <div style="font-size:2.2rem;">🔥</div>
+            <div>
+                <div style="font-weight:900; font-size:1.1rem; color:var(--text);">Daily Cognitive Triad Ready!</div>
+                <div style="font-size:0.88rem; color:var(--muted);">Complete today's 3-leg personalized circuit to maintain your {{ current_user.streak or 0 }}-day streak & earn +150 XP.</div>
+            </div>
+        </div>
+        <a href="{{ url_for('daily_triad') }}" class="btn btn-primary" style="background:#f59e0b; color:#000; font-weight:800; padding:8px 20px;">
+            Calibrate Today 🔥
+        </a>
+    </div>
     <div class="dashboard-grid">
         <section class="dash-card">
             <h2>Recent Tests</h2>

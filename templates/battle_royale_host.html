@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block title %}Battle Royale Arena Host — Lumina Stadium{% endblock %}
+{% block head %}
+<style>
+.br-host-container { max-width: 1200px; margin: 16px auto 40px; padding: 0 16px; }
+.br-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+}
+.br-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 5px;
+    background: linear-gradient(90deg, #ef4444, #f59e0b, #ec4899, #8b5cf6);
+}
+.pin-badge {
+    font-size: 3.2rem;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+    border: 2px dashed #f59e0b;
+    padding: 8px 24px;
+    border-radius: 16px;
+    display: inline-block;
+}
+.roster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+    max-height: 380px;
+    overflow-y: auto;
+}
+.player-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+.player-tag.eliminated {
+    opacity: 0.35;
+    text-decoration: line-through;
+    filter: grayscale(1);
+    border-color: #ef4444;
+}
+.live-question-box {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    text-align: center;
+    margin-bottom: 24px;
+}
+.options-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 24px;
+}
+.option-host-box {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 1.25rem;
+    font-weight: 800;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.option-host-box.revealed-correct {
+    border-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #10b981 !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="br-host-container">
+    <div class="br-card">
+        <!-- LOBBY STATE -->
+        <div id="br-lobby" style="text-align:center;">
+            <div style="font-size:3.5rem; margin-bottom:8px;">👑</div>
+            <h1 style="font-size:2.4rem; font-weight:900; margin-bottom:6px;">Classroom Battle Royale</h1>
+            <p style="color:var(--muted); font-size:1.1rem; max-width:650px; margin:0 auto 20px;">
+                Connect your phone or laptop. Last mind standing wins the championship!
+            </p>
+
+            <div style="margin:24px 0;">
+                <div style="font-size:0.9rem; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Join Code PIN</div>
+                <div class="pin-badge" id="host-pin">----</div>
+                <div style="margin-top:12px; font-size:1rem; color:var(--text-secondary);">
+                    Join at <strong>{{ request.host_url }}battle_royale/join</strong>
+                </div>
+            </div>
+
+            <div style="margin-top:32px; text-align:left;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="margin:0; font-size:1.2rem; font-weight:800;">
+                        Contestants Waiting: <span id="player-count" style="color:#f59e0b;">0</span>
+                    </h3>
+                    <button class="btn btn-primary" onclick="startBattleRoyale()" id="start-btn" style="padding:12px 32px; font-size:1.1rem; font-weight:800; background:linear-gradient(135deg, #ef4444, #f59e0b); color:#000;">
+                        ⚔️ Launch Battle Royale
+                    </button>
+                </div>
+                <div class="roster-grid" id="roster-grid">
+                    <div style="grid-column: 1 / -1; text-align:center; color:var(--muted); padding:30px;">
+                        Waiting for students to join via PIN...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIVE QUESTION STATE -->
+        <div id="br-game" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:16px; margin-bottom:20px;">
+                <div>
+                    <span style="background:#ef4444; color:#fff; font-weight:800; font-size:0.8rem; padding:4px 12px; border-radius:12px; text-transform:uppercase;" id="br-round-badge">Wave 1</span>
+                    <span style="font-weight:700; color:var(--muted); margin-left:10px;" id="br-domain-label">Olympiad Domain</span>
+                </div>
+                <div style="display:flex; gap:20px; align-items:center;">
+                    <div style="font-size:1.4rem; font-weight:900; color:var(--accent);">⏱️ <span id="br-timer-val">15</span>s</div>
+                    <div style="font-weight:800; color:#10b981;">Submissions: <span id="br-sub-count">0</span>/<span id="br-alive-count">0</span></div>
+                </div>
+            </div>
+
+            <div class="live-question-box">
+                <div id="br-q-text" style="font-size:2rem; font-weight:800; line-height:1.4;">
+                    Loading Question...
+                </div>
+                <div class="options-display" id="br-host-options"></div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-weight:700; color:var(--muted);">Survivors Remaining: <span id="br-survivors-count">0</span></div>
+                <button class="btn btn-primary" onclick="nextBRWave()" id="next-wave-btn" style="display:none; padding:10px 24px; font-weight:800; background:#f59e0b; color:#000;">
+                    Next Elimination Wave →
+                </button>
+            </div>
+
+            <!-- Live mini roster during game -->
+            <div class="roster-grid" id="br-game-roster" style="max-height:140px; margin-top:20px;"></div>
+        </div>
+
+        <!-- PODIUM STATE -->
+        <div id="br-podium" style="display:none; text-align:center; padding:40px 10px;">
+            <div style="font-size:5rem; margin-bottom:10px;">👑</div>
+            <h1 style="font-size:2.8rem; font-weight:900; margin-bottom:8px; color:#f59e0b;">Champion Crowned!</h1>
+            <p style="color:var(--muted); font-size:1.2rem; margin-bottom:30px;">
+                The classroom Battle Royale has concluded.
+            </p>
+
+            <div style="background:var(--surface2); border:2px solid #f59e0b; border-radius:16px; padding:30px; max-width:480px; margin:0 auto 30px;">
+                <div style="font-size:1rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Sole Survivor & Victor</div>
+                <div id="winner-name" style="font-size:2.4rem; font-weight:900; color:#f59e0b; margin:10px 0;">Student</div>
+                <div style="font-size:1.1rem; color:#10b981; font-weight:700;">+250 XP Awarded & House Victory!</div>
+            </div>
+
+            <button class="btn btn-primary" onclick="location.reload()" style="padding:12px 30px; font-weight:800;">
+                Create New Battle Royale Room ⚔️
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/socket.io.min.js"></script>
+<script>
+let socket = io();
+let roomCode = "";
+let currentRound = 0;
+let roundTimer = null;
+let roundSeconds = 15;
+let activeQuestion = null;
+let players = {};
+
+function initHost() {
+    socket.emit("br_host_create");
+}
+
+socket.on("br_room_created", (data) => {
+    roomCode = data.code;
+    document.getElementById("host-pin").textContent = roomCode;
+});
+
+socket.on("br_player_joined", (data) => {
+    players[data.sid] = {
+        name: data.name,
+        lives: 3,
+        answered: false,
+        eliminated: false,
+        house: data.house || "Emerald"
+    };
+    updateRoster();
+});
+
+socket.on("br_player_left", (data) => {
+    delete players[data.sid];
+    updateRoster();
+});
+
+socket.on("br_answer_recorded", (data) => {
+    if (players[data.sid]) {
+        players[data.sid].answered = true;
+        players[data.sid].chosen = data.ans;
+    }
+    updateSubmissionCount();
+});
+
+function updateRoster() {
+    const list = Object.values(players);
+    document.getElementById("player-count").textContent = list.length;
+    const grid = document.getElementById("roster-grid");
+    if (list.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; color:var(--muted); padding:30px;">Waiting for students to join via PIN...</div>`;
+        return;
+    }
+    grid.innerHTML = list.map(p => `
+        <div class="player-tag ${p.eliminated ? 'eliminated' : ''}">
+            <div style="font-size:1.4rem;">${p.eliminated ? '💀' : '👤'}</div>
+            <div style="font-weight:800;">${p.name}</div>
+            <div style="font-size:0.75rem; color:var(--muted);">${p.eliminated ? 'Eliminated' : '❤️❤️❤️'.slice(0, p.lives * 2)}</div>
+        </div>
+    `).join("");
+}
+
+function updateSubmissionCount() {
+    const alive = Object.values(players).filter(p => !p.eliminated);
+    const submitted = alive.filter(p => p.answered).length;
+    document.getElementById("br-sub-count").textContent = submitted;
+    document.getElementById("br-alive-count").textContent = alive.length;
+    document.getElementById("br-survivors-count").textContent = alive.length;
+
+    if (submitted >= alive.length && alive.length > 0) {
+        resolveWave();
+    }
+}
+
+function startBattleRoyale() {
+    if (Object.keys(players).length < 1) {
+        alert("At least 1 contestant must join to start!");
+        return;
+    }
+    document.getElementById("br-lobby").style.display = "none";
+    document.getElementById("br-game").style.display = "block";
+    socket.emit("br_start_game", { code: roomCode });
+}
+
+socket.on("br_new_question", (q) => {
+    activeQuestion = q;
+    currentRound++;
+    document.getElementById("br-round-badge").textContent = `Wave ${currentRound}`;
+    document.getElementById("br-domain-label").textContent = q.category;
+    document.getElementById("br-q-text").textContent = q.question;
+    document.getElementById("next-wave-btn").style.display = "none";
+
+    const optsBox = document.getElementById("br-host-options");
+    optsBox.innerHTML = q.options.map((opt, i) => `
+        <div class="option-host-box" id="host-opt-${i}">
+            <span style="background:var(--surface2); width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem;">${String.fromCharCode(65 + i)}</span>
+            <span>${opt}</span>
+        </div>
+    `).join("");
+
+    // Reset round answers
+    Object.values(players).forEach(p => {
+        p.answered = false;
+        p.chosen = null;
+    });
+    updateSubmissionCount();
+
+    // Timer
+    clearInterval(roundTimer);
+    roundSeconds = 15;
+    document.getElementById("br-timer-val").textContent = roundSeconds;
+    roundTimer = setInterval(() => {
+        roundSeconds--;
+        document.getElementById("br-timer-val").textContent = roundSeconds;
+        if (roundSeconds <= 0) {
+            resolveWave();
+        }
+    }, 1000);
+});
+
+function resolveWave() {
+    clearInterval(roundTimer);
+    // Highlight correct answer
+    const correctIdx = activeQuestion.ans;
+    const correctEl = document.getElementById(`host-opt-${correctIdx}`);
+    if (correctEl) correctEl.classList.add("revealed-correct");
+
+    // Deduct lives for incorrect or unanswered
+    let aliveCount = 0;
+    let lastSurvivor = null;
+
+    Object.values(players).forEach(p => {
+        if (!p.eliminated) {
+            if (p.chosen !== correctIdx) {
+                p.lives--;
+                if (p.lives <= 0) {
+                    p.eliminated = true;
+                }
+            }
+            if (!p.eliminated) {
+                aliveCount++;
+                lastSurvivor = p;
+            }
+        }
+    });
+
+    socket.emit("br_wave_resolved", {
+        code: roomCode,
+        correct_ans: correctIdx,
+        players: players
+    });
+
+    updateRoster();
+
+    if (aliveCount <= 1 && Object.keys(players).length > 1) {
+        setTimeout(() => showPodium(lastSurvivor ? lastSurvivor.name : "Champion"), 2000);
+    } else {
+        document.getElementById("next-wave-btn").style.display = "block";
+    }
+}
+
+function nextBRWave() {
+    socket.emit("br_request_next_question", { code: roomCode });
+}
+
+function showPodium(winnerName) {
+    document.getElementById("br-game").style.display = "none";
+    document.getElementById("br-podium").style.display = "block";
+    document.getElementById("winner-name").textContent = winnerName;
+}
+
+document.addEventListener("DOMContentLoaded", initHost);
+</script>
+{% endblock %}

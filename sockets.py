@@ -20,6 +20,7 @@ SPECTATORS = {}
 AGENTS = {}  # agent_id -> {sid, user_id, hostname, platform, last_seen}
 PRODUCER_ROOMS = {}  # agent_id -> producer_sid
 RELAY_ROOMS = {}  # room_id -> {state, teams, winner}
+BR_ROOMS = {}  # room_code -> {host_sid, players: {sid: {name, lives, answered, chosen}}, state, round}
 
 # Safe command whitelist for remote diagnostics (Windows, macOS, Linux, Chromebooks)
 SAFE_COMMANDS = {
@@ -220,6 +221,18 @@ def clean_disconnected_socket(sid, emit_fn=None):
         if relay_changed and emit_fn:
             try: emit_fn("relay_state", rdata, room=rid)
             except Exception: pass
+
+    for code, brdata in list(BR_ROOMS.items()):
+        if brdata.get("host_sid") == sid:
+            if emit_fn:
+                try: emit_fn("br_host_disconnected", room=f"br_{code}")
+                except Exception: pass
+            del BR_ROOMS[code]
+        elif sid in brdata.get("players", {}):
+            p = brdata["players"].pop(sid, None)
+            if emit_fn:
+                try: emit_fn("br_player_left", {"sid": sid, "name": p.get("name") if p else ""}, room=f"br_{code}")
+                except Exception: pass
 
     for code, sids in list(MONITOR_SUBSCRIBERS.items()):
         sids.discard(sid)
@@ -478,6 +491,83 @@ def register_sockets(socketio):
                     emit("relay_game_over", {"winner": team, "room": room}, room=room_id)
 
         emit("relay_state", room, room=room_id)
+
+    # ---------- Classroom Battle Royale ----------
+    @socketio.on("br_host_create")
+    def handle_br_host_create(data=None):
+        import string
+        code = "BR-" + "".join(random.choices(string.digits, k=4))
+        while code in BR_ROOMS:
+            code = "BR-" + "".join(random.choices(string.digits, k=4))
+        room_name = f"br_{code}"
+        join_room(room_name)
+        BR_ROOMS[code] = {
+            "host_sid": request.sid,
+            "players": {},
+            "state": "lobby",
+            "round": 0
+        }
+        emit("br_room_created", {"code": code})
+
+    @socketio.on("br_player_join")
+    def handle_br_player_join(data):
+        code = (data.get("code") or "").strip().upper()
+        name = (data.get("name") or "").strip() or "Tobi Olive"
+        if code not in BR_ROOMS:
+            emit("br_join_error", {"message": "Invalid or expired Battle Royale PIN."})
+            return
+        room_name = f"br_{code}"
+        join_room(room_name)
+        BR_ROOMS[code]["players"][request.sid] = {
+            "name": name,
+            "lives": 3,
+            "sid": request.sid,
+            "answered": False,
+            "chosen": None
+        }
+        emit("br_joined_success", {"code": code, "name": name})
+        emit("br_player_joined", {"sid": request.sid, "name": name}, room=room_name)
+
+    @socketio.on("br_start_game")
+    def handle_br_start_game(data):
+        code = (data.get("code") or "").strip().upper()
+        if code not in BR_ROOMS:
+            return
+        from procedural_generator import generate_procedural_math, generate_procedural_code, generate_procedural_pattern
+        gen_fn = random.choice([generate_procedural_math, generate_procedural_code, generate_procedural_pattern])
+        q = gen_fn(tier=1)
+        BR_ROOMS[code]["state"] = "playing"
+        BR_ROOMS[code]["round"] = 1
+        BR_ROOMS[code]["current_q"] = q
+        emit("br_new_question", q, room=f"br_{code}")
+
+    @socketio.on("br_player_submit")
+    def handle_br_player_submit(data):
+        code = (data.get("code") or "").strip().upper()
+        ans = data.get("ans")
+        if code not in BR_ROOMS:
+            return
+        emit("br_answer_recorded", {"sid": request.sid, "ans": ans}, room=f"br_{code}")
+
+    @socketio.on("br_wave_resolved")
+    def handle_br_wave_resolved(data):
+        code = (data.get("code") or "").strip().upper()
+        correct_ans = data.get("correct_ans")
+        if code not in BR_ROOMS:
+            return
+        emit("br_wave_resolved", {"correct_ans": correct_ans}, room=f"br_{code}")
+
+    @socketio.on("br_request_next_question")
+    def handle_br_request_next_question(data):
+        code = (data.get("code") or "").strip().upper()
+        if code not in BR_ROOMS:
+            return
+        from procedural_generator import generate_procedural_math, generate_procedural_code, generate_procedural_pattern
+        gen_fn = random.choice([generate_procedural_math, generate_procedural_code, generate_procedural_pattern])
+        q = gen_fn(tier=min(3, BR_ROOMS[code]["round"] + 1))
+        BR_ROOMS[code]["round"] += 1
+        BR_ROOMS[code]["current_q"] = q
+        emit("br_new_question", q, room=f"br_{code}")
 
     # ---------- Teacher Monitor ----------
     @socketio.on("teacher_subscribe")

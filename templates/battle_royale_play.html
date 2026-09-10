@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}Battle Royale Arena Gamepad — Lumina Stadium{% endblock %}
+{% block head %}
+<style>
+.br-player-container { max-width: 500px; margin: 20px auto 40px; padding: 0 16px; }
+.br-play-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+    text-align: center;
+}
+.hearts-bar {
+    font-size: 1.6rem;
+    letter-spacing: 4px;
+    margin-bottom: 12px;
+}
+.gamepad-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 24px;
+}
+.gamepad-btn {
+    min-height: 120px;
+    border-radius: 16px;
+    border: none;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.1s ease, filter 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+.gamepad-btn:active {
+    transform: scale(0.95);
+}
+.gamepad-btn.btn-a { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.gamepad-btn.btn-b { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.gamepad-btn.btn-c { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.gamepad-btn.btn-d { background: linear-gradient(135deg, #10b981, #059669); }
+.gamepad-btn.selected {
+    box-shadow: 0 0 0 4px #fff, 0 8px 20px rgba(0,0,0,0.4);
+    transform: scale(1.02);
+}
+.gamepad-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="br-player-container">
+    <!-- JOIN FORM -->
+    <div class="br-play-card" id="join-card">
+        <div style="font-size:3rem; margin-bottom:8px;">⚔️</div>
+        <h1 style="font-size:2rem; font-weight:900; margin-bottom:6px;">Join Battle Royale</h1>
+        <p style="color:var(--muted); font-size:0.95rem; margin-bottom:20px;">
+            Enter the room PIN displayed on the teacher's projector screen.
+        </p>
+
+        <div style="text-align:left; display:flex; flex-direction:column; gap:14px; margin-bottom:24px;">
+            <div>
+                <label style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Room PIN</label>
+                <input type="text" id="input-pin" placeholder="BR-XXXX" value="{{ request.args.get('code', '') }}" style="width:100%; padding:14px; font-size:1.3rem; font-weight:800; text-align:center; text-transform:uppercase; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text);" />
+            </div>
+            <div>
+                <label style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Your Full Name</label>
+                <input type="text" id="input-name" placeholder="Tobi Olive" value="{{ current_user.fullname if current_user.is_authenticated else '' }}" style="width:100%; padding:14px; font-size:1.1rem; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text);" />
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="joinBRGame()" style="width:100%; padding:14px; font-size:1.1rem; font-weight:800; background:linear-gradient(135deg, #ef4444, #f59e0b); color:#000;">
+            Enter Arena 🎮
+        </button>
+    </div>
+
+    <!-- GAMEPAD VIEW -->
+    <div class="br-play-card" id="gamepad-card" style="display:none;">
+        <div class="hearts-bar" id="hearts-display">❤️❤️❤️</div>
+        <div style="font-size:1.2rem; font-weight:800;" id="player-status-badge">🟢 Alive & In Play</div>
+        <div style="font-size:0.9rem; color:var(--muted); margin-top:4px;" id="game-status-sub">Look at the classroom projector screen for the question!</div>
+
+        <div class="gamepad-grid" id="buttons-grid">
+            <button class="gamepad-btn btn-a" onclick="pressPad(0)">
+                <span>A</span>
+                <span style="font-size:0.75rem; font-weight:600; opacity:0.8;">Option 1</span>
+            </button>
+            <button class="gamepad-btn btn-b" onclick="pressPad(1)">
+                <span>B</span>
+                <span style="font-size:0.75rem; font-weight:600; opacity:0.8;">Option 2</span>
+            </button>
+            <button class="gamepad-btn btn-c" onclick="pressPad(2)">
+                <span>C</span>
+                <span style="font-size:0.75rem; font-weight:600; opacity:0.8;">Option 3</span>
+            </button>
+            <button class="gamepad-btn btn-d" onclick="pressPad(3)">
+                <span>D</span>
+                <span style="font-size:0.75rem; font-weight:600; opacity:0.8;">Option 4</span>
+            </button>
+        </div>
+
+        <div id="answer-locked-banner" style="display:none; margin-top:20px; padding:12px; border-radius:10px; background:rgba(56,189,248,0.15); color:var(--primary); font-weight:800;">
+            🔒 Answer Locked In! Waiting for wave resolution...
+        </div>
+
+        <div id="wave-feedback-banner" style="display:none; margin-top:20px; padding:14px; border-radius:10px; font-weight:800;"></div>
+    </div>
+</div>
+
+<script src="/static/socket.io.min.js"></script>
+<script>
+let socket = io();
+let myCode = "";
+let myName = "";
+let myLives = 3;
+let mySid = null;
+let currentAnswer = null;
+
+function joinBRGame() {
+    myCode = document.getElementById("input-pin").value.trim().toUpperCase();
+    myName = document.getElementById("input-name").value.trim() || "Tobi Olive";
+
+    if (!myCode) {
+        alert("Please enter a room PIN!");
+        return;
+    }
+
+    socket.emit("br_player_join", {
+        code: myCode,
+        name: myName
+    });
+}
+
+socket.on("connect", () => {
+    mySid = socket.id;
+});
+
+socket.on("br_joined_success", (data) => {
+    document.getElementById("join-card").style.display = "none";
+    document.getElementById("gamepad-card").style.display = "block";
+    updateHearts();
+});
+
+socket.on("br_join_error", (err) => {
+    alert(err.message || "Failed to join room.");
+});
+
+socket.on("br_new_question", () => {
+    currentAnswer = null;
+    document.getElementById("answer-locked-banner").style.display = "none";
+    document.getElementById("wave-feedback-banner").style.display = "none";
+
+    const btns = document.querySelectorAll(".gamepad-btn");
+    btns.forEach(b => {
+        b.disabled = (myLives <= 0);
+        b.classList.remove("selected");
+    });
+});
+
+function pressPad(idx) {
+    if (myLives <= 0 || currentAnswer !== null) return;
+    currentAnswer = idx;
+
+    const btns = document.querySelectorAll(".gamepad-btn");
+    btns.forEach((b, i) => {
+        if (i === idx) b.classList.add("selected");
+        b.disabled = true;
+    });
+
+    document.getElementById("answer-locked-banner").style.display = "block";
+    if (navigator.vibrate) navigator.vibrate(30);
+
+    socket.emit("br_player_submit", {
+        code: myCode,
+        ans: idx
+    });
+}
+
+socket.on("br_wave_resolved", (data) => {
+    const isCorrect = (currentAnswer === data.correct_ans);
+    const banner = document.getElementById("wave-feedback-banner");
+    banner.style.display = "block";
+
+    if (myLives <= 0) {
+        banner.style.background = "rgba(239, 68, 68, 0.15)";
+        banner.style.color = "#ef4444";
+        banner.textContent = "💀 You are spectating as a Ghost.";
+        return;
+    }
+
+    if (isCorrect) {
+        banner.style.background = "rgba(16, 185, 129, 0.15)";
+        banner.style.color = "#10b981";
+        banner.textContent = "✅ SAFE! Flawless defense this wave.";
+        if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+    } else {
+        myLives--;
+        updateHearts();
+        banner.style.background = "rgba(239, 68, 68, 0.15)";
+        banner.style.color = "#ef4444";
+        banner.textContent = myLives > 0 ? "⚠️ DAMAGE TAKEN! Lost 1 Life ❤️." : "💀 ELIMINATED! You are now spectating.";
+        if (navigator.vibrate) navigator.vibrate(200);
+    }
+});
+
+function updateHearts() {
+    const h = document.getElementById("hearts-display");
+    const badge = document.getElementById("player-status-badge");
+    if (myLives <= 0) {
+        h.textContent = "💀 💀 💀";
+        badge.textContent = "👻 Ghost Spectator";
+        badge.style.color = "#ef4444";
+    } else {
+        h.textContent = "❤️❤️❤️".slice(0, myLives * 2);
+        badge.textContent = `🟢 Alive (${myLives} Lives Left)`;
+        badge.style.color = "#10b981";
+    }
+}
+</script>
+{% endblock %}

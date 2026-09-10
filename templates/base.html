@@ -73,12 +73,26 @@
                                 <div class="item-desc">Cooperative math, pattern & typing</div>
                             </div>
                         </a>
+                        <a href="{{ url_for('battle_royale_host') }}" class="nav-dropdown-item">
+                            <span class="item-icon">⚔️</span>
+                            <div>
+                                <div class="item-title">Classroom Battle Royale</div>
+                                <div class="item-desc">Live elimination stadium for projectors</div>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('daily_triad') }}" class="nav-dropdown-item">
+                            <span class="item-icon">🔥</span>
+                            <div>
+                                <div class="item-title">Daily Cognitive Triad</div>
+                                <div class="item-desc">3-leg daily streak & weakness calibrator</div>
+                            </div>
+                        </a>
                         <div class="nav-divider"></div>
                         <a href="{{ url_for('games_hub') }}" class="nav-dropdown-item">
                             <span class="item-icon">🎮</span>
                             <div>
-                                <div class="item-title">All 14 Cognitive Arenas</div>
-                                <div class="item-desc">Chess, Math, GeoQuest, Grammar, Sudoku, etc.</div>
+                                <div class="item-title">All 16 Cognitive Arenas</div>
+                                <div class="item-desc">Chess, Math, GeoQuest, Grammar, 3D Spatial, ChronoLogix</div>
                             </div>
                         </a>
                         <a href="{{ url_for('tournament_list') }}" class="nav-dropdown-item">
@@ -659,5 +673,14 @@
         }
     }
     </style>
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                console.log('ServiceWorker registration skipped:', err);
+            });
+        });
+    }
+    </script>
 </body>
 </html>

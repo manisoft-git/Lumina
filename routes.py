@@ -11,7 +11,7 @@ import string
 import uuid
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import render_template, request, redirect, url_for, flash, jsonify, Response, session
+from flask import render_template, request, redirect, url_for, flash, jsonify, Response, session, send_from_directory, make_response
 from flask_login import login_required, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash
 
@@ -2306,6 +2306,158 @@ def register_routes(app):
         check_badges(current_user.id)
         return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier})
 
+    @app.route("/spatial_rotation")
+    def spatial_rotation_arena():
+        """Arena 15: Spatial 3D Mental Rotation Matrix"""
+        return render_template("spatial_rotation.html")
+
+    @app.route("/api/spatial_rotation/submit", methods=["POST"])
+    @login_required
+    def api_spatial_rotation_submit():
+        data = request.get_json() or {}
+        score = int(data.get("score", 0))
+        total = int(data.get("total", 10))
+        acc = round((score / max(total, 1)) * 100, 1)
+        xp = score * 15
+        tier = "legendary" if score >= 9 else ("gold" if score >= 7 else "silver")
+
+        record_activity(
+            user_id=current_user.id,
+            arena_type="spatial_rotation",
+            title=f"3D Spatial Rotation: {score}/{total}",
+            description=f"Shepard-Metzler 3D Mental Rotation Matrix with {acc}% accuracy.",
+            metric_value=f"{score}/{total} ({acc}%)",
+            metric_unit="3D Spatial",
+            score_points=score * 50,
+            tier=tier
+        )
+        award_xp(current_user.id, xp)
+        check_badges(current_user.id)
+        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier})
+
+    @app.route("/chronologix")
+    def chronologix_arena():
+        """Arena 16: ChronoLogix Historical & Scientific Timeline"""
+        return render_template("chronologix.html")
+
+    @app.route("/api/chronologix/submit", methods=["POST"])
+    @login_required
+    def api_chronologix_submit():
+        data = request.get_json() or {}
+        score = int(data.get("score", 0))
+        total = int(data.get("total", 8))
+        acc = round((score / max(total, 1)) * 100, 1)
+        xp = score * 20
+        tier = "legendary" if score >= 7 else ("gold" if score >= 5 else "silver")
+
+        record_activity(
+            user_id=current_user.id,
+            arena_type="chronologix",
+            title=f"ChronoLogix Sequence: {score}/{total}",
+            description=f"Historical & Scientific Timeline Synthesis with {acc}% accuracy.",
+            metric_value=f"{score}/{total} ({acc}%)",
+            metric_unit="Timeline",
+            score_points=score * 50,
+            tier=tier
+        )
+        award_xp(current_user.id, xp)
+        check_badges(current_user.id)
+        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier})
+
+    @app.route("/daily_triad")
+    @login_required
+    def daily_triad():
+        """Personalized 3-Leg Daily Cognitive Triad & Streak Calibrator"""
+        return render_template("daily_triad.html")
+
+    @app.route("/api/daily_triad/today")
+    @login_required
+    def api_daily_triad_today():
+        from procedural_generator import generate_procedural_math, generate_procedural_code, generate_procedural_pattern
+        q1 = generate_procedural_math(tier=1)
+        q2 = generate_procedural_pattern(tier=1)
+        q3 = generate_procedural_code(tier=1)
+        return jsonify({
+            "status": "ok",
+            "date": datetime.utcnow().strftime("%Y-%m-%d"),
+            "streak": current_user.streak or 0,
+            "questions": [q1, q2, q3]
+        })
+
+    @app.route("/api/daily_triad/complete", methods=["POST"])
+    @login_required
+    def api_daily_triad_complete():
+        data = request.get_json() or {}
+        score = int(data.get("score", 0))
+        total = int(data.get("total", 3))
+        xp = score * 50 + 100
+
+        new_streak = (current_user.streak or 0) + 1
+        longest = max(new_streak, current_user.longest_streak or 0)
+        db_execute(
+            "UPDATE users SET streak=?, longest_streak=?, last_active=? WHERE id=?",
+            (new_streak, longest, datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), current_user.id)
+        )
+        record_activity(
+            user_id=current_user.id,
+            arena_type="daily_triad",
+            title=f"Daily Cognitive Triad Cleared: {score}/{total}",
+            description=f"Completed 3-leg personalized daily cognitive calibration. Streak: {new_streak} days.",
+            metric_value=f"{score}/{total} (🔥 {new_streak}d)",
+            metric_unit="Daily Triad",
+            score_points=score * 100,
+            tier="gold" if score >= 2 else "silver"
+        )
+        award_xp(current_user.id, xp)
+        check_badges(current_user.id)
+        return jsonify({"status": "ok", "score": score, "total": total, "streak": new_streak, "xp_earned": xp})
+
+    @app.route("/battle_royale")
+    @app.route("/battle_royale/host")
+    def battle_royale_host():
+        """Classroom Battle Royale Projector Screen & Teacher Host"""
+        return render_template("battle_royale_host.html")
+
+    @app.route("/battle_royale/join")
+    @app.route("/battle_royale/play")
+    def battle_royale_play():
+        """Classroom Battle Royale Student Mobile Gamepad"""
+        return render_template("battle_royale_play.html")
+
+    @app.route("/api/procedural/math")
+    def api_procedural_math():
+        from procedural_generator import generate_procedural_math
+        tier = request.args.get("tier", 1, type=int)
+        count = min(30, max(1, request.args.get("count", 1, type=int)))
+        questions = [generate_procedural_math(tier) for _ in range(count)]
+        return jsonify({"status": "ok", "questions": questions if count > 1 else questions[0]})
+
+    @app.route("/api/procedural/code")
+    def api_procedural_code():
+        from procedural_generator import generate_procedural_code
+        tier = request.args.get("tier", 1, type=int)
+        count = min(30, max(1, request.args.get("count", 1, type=int)))
+        questions = [generate_procedural_code(tier) for _ in range(count)]
+        return jsonify({"status": "ok", "questions": questions if count > 1 else questions[0]})
+
+    @app.route("/api/procedural/pattern")
+    def api_procedural_pattern():
+        from procedural_generator import generate_procedural_pattern
+        tier = request.args.get("tier", 1, type=int)
+        count = min(30, max(1, request.args.get("count", 1, type=int)))
+        questions = [generate_procedural_pattern(tier) for _ in range(count)]
+        return jsonify({"status": "ok", "questions": questions if count > 1 else questions[0]})
+
+    @app.route("/manifest.json")
+    def manifest_json():
+        return send_from_directory("static", "manifest.json", mimetype="application/manifest+json")
+
+    @app.route("/sw.js")
+    def service_worker():
+        response = make_response(send_from_directory("static", "sw.js", mimetype="application/javascript"))
+        response.headers["Service-Worker-Allowed"] = "/"
+        return response
+
     @app.route("/api_docs")
     def api_docs():
         return render_template("api_docs.html")
@@ -2319,7 +2471,7 @@ def register_routes(app):
         return jsonify({
             "status": "operational",
             "platform": "Lumina v5.2",
-            "features": ["typing", "chess", "checkers", "math", "memory", "reaction", "pattern", "word", "tournaments", "olympiad", "code_sprint", "spelling_bee", "sudoku", "geo_quest", "grammar_scalpel"],
+            "features": ["typing", "chess", "checkers", "math", "memory", "reaction", "pattern", "word", "tournaments", "olympiad", "code_sprint", "spelling_bee", "sudoku", "geo_quest", "grammar_scalpel", "spatial_rotation", "chronologix", "daily_triad", "battle_royale"],
             "websocket": True,
             "timestamp": datetime.utcnow().isoformat()
         })

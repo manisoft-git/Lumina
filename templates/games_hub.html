@@ -5,7 +5,7 @@
     <div style="text-align:center; margin-bottom:32px;">
         <h1 style="font-size:2.4rem; font-weight:900; letter-spacing:-0.5px;">Cognitive & Strategy Arenas</h1>
         <p style="color:var(--muted); font-size:1.05rem; max-width:650px; margin:8px auto 0;">
-            Calibrate your mind across 14 standardized cognitive & academic domains and talent arenas. Every session feeds your verified Lumina Talent Index (LTI) profile and earns XP.
+            Calibrate your mind across 16 standardized cognitive & academic domains and talent arenas. Every session feeds your verified Lumina Talent Index (LTI) profile and earns XP.
         </p>
     </div>
 
@@ -234,6 +234,71 @@
             </div>
             <div style="margin-top:16px;">
                 <a href="{{ url_for('grammar_scalpel_arena') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#6366f1; color:#fff; font-weight:800;">Launch Grammar Scalpel</a>
+            </div>
+        </div>
+
+        <!-- Spatial 3D Mental Rotation (Arena 15) -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #ec4899;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🧊 Spatial 3D Rotation</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(236,72,153,0.15); color:#ec4899; padding:4px 10px; border-radius:12px;">Spatial Deduction</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Shepard-Metzler 3D polycube rotation under 15-second clock pressure. Calibrate topological perception and CAD foresight.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('spatial_rotation_arena') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#ec4899; color:#fff; font-weight:800;">Launch Spatial Arena</a>
+            </div>
+        </div>
+
+        <!-- ChronoLogix Timeline (Arena 16) -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #f59e0b;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">⏳ ChronoLogix</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(245,158,11,0.15); color:#f59e0b; padding:4px 10px; border-radius:12px;">Chronological Synthesis</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Order historic African landmarks, scientific breakthroughs, and computing revolutions from Earliest to Most Recent.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('chronologix_arena') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#f59e0b; color:#000; font-weight:800;">Launch ChronoLogix</a>
+            </div>
+        </div>
+
+        <!-- Daily Cognitive Triad -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #10b981; background:rgba(16,185,129,0.06);">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🔥 Daily Cognitive Triad</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(16,185,129,0.2); color:#10b981; padding:4px 10px; border-radius:12px;">Daily Circuit</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    3-leg personalized daily circuit targeting your lowest LTI cognitive domains. Build daily streaks and earn +100 bonus XP.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('daily_triad') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#10b981; color:#000; font-weight:800;">Start Daily Triad 🔥</a>
+            </div>
+        </div>
+
+        <!-- Classroom Battle Royale -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #ef4444; background:rgba(239,68,68,0.06);">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">⚔️ Classroom Battle Royale</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(239,68,68,0.2); color:#ef4444; padding:4px 10px; border-radius:12px;">Live Elimination</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Synchronous live elimination stadium. Teacher projects on smartboard, 30+ students join on mobile gamepads with 3 lives.
+                </p>
+            </div>
+            <div style="margin-top:16px; display:flex; gap:8px;">
+                <a href="{{ url_for('battle_royale_host') }}" class="btn btn-primary" style="flex:1; text-align:center; background:#ef4444; color:#fff; font-weight:800;">Host (Projector)</a>
+                <a href="{{ url_for('battle_royale_play') }}" class="btn btn-secondary" style="flex:1; text-align:center; font-weight:800;">Join as Player</a>
             </div>
         </div>
 

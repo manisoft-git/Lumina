@@ -1,0 +1,542 @@
+{% extends "base.html" %}
+{% block title %}ChronoLogix Historical & Scientific Timeline — Lumina{% endblock %}
+{% block head %}
+<style>
+.chrono-container { max-width: 860px; margin: 20px auto 40px; padding: 0 16px; }
+.chrono-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+    position: relative;
+    overflow: hidden;
+}
+.chrono-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, #f59e0b, #ef4444, #8b5cf6);
+}
+.chrono-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.chrono-badge {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #000;
+    font-size: 0.8rem;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.chrono-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+.chrono-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+.slots-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+@media (max-width: 640px) {
+    .slots-container { grid-template-columns: 1fr; }
+}
+.slot-box {
+    background: var(--surface2);
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    min-height: 110px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+}
+.slot-badge {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+.pool-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+.chrono-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.chrono-item:hover {
+    border-color: #f59e0b;
+    transform: translateY(-2px);
+}
+.chrono-item.selected {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+.year-reveal {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #f59e0b;
+    margin-left: 10px;
+    display: none;
+}
+.explanation-box {
+    margin-top: 16px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: rgba(245, 158, 11, 0.08);
+    border-left: 4px solid #f59e0b;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    display: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chrono-container">
+    <div class="chrono-card">
+        <!-- Start Screen -->
+        <div id="start-screen" style="text-align:center; padding:20px 10px;">
+            <div style="font-size:3.5rem; margin-bottom:12px;">⏳</div>
+            <h1 style="font-size:2.2rem; font-weight:900; margin-bottom:10px;">ChronoLogix Timeline Arena</h1>
+            <p style="color:var(--muted); font-size:1.05rem; max-width:640px; margin:0 auto 24px; line-height:1.6;">
+                Calibrate chronological synthesis and historical working memory. Order 4 randomized scientific breakthroughs, African independence milestones, or world civilization events from <strong>Earliest</strong> to <strong>Most Recent</strong>.
+            </p>
+            <div style="display:flex; justify-content:center; gap:20px; margin-bottom:28px; flex-wrap:wrap;">
+                <div style="background:var(--surface2); padding:12px 20px; border-radius:10px; border:1px solid var(--border);">
+                    <div style="font-size:0.75rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Rounds</div>
+                    <div style="font-size:1.4rem; font-weight:800; color:#f59e0b;">8 Timelines</div>
+                </div>
+                <div style="background:var(--surface2); padding:12px 20px; border-radius:10px; border:1px solid var(--border);">
+                    <div style="font-size:0.75rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Clock</div>
+                    <div style="font-size:1.4rem; font-weight:800; color:var(--accent);">25s / Round</div>
+                </div>
+                <div style="background:var(--surface2); padding:12px 20px; border-radius:10px; border:1px solid var(--border);">
+                    <div style="font-size:0.75rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Cognitive Focus</div>
+                    <div style="font-size:1.4rem; font-weight:800; color:#10b981;">Chronological Synthesis</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="startChronoGame()" style="padding:14px 40px; font-size:1.1rem; font-weight:800; border-radius:12px; background:linear-gradient(135deg, #f59e0b, #ef4444); color:#000;">
+                Launch ChronoLogix →
+            </button>
+        </div>
+
+        <!-- Gameplay Screen -->
+        <div id="game-screen" style="display:none;">
+            <div class="chrono-header">
+                <div>
+                    <span class="chrono-badge">Arena 16</span>
+                    <span style="margin-left:10px; font-weight:700; font-size:0.9rem; color:var(--muted);" id="q-counter">Round 1/8</span>
+                </div>
+                <div style="display:flex; gap:16px; font-weight:700;">
+                    <div style="color:var(--accent); font-size:1.1rem;">⏱️ <span id="timer-val">25</span>s</div>
+                    <div style="color:#f59e0b;">Score: <span id="current-score">0</span></div>
+                </div>
+            </div>
+
+            <div class="chrono-progress-bar">
+                <div class="chrono-progress-fill" id="progress-fill"></div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="font-size:0.8rem; color:#f59e0b; text-transform:uppercase; font-weight:800;" id="timeline-cat">Historical Milestones</div>
+                <button class="btn btn-secondary" onclick="resetSlots()" style="padding:4px 12px; font-size:0.8rem;">↺ Clear Slots</button>
+            </div>
+
+            <!-- 4 Ordered Sequence Slots -->
+            <div class="slots-container" id="slots-container">
+                <div class="slot-box" id="slot-0" onclick="removeFromSlot(0)">
+                    <span class="slot-badge">1st (Earliest)</span>
+                    <div class="slot-content" style="font-size:0.88rem; font-weight:700; color:var(--muted); margin-top:14px;">Tap event below</div>
+                </div>
+                <div class="slot-box" id="slot-1" onclick="removeFromSlot(1)">
+                    <span class="slot-badge">2nd</span>
+                    <div class="slot-content" style="font-size:0.88rem; font-weight:700; color:var(--muted); margin-top:14px;">Tap event below</div>
+                </div>
+                <div class="slot-box" id="slot-2" onclick="removeFromSlot(2)">
+                    <span class="slot-badge">3rd</span>
+                    <div class="slot-content" style="font-size:0.88rem; font-weight:700; color:var(--muted); margin-top:14px;">Tap event below</div>
+                </div>
+                <div class="slot-box" id="slot-3" onclick="removeFromSlot(3)">
+                    <span class="slot-badge">4th (Latest)</span>
+                    <div class="slot-content" style="font-size:0.88rem; font-weight:700; color:var(--muted); margin-top:14px;">Tap event below</div>
+                </div>
+            </div>
+
+            <!-- Pool of 4 unsorted events -->
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:8px; font-weight:700;">Select events in order from Earliest to Most Recent:</div>
+            <div class="pool-container" id="pool-container"></div>
+
+            <button id="verify-btn" class="btn btn-primary" onclick="verifySequence()" style="width:100%; padding:14px; font-weight:800; background:#f59e0b; color:#000; display:block;">
+                Verify Chronological Order ⏳
+            </button>
+
+            <div class="explanation-box" id="explanation-box"></div>
+
+            <button id="next-btn" class="btn btn-primary" onclick="nextRound()" style="display:none; width:100%; padding:12px; font-weight:800; margin-top:16px;">
+                Next Timeline →
+            </button>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" style="display:none; text-align:center; padding:30px 10px;">
+            <div style="font-size:4rem; margin-bottom:12px;">⌛</div>
+            <h2 style="font-size:2rem; font-weight:900; margin-bottom:6px;">ChronoLogix Completed!</h2>
+            <p style="color:var(--muted); font-size:1.05rem; margin-bottom:24px;">Your chronological working memory and historical timeline synthesis have been calibrated.</p>
+
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; max-width:480px; margin:0 auto 28px;">
+                <div style="background:var(--surface2); padding:16px; border-radius:12px; border:1px solid var(--border);">
+                    <div style="font-size:0.75rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Score</div>
+                    <div id="res-score" style="font-size:1.8rem; font-weight:900; color:#f59e0b; margin-top:4px;">0/8</div>
+                </div>
+                <div style="background:var(--surface2); padding:16px; border-radius:12px; border:1px solid var(--border);">
+                    <div style="font-size:0.75rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Accuracy</div>
+                    <div id="res-acc" style="font-size:1.8rem; font-weight:900; color:var(--primary); margin-top:4px;">0%</div>
+                </div>
+                <div style="background:var(--surface2); padding:16px; border-radius:12px; border:1px solid var(--border);">
+                    <div style="font-size:0.75rem; color:var(--muted); font-weight:700; text-transform:uppercase;">XP Awarded</div>
+                    <div id="res-xp" style="font-size:1.8rem; font-weight:900; color:#fbbf24; margin-top:4px;">+0</div>
+                </div>
+            </div>
+
+            <div id="res-feedback" style="font-size:1.1rem; font-weight:700; color:var(--text); margin-bottom:24px;"></div>
+
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="startChronoGame()" style="padding:10px 24px; font-weight:700; background:#f59e0b; color:#000;">
+                    🔄 Play Again
+                </button>
+                <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary" style="padding:10px 24px; font-weight:700;">
+                    🌟 View Showcase Feed
+                </a>
+                <a href="{{ url_for('games_hub') }}" class="btn btn-secondary" style="padding:10px 24px; font-weight:700;">
+                    🎮 Games Hub
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const CHRONO_SETS = [
+    {
+        cat: "African Independence & Sovereignty",
+        events: [
+            { text: "Ghana gains independence led by Kwame Nkrumah", year: 1957 },
+            { text: "Nigeria gains independence with Nnamdi Azikiwe & Tafawa Balewa", year: 1960 },
+            { text: "Nelson Mandela is released after 27 years of imprisonment", year: 1990 },
+            { text: "African Union (AU) officially established in Durban", year: 2002 }
+        ],
+        exp: "Ghana (1957) pioneered Sub-Saharan independence, followed by Nigeria (1960), Mandela's release (1990), and the transition from OAU to the African Union (2002)."
+    },
+    {
+        cat: "Pioneering Computing Milestones",
+        events: [
+            { text: "Alan Turing introduces the Universal Turing Machine model", year: 1936 },
+            { text: "ENIAC, the first programmable general-purpose digital computer, is completed", year: 1945 },
+            { text: "Tim Berners-Lee invents the World Wide Web at CERN", year: 1989 },
+            { text: "Google researchers publish the seminal 'Attention Is All You Need' Transformer paper", year: 2017 }
+        ],
+        exp: "Theoretical foundations began with Turing (1936), hardware with ENIAC (1945), networked hypermedia with the Web (1989), and modern LLMs with Transformers (2017)."
+    },
+    {
+        cat: "Scientific & Physics Revolutions",
+        events: [
+            { text: "Isaac Newton publishes Philosophiæ Naturalis Principia Mathematica", year: 1687 },
+            { text: "Dmitri Mendeleev formulates the Periodic Table of Chemical Elements", year: 1869 },
+            { text: "Albert Einstein publishes his Special Theory of Relativity", year: 1905 },
+            { text: "CERN confirms detection of the Higgs Boson elementary particle", year: 2012 }
+        ],
+        exp: "Classical mechanics in 1687, chemistry's periodic law in 1869, relativistic physics in 1905, and particle physics verification in 2012."
+    },
+    {
+        cat: "Biological Discoveries & Medicine",
+        events: [
+            { text: "Edward Jenner discovers the Smallpox vaccine", year: 1796 },
+            { text: "Alexander Fleming discovers Penicillin antibacterial mould", year: 1928 },
+            { text: "Watson, Crick, and Franklin determine the double-helix structure of DNA", year: 1953 },
+            { text: "Human Genome Project completes the first near-complete human genetic sequence", year: 2003 }
+        ],
+        exp: "Immunology began with Jenner (1796), antibiotics with Fleming (1928), molecular genetics with DNA (1953), and genomics in 2003."
+    },
+    {
+        cat: "Ancient Civilizations & Wonders",
+        events: [
+            { text: "Construction of the Great Pyramid of Giza under Pharaoh Khufu", year: -2560 },
+            { text: "Code of Hammurabi inscribed in ancient Babylon", year: -1750 },
+            { text: "Founding of the Kingdom of Nri in southeastern Nigeria", year: 948 },
+            { text: "Mansa Musa undertakes his legendary pilgrimage to Mecca with Mali's gold", year: 1324 }
+        ],
+        exp: "Giza (~2560 BCE) and Hammurabi (~1750 BCE) anchored the ancient world, followed by the medieval Golden Age of Nri (948 CE) and Mali Empire's Mansa Musa (1324 CE)."
+    },
+    {
+        cat: "Space Exploration & Astrophysics",
+        events: [
+            { text: "Soviet Union launches Sputnik 1, the first artificial satellite", year: 1957 },
+            { text: "Apollo 11 mission lands humans on the Moon", year: 1969 },
+            { text: "NASA Hubble Space Telescope deployed into low Earth orbit", year: 1990 },
+            { text: "James Webb Space Telescope (JWST) deploys into deep space L2 orbit", year: 2021 }
+        ],
+        exp: "The space age launched with Sputnik (1957), Moon landing (1969), Hubble (1990), and deep infrared spectroscopy with JWST (2021)."
+    },
+    {
+        cat: "World Telecommunications & Connectivity",
+        events: [
+            { text: "Samuel Morse sends the first electric telegraph message", year: 1844 },
+            { text: "Alexander Graham Bell patents the telephone", year: 1876 },
+            { text: "First ARPANET message transmitted between UCLA and Stanford", year: 1969 },
+            { text: "Launch of the first commercial GSM mobile cellular network", year: 1991 }
+        ],
+        exp: "Telegraphy (1844) led to telephony (1876), packet switching networks (1969), and modern mobile cellular standards (1991)."
+    },
+    {
+        cat: "African Literature & Arts",
+        events: [
+            { text: "Chinua Achebe publishes the landmark novel 'Things Fall Apart'", year: 1958 },
+            { text: "Wole Soyinka becomes the first African recipient of the Nobel Prize in Literature", year: 1986 },
+            { text: "Ben Okri wins the Booker Prize for 'The Famished Road'", year: 1991 },
+            { text: "Chimamanda Ngozi Adichie publishes 'Half of a Yellow Sun'", year: 2006 }
+        ],
+        exp: "Achebe's masterwork in 1958, Soyinka's Nobel prize in 1986, Okri's Booker win in 1991, and Adichie's modern classic in 2006."
+    }
+];
+
+let roundIdx = 0;
+let score = 0;
+let timer = null;
+let seconds = 25;
+let currentSet = null;
+let placedEvents = [null, null, null, null];
+let availableEvents = [];
+
+function startChronoGame() {
+    roundIdx = 0;
+    score = 0;
+    document.getElementById("start-screen").style.display = "none";
+    document.getElementById("results-screen").style.display = "none";
+    document.getElementById("game-screen").style.display = "block";
+    loadChronoRound();
+}
+
+function loadChronoRound() {
+    placedEvents = [null, null, null, null];
+    document.getElementById("explanation-box").style.display = "none";
+    document.getElementById("next-btn").style.display = "none";
+    document.getElementById("verify-btn").style.display = "block";
+    document.getElementById("verify-btn").disabled = false;
+    document.getElementById("q-counter").textContent = `Round ${roundIdx + 1}/8`;
+    document.getElementById("current-score").textContent = score;
+    document.getElementById("progress-fill").style.width = `${(roundIdx / 8) * 100}%`;
+
+    currentSet = CHRONO_SETS[roundIdx % CHRONO_SETS.length];
+    document.getElementById("timeline-cat").textContent = currentSet.cat;
+
+    // Scramble events
+    availableEvents = [...currentSet.events].sort(() => Math.random() - 0.5);
+
+    renderSlots();
+    renderPool();
+
+    clearInterval(timer);
+    seconds = 25;
+    document.getElementById("timer-val").textContent = seconds;
+    timer = setInterval(() => {
+        seconds--;
+        document.getElementById("timer-val").textContent = seconds;
+        if (seconds <= 0) {
+            clearInterval(timer);
+            verifySequence(true);
+        }
+    }, 1000);
+}
+
+function renderSlots() {
+    for (let i = 0; i < 4; i++) {
+        const slotEl = document.getElementById(`slot-${i}`);
+        const contentEl = slotEl.querySelector(".slot-content");
+        const ev = placedEvents[i];
+        if (ev) {
+            contentEl.innerHTML = `<span style="color:var(--text);">${ev.text}</span><span class="year-reveal" id="yr-${i}"> (${formatYear(ev.year)})</span>`;
+            slotEl.style.border = "2px solid #f59e0b";
+            slotEl.style.background = "rgba(245, 158, 11, 0.05)";
+        } else {
+            contentEl.innerHTML = `<span style="color:var(--muted);">Tap an event below</span>`;
+            slotEl.style.border = "2px dashed var(--border)";
+            slotEl.style.background = "var(--surface2)";
+        }
+    }
+}
+
+function renderPool() {
+    const pool = document.getElementById("pool-container");
+    pool.innerHTML = "";
+    availableEvents.forEach((ev, idx) => {
+        const item = document.createElement("div");
+        item.className = "chrono-item";
+        item.innerHTML = `<span>${ev.text}</span> <span style="color:var(--muted); font-size:0.8rem;">Tap to place ➔</span>`;
+        item.onclick = () => placeInFirstEmptySlot(ev, idx);
+        pool.appendChild(item);
+    });
+}
+
+function placeInFirstEmptySlot(ev, poolIdx) {
+    const emptySlot = placedEvents.indexOf(null);
+    if (emptySlot === -1) return;
+    placedEvents[emptySlot] = ev;
+    availableEvents.splice(poolIdx, 1);
+    renderSlots();
+    renderPool();
+}
+
+function removeFromSlot(slotIdx) {
+    if (document.getElementById("next-btn").style.display === "block") return;
+    const ev = placedEvents[slotIdx];
+    if (!ev) return;
+    placedEvents[slotIdx] = null;
+    availableEvents.push(ev);
+    renderSlots();
+    renderPool();
+}
+
+function resetSlots() {
+    if (document.getElementById("next-btn").style.display === "block") return;
+    placedEvents.forEach(ev => {
+        if (ev) availableEvents.push(ev);
+    });
+    placedEvents = [null, null, null, null];
+    renderSlots();
+    renderPool();
+}
+
+function formatYear(y) {
+    if (y < 0) return `${Math.abs(y)} BCE`;
+    return `${y} CE`;
+}
+
+function verifySequence(timedOut = false) {
+    clearInterval(timer);
+    document.getElementById("verify-btn").style.display = "none";
+
+    // Auto-fill any remaining slots with remaining pool
+    for (let i = 0; i < 4; i++) {
+        if (!placedEvents[i] && availableEvents.length > 0) {
+            placedEvents[i] = availableEvents.shift();
+        }
+    }
+    renderSlots();
+
+    // Check correctness: Is placed sequence strictly ascending in year?
+    const correctYears = [...currentSet.events].sort((a, b) => a.year - b.year);
+    let isCorrect = true;
+    for (let i = 0; i < 4; i++) {
+        if (!placedEvents[i] || placedEvents[i].year !== correctYears[i].year) {
+            isCorrect = false;
+        }
+    }
+
+    // Reveal years on all slots
+    for (let i = 0; i < 4; i++) {
+        const yrSpan = document.getElementById(`yr-${i}`);
+        if (yrSpan) yrSpan.style.display = "inline";
+        const slotEl = document.getElementById(`slot-${i}`);
+        if (placedEvents[i] && placedEvents[i].year === correctYears[i].year) {
+            slotEl.style.borderColor = "#10b981";
+            slotEl.style.background = "rgba(16, 185, 129, 0.12)";
+        } else {
+            slotEl.style.borderColor = "#ef4444";
+            slotEl.style.background = "rgba(239, 68, 68, 0.12)";
+        }
+    }
+
+    if (isCorrect && !timedOut) {
+        score++;
+        if (navigator.vibrate) navigator.vibrate(40);
+        document.getElementById("current-score").textContent = score;
+    }
+
+    const expBox = document.getElementById("explanation-box");
+    expBox.style.display = "block";
+    expBox.innerHTML = `
+        <strong>${isCorrect ? "✅ Perfect Chronological Sequence!" : "❌ Chronological Mismatch:"}</strong><br>
+        ${currentSet.exp}<br>
+        <strong>Correct Timeline Order:</strong><br>
+        1. ${correctYears[0].text} (<em>${formatYear(correctYears[0].year)}</em>)<br>
+        2. ${correctYears[1].text} (<em>${formatYear(correctYears[1].year)}</em>)<br>
+        3. ${correctYears[2].text} (<em>${formatYear(correctYears[2].year)}</em>)<br>
+        4. ${correctYears[3].text} (<em>${formatYear(correctYears[3].year)}</em>)
+    `;
+
+    document.getElementById("next-btn").style.display = "block";
+}
+
+function nextRound() {
+    roundIdx++;
+    if (roundIdx >= 8) {
+        endChronoGame();
+    } else {
+        loadChronoRound();
+    }
+}
+
+function endChronoGame() {
+    document.getElementById("game-screen").style.display = "none";
+    document.getElementById("results-screen").style.display = "block";
+
+    const acc = Math.round((score / 8) * 100);
+    const xpEarned = score * 20;
+
+    document.getElementById("res-score").textContent = `${score}/8`;
+    document.getElementById("res-acc").textContent = `${acc}%`;
+    document.getElementById("res-xp").textContent = `+${xpEarned}`;
+
+    let feedback = "";
+    if (score >= 7) feedback = "🏆 Polymath Chrono-Scholar! Masterful contextual recall of historic eras.";
+    else if (score >= 5) feedback = "🌟 Strong Chronological Working Memory. High historic & scientific landmark precision.";
+    else if (score >= 3) feedback = "👍 Competent Timeline Grasp. Good awareness of civilizational inflection points.";
+    else feedback = "🌱 Developing Chronological Synthesis. Review milestone dates across African & scientific history.";
+    document.getElementById("res-feedback").textContent = feedback;
+
+    fetch("/api/chronologix/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score: score, total: 8, accuracy: acc })
+    }).catch(err => console.log("Submit error:", err));
+}
+</script>
+{% endblock %}

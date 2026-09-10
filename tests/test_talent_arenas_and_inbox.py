@@ -38,18 +38,22 @@ class TestTalentArenasAndInbox(unittest.TestCase):
         self.assertIn('🎓 Briefing', html)
         self.assertNotIn('🎓 Principal Briefing', html)
 
-    def test_games_hub_fourteen_domains(self):
-        """Verify Games Hub displays all 14 domains including Cowbellpedia Olympiad, Code Debugger, Spelling Bee, Sudoku, GeoQuest, and Grammar Scalpel."""
+    def test_games_hub_sixteen_domains(self):
+        """Verify Games Hub displays all 16 domains including Spatial 3D Rotation, ChronoLogix, Daily Triad, and Battle Royale."""
         resp = self.client.get('/games')
         self.assertEqual(resp.status_code, 200)
         html = resp.data.decode('utf-8')
-        self.assertIn('14 standardized cognitive & academic domains', html)
+        self.assertIn('16 standardized cognitive & academic domains', html)
         self.assertIn('/olympiad', html)
         self.assertIn('/code_sprint', html)
         self.assertIn('/spelling_bee', html)
         self.assertIn('/sudoku', html)
         self.assertIn('/geo_quest', html)
         self.assertIn('/grammar_scalpel', html)
+        self.assertIn('/spatial_rotation', html)
+        self.assertIn('/chronologix', html)
+        self.assertIn('/daily_triad', html)
+        self.assertIn('/battle_royale', html)
 
     def test_olympiad_arena_and_submit(self):
         """Verify Cowbellpedia STEM Olympiad arena loads and records score/XP."""
@@ -254,15 +258,113 @@ class TestTalentArenasAndInbox(unittest.TestCase):
         self.assertIn('GeoQuest', html)
         self.assertIn('Grammar Scalpel', html)
 
-    def test_principal_briefing_inter_house_and_fourteen_arenas(self):
-        """Verify Principal Briefing presents 14 arenas and Good Shepherd House Championship."""
+    def test_principal_briefing_inter_house_and_sixteen_arenas(self):
+        """Verify Principal Briefing presents 16 arenas and Good Shepherd House Championship."""
         with self.client.session_transaction() as sess:
             sess['principal_unlocked'] = True
 
         resp = self.client.get('/principal')
         self.assertEqual(resp.status_code, 200)
         html = resp.data.decode('utf-8')
-        self.assertIn('14 Arenas', html)
+        self.assertIn('16 Arenas', html)
         self.assertIn('Inter-House Cognitive & Academic Championship', html)
         self.assertIn('St. Michael House', html)
+
+    def test_spatial_rotation_arena_and_submit(self):
+        """Verify Arena 15 Spatial 3D Mental Rotation loads and submits score."""
+        with self.client.session_transaction() as sess:
+            sess['_user_id'] = str(self.uid)
+
+        resp = self.client.get('/spatial_rotation')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Spatial 3D Mental Rotation', resp.data)
+
+        sub_resp = self.client.post('/api/spatial_rotation/submit', json={
+            'score': 9,
+            'total': 10
+        })
+        self.assertEqual(sub_resp.status_code, 200)
+        data = sub_resp.get_json()
+        self.assertEqual(data.get('status'), 'ok')
+        self.assertEqual(data.get('tier'), 'legendary')
+
+    def test_chronologix_arena_and_submit(self):
+        """Verify Arena 16 ChronoLogix Timeline loads and submits score."""
+        with self.client.session_transaction() as sess:
+            sess['_user_id'] = str(self.uid)
+
+        resp = self.client.get('/chronologix')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'ChronoLogix Timeline Arena', resp.data)
+
+        sub_resp = self.client.post('/api/chronologix/submit', json={
+            'score': 8,
+            'total': 8
+        })
+        self.assertEqual(sub_resp.status_code, 200)
+        data = sub_resp.get_json()
+        self.assertEqual(data.get('status'), 'ok')
+        self.assertEqual(data.get('tier'), 'legendary')
+
+    def test_daily_triad_and_submit(self):
+        """Verify Daily Cognitive Triad loads today questions and completes circuit."""
+        with self.client.session_transaction() as sess:
+            sess['_user_id'] = str(self.uid)
+
+        resp = self.client.get('/daily_triad')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Daily Cognitive Triad', resp.data)
+
+        # Get questions
+        q_resp = self.client.get('/api/daily_triad/today')
+        self.assertEqual(q_resp.status_code, 200)
+        q_data = q_resp.get_json()
+        self.assertEqual(len(q_data.get('questions', [])), 3)
+
+        # Complete
+        comp_resp = self.client.post('/api/daily_triad/complete', json={
+            'score': 3,
+            'total': 3
+        })
+        self.assertEqual(comp_resp.status_code, 200)
+        c_data = comp_resp.get_json()
+        self.assertEqual(c_data.get('status'), 'ok')
+        self.assertGreaterEqual(c_data.get('streak', 0), 1)
+
+    def test_battle_royale_routes(self):
+        """Verify Classroom Battle Royale host and play views load."""
+        h_resp = self.client.get('/battle_royale/host')
+        self.assertEqual(h_resp.status_code, 200)
+        self.assertIn(b'Classroom Battle Royale', h_resp.data)
+
+        p_resp = self.client.get('/battle_royale/play')
+        self.assertEqual(p_resp.status_code, 200)
+        self.assertIn(b'Join Battle Royale', p_resp.data)
+
+    def test_procedural_apis(self):
+        """Verify procedural question APIs synthesize infinite non-repeating questions."""
+        math_resp = self.client.get('/api/procedural/math?count=3&tier=2')
+        self.assertEqual(math_resp.status_code, 200)
+        m_data = math_resp.get_json()
+        self.assertEqual(len(m_data.get('questions', [])), 3)
+
+        code_resp = self.client.get('/api/procedural/code?count=3&tier=1')
+        self.assertEqual(code_resp.status_code, 200)
+        c_data = code_resp.get_json()
+        self.assertEqual(len(c_data.get('questions', [])), 3)
+
+        pat_resp = self.client.get('/api/procedural/pattern?count=3&tier=1')
+        self.assertEqual(pat_resp.status_code, 200)
+        p_data = pat_resp.get_json()
+        self.assertEqual(len(p_data.get('questions', [])), 3)
+
+    def test_pwa_manifest_and_sw(self):
+        """Verify PWA manifest and service worker are served with valid headers."""
+        m_resp = self.client.get('/manifest.json')
+        self.assertEqual(m_resp.status_code, 200)
+        self.assertIn('Lumina', m_resp.data.decode('utf-8'))
+
+        sw_resp = self.client.get('/sw.js')
+        self.assertEqual(sw_resp.status_code, 200)
+        self.assertIn(b'CACHE_NAME', sw_resp.data)
 
