@@ -818,8 +818,21 @@ def register_routes(app):
     def submit_math():
         d = request.get_json() or {}
         score = int(d.get("score", 0))
-        db_execute("INSERT INTO math_sprints (user_id, correct, total, difficulty, time_limit, score) VALUES (?, ?, ?, ?, ?, ?)",
+        cur = db_execute("INSERT INTO math_sprints (user_id, correct, total, difficulty, time_limit, score) VALUES (?, ?, ?, ?, ?, ?)",
                    (current_user.id, d.get("correct", 0), d.get("total", 0), d.get("difficulty", "medium"), d.get("time_limit", 60), score))
+        mid = cur.lastrowid
+        tier = "legendary" if score >= 200 else ("gold" if score >= 120 else ("silver" if score >= 60 else "bronze"))
+        record_activity(
+            user_id=current_user.id,
+            arena_type="math",
+            title=f"Math Sprint Velocity: {score} Pts",
+            description=f"Rapid mental arithmetic across {d.get('total', 0)} problems ({d.get('correct', 0)} correct) in {d.get('time_limit', 60)}s ({d.get('difficulty', 'medium').capitalize()} mode).",
+            metric_value=f"{score} Pts ({d.get('correct', 0)}/{d.get('total', 0)})",
+            metric_unit="Math",
+            score_points=score,
+            tier=tier,
+            source_ref=f"math:{mid}"
+        )
         xp_earned = max(0, score // 5)
         award_xp(current_user.id, xp_earned)
         check_badges(current_user.id)
@@ -830,8 +843,21 @@ def register_routes(app):
     def submit_memory():
         d = request.get_json() or {}
         level = int(d.get("level_reached", 0))
-        db_execute("INSERT INTO memory_tests (user_id, level_reached, max_pattern_length, attempts) VALUES (?, ?, ?, ?)",
+        cur = db_execute("INSERT INTO memory_tests (user_id, level_reached, max_pattern_length, attempts) VALUES (?, ?, ?, ?)",
                    (current_user.id, level, d.get("max_pattern", 0), d.get("attempts", 1)))
+        mem_id = cur.lastrowid
+        tier = "legendary" if level >= 10 else ("gold" if level >= 7 else ("silver" if level >= 4 else "bronze"))
+        record_activity(
+            user_id=current_user.id,
+            arena_type="memory",
+            title=f"Memory Palace: Level {level} Reached",
+            description=f"Working memory sequence retention up to {d.get('max_pattern', 0)} nodes across {d.get('attempts', 1)} attempts.",
+            metric_value=f"Level {level} ({d.get('max_pattern', 0)} Nodes)",
+            metric_unit="Memory",
+            score_points=level * 50,
+            tier=tier,
+            source_ref=f"memory:{mem_id}"
+        )
         xp_earned = max(0, level * 10)
         award_xp(current_user.id, xp_earned)
         check_badges(current_user.id)
@@ -852,8 +878,21 @@ def register_routes(app):
         except (ValueError, OverflowError, TypeError):
             avg = 350
         attempts = int(d.get("attempts", 5))
-        db_execute("INSERT INTO reaction_tests (user_id, best_ms, avg_ms, attempts) VALUES (?, ?, ?, ?)",
+        cur = db_execute("INSERT INTO reaction_tests (user_id, best_ms, avg_ms, attempts) VALUES (?, ?, ?, ?)",
                    (current_user.id, best, avg, attempts))
+        rid = cur.lastrowid
+        tier = "legendary" if best <= 200 else ("gold" if best <= 250 else ("silver" if best <= 350 else "bronze"))
+        record_activity(
+            user_id=current_user.id,
+            arena_type="reaction",
+            title=f"Neuromuscular Reflex: {best}ms Latency",
+            description=f"Visual stimulus response across {attempts} rounds with {avg}ms average latency.",
+            metric_value=f"{best}ms Reflex",
+            metric_unit="ms",
+            score_points=max(10, 500 - best),
+            tier=tier,
+            source_ref=f"reaction:{rid}"
+        )
         xp_earned = max(0, 100 - best // 5)
         award_xp(current_user.id, xp_earned)
         check_badges(current_user.id)
@@ -864,8 +903,21 @@ def register_routes(app):
     def submit_pattern():
         d = request.get_json()
         solved = int(d.get("puzzles_solved", 0))
-        db_execute("INSERT INTO pattern_tests (user_id, puzzles_solved, difficulty, avg_time_ms) VALUES (?, ?, ?, ?)",
+        cur = db_execute("INSERT INTO pattern_tests (user_id, puzzles_solved, difficulty, avg_time_ms) VALUES (?, ?, ?, ?)",
                    (current_user.id, solved, d.get("difficulty", "medium"), d.get("avg_time", 0)))
+        pid = cur.lastrowid
+        tier = "legendary" if solved >= 10 else ("gold" if solved >= 6 else ("silver" if solved >= 3 else "bronze"))
+        record_activity(
+            user_id=current_user.id,
+            arena_type="pattern",
+            title=f"Pattern Induction: {solved} Puzzles Solved",
+            description=f"Completed inductive visual sequence puzzles ({d.get('difficulty', 'medium').capitalize()} difficulty).",
+            metric_value=f"{solved} Patterns",
+            metric_unit="Patterns",
+            score_points=solved * 40,
+            tier=tier,
+            source_ref=f"pattern:{pid}"
+        )
         award_xp(current_user.id, solved * 15)
         check_badges(current_user.id)
         return jsonify({"status": "ok", "xp": solved * 15})
@@ -875,8 +927,21 @@ def register_routes(app):
     def submit_word():
         d = request.get_json()
         score = int(d.get("score", 0))
-        db_execute("INSERT INTO word_blitz_scores (user_id, score, words_found, time_limit) VALUES (?, ?, ?, ?)",
+        cur = db_execute("INSERT INTO word_blitz_scores (user_id, score, words_found, time_limit) VALUES (?, ?, ?, ?)",
                    (current_user.id, score, json.dumps(d.get("words", [])), d.get("time_limit", 60)))
+        wid = cur.lastrowid
+        tier = "legendary" if score >= 80 else ("gold" if score >= 50 else ("silver" if score >= 25 else "bronze"))
+        record_activity(
+            user_id=current_user.id,
+            arena_type="word",
+            title=f"Word Blitz Fluency: {score} Pts",
+            description=f"Rapid lexical vocabulary fluency in {d.get('time_limit', 60)} seconds.",
+            metric_value=f"{score} Pts",
+            metric_unit="Words",
+            score_points=score,
+            tier=tier,
+            source_ref=f"word:{wid}"
+        )
         award_xp(current_user.id, score * 3)
         check_badges(current_user.id)
         return jsonify({"status": "ok", "xp": score * 3})
@@ -1518,7 +1583,7 @@ def register_routes(app):
         if current_user.is_authenticated:
             sync_all_student_history(current_user.id)
             history_items = db_fetchall(
-                "SELECT id, arena_type, title, description, metric_value, metric_unit, score_points, tier, is_posted, created_at FROM student_activity_history WHERE user_id=? ORDER BY score_points DESC, created_at DESC",
+                "SELECT id, arena_type, title, description, metric_value, metric_unit, score_points, tier, is_posted, created_at FROM student_activity_history WHERE user_id=? ORDER BY is_posted ASC, score_points DESC, created_at DESC",
                 (current_user.id,)
             )
             unread_row = db_fetchone("SELECT COUNT(*) FROM direct_messages WHERE receiver_id=? AND read_at IS NULL", (current_user.id,))
@@ -1543,7 +1608,7 @@ def register_routes(app):
     def api_student_history():
         sync_all_student_history(current_user.id)
         rows = db_fetchall(
-            "SELECT id, arena_type, title, description, metric_value, metric_unit, score_points, tier, is_posted, created_at FROM student_activity_history WHERE user_id=? ORDER BY score_points DESC, created_at DESC",
+            "SELECT id, arena_type, title, description, metric_value, metric_unit, score_points, tier, is_posted, created_at FROM student_activity_history WHERE user_id=? ORDER BY is_posted ASC, score_points DESC, created_at DESC",
             (current_user.id,)
         )
         return jsonify([{
@@ -1560,29 +1625,61 @@ def register_routes(app):
         content = (data.get("content") or data.get("story") or "").strip()
         media_url = (data.get("media_url") or "").strip()
 
-        history_row = None
-        if history_id:
-            history_row = db_fetchone("SELECT id, arena_type, title, description, metric_value, metric_unit, score_points, tier FROM student_activity_history WHERE id=? AND user_id=?", (history_id, current_user.id))
+        if not history_id:
+            msg = "Posts must be generated from a verified achievement in your Activity History."
+            if request.is_json:
+                return jsonify({"error": msg}), 400
+            flash(msg, "error")
+            return redirect(url_for("showcase_feed"))
 
+        history_row = db_fetchone(
+            "SELECT id, arena_type, title, description, metric_value, metric_unit, score_points, tier, is_posted FROM student_activity_history WHERE id=? AND user_id=?",
+            (history_id, current_user.id)
+        )
         if not history_row:
-            if data.get("title"):
-                title = (data.get("title") or "").strip()
-                achievement_type = data.get("achievement_type", "typing_record")
-                stat_highlight = data.get("stat_highlight", "Verified Milestone")
-                rank_score = 100
-                history_id = None
-            else:
-                if request.is_json:
-                    return jsonify({"error": "Posts must be generated from a verified achievement in your Activity History."}), 400
-                flash("Posts must be created from your verified Activity History.", "error")
-                return redirect(url_for("showcase_feed"))
-        else:
-            title = history_row[2]
-            metric_val = history_row[4]
-            stat_highlight = f"{metric_val} • {history_row[7].upper()} TIER"
-            cat_map = {"typing": "typing_record", "chess": "chess_win", "checkers": "chess_win", "badge": "certificate", "math": "cognitive_talent", "olympiad": "cognitive_talent", "code": "cognitive_talent"}
-            achievement_type = cat_map.get(history_row[1], "cognitive_talent")
-            rank_score = int(history_row[6] or 100)
+            msg = "Verified achievement milestone not found in your activity record."
+            if request.is_json:
+                return jsonify({"error": msg}), 400
+            flash(msg, "error")
+            return redirect(url_for("showcase_feed"))
+
+        if history_row[8]:  # is_posted is True
+            msg = "This milestone has already been shared to the Showcase."
+            if request.is_json:
+                return jsonify({"error": msg}), 400
+            flash(msg, "error")
+            return redirect(url_for("showcase_feed"))
+
+        already_shared = db_fetchone("SELECT id FROM showcase_posts WHERE verified_history_id=?", (history_id,))
+        if already_shared:
+            msg = "This milestone has already been shared to the Showcase."
+            if request.is_json:
+                return jsonify({"error": msg}), 400
+            flash(msg, "error")
+            return redirect(url_for("showcase_feed"))
+
+        title = history_row[2]
+        metric_val = history_row[4]
+        tier_val = (history_row[7] or "bronze").upper()
+        stat_highlight = f"{metric_val} • {tier_val} TIER"
+        cat_map = {
+            "typing": "typing_record",
+            "chess": "chess_win",
+            "checkers": "chess_win",
+            "badge": "certificate",
+            "math": "cognitive_talent",
+            "memory": "cognitive_talent",
+            "reaction": "cognitive_talent",
+            "pattern": "cognitive_talent",
+            "word": "cognitive_talent",
+            "olympiad": "cognitive_talent",
+            "code": "cognitive_talent",
+            "spelling": "cognitive_talent",
+            "sudoku": "cognitive_talent",
+            "relay": "cognitive_talent"
+        }
+        achievement_type = cat_map.get(history_row[1], "cognitive_talent")
+        rank_score = int(history_row[6] or 100)
 
         if not media_url:
             defaults = {

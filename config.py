@@ -15,4 +15,19 @@ PORT = int(os.environ.get("PORT", "8080"))
 HOST = os.environ.get("HOST", "0.0.0.0")
 
 def get_db_path():
+    db_env = os.environ.get("LUMINA_DB")
+    if db_env:
+        return Path(db_env)
+    if "unittest" in sys.modules or "pytest" in sys.modules:
+        return BASE_DIR / "tests" / "test_lumina.db"
+    try:
+        from flask import current_app
+        if current_app:
+            if current_app.config.get("DATABASE_PATH"):
+                return Path(current_app.config["DATABASE_PATH"])
+            if current_app.config.get("TESTING"):
+                return BASE_DIR / "tests" / "test_lumina.db"
+    except Exception:
+        pass
     return BASE_DIR / "lumina.db"
+

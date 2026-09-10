@@ -218,6 +218,7 @@ def ensure_columns():
         ("scores", "integrity_score", "REAL DEFAULT 1.0"),
         ("showcase_posts", "achievement_rank_score", "INTEGER DEFAULT 0"),
         ("showcase_posts", "verified_history_id", "INTEGER"),
+        ("student_activity_history", "source_ref", "TEXT"),
     ]
     is_pg = bool(__import__("config").DATABASE_URL)
     db = get_db()
@@ -412,6 +413,7 @@ def init_db():
             description TEXT, metric_value TEXT NOT NULL,
             metric_unit TEXT, score_points INTEGER DEFAULT 0,
             tier TEXT DEFAULT 'bronze', is_posted INTEGER DEFAULT 0,
+            source_ref TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""",
         f"""CREATE TABLE IF NOT EXISTS parent_students (
@@ -487,60 +489,161 @@ def init_db():
         )
     """)
 
-    cnt_showcase = db_fetchone("SELECT COUNT(*) FROM showcase_posts")
-    if not cnt_showcase or cnt_showcase[0] == 0:
-        first_user = db_fetchone("SELECT id FROM users LIMIT 1")
-        uid = first_user[0] if first_user else 1
-        initial_posts = [
-            (uid, "Broke 125 WPM on Advanced Python Syntax! ⚡", "Practiced late last night with Bionic Reading enabled. The saccade fixations made code reading so much faster! Dedicated to our upcoming school competition.", "image", "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80", "typing_record", "125 WPM • 99.4% Acc", 14),
-            (uid, "Certified: Algorithmic Architect (MIT Pathway Matched) 🏛️", "My 7-axis cognitive radar just qualified for the MIT EECS pathway after yesterday's tournament win and math sprint record!", "image", "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80", "cognitive_talent", "LTI: 940 • Top 1%", 28),
-            (uid, "Checkmated Grandmaster Bot in 34 Moves! ♟️", "Double knight sacrifice in the endgame against Manisoft_Chess[GM]. ELO jumped by +45 points!", "image", "https://images.unsplash.com/photo-1529699211952-734e80c4d42b?w=800&q=80", "chess_win", "ELO: 1520 • Victory", 19)
-        ]
-        for p in initial_posts:
-            try:
-                db_execute(
-                    "INSERT INTO showcase_posts (student_id, title, content, media_type, media_url, achievement_type, stat_highlight, likes_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    p
-                )
-            except Exception:
-                pass
-
-def record_activity(user_id, arena_type, title, description, metric_value, metric_unit="", score_points=0, tier="bronze"):
-    """Records a verified achievement into the student's activity history."""
+def record_activity(user_id, arena_type, title, description, metric_value, metric_unit="", score_points=0, tier="bronze", source_ref=None):
+    """Records a verified achievement into the student's activity history without duplicates."""
     try:
+        if source_ref:
+            existing = db_fetchone("SELECT id FROM student_activity_history WHERE user_id=? AND source_ref=?", (user_id, source_ref))
+            if existing:
+                return existing[0]
+        # Also prevent duplicate milestones with identical user, arena_type, title, and metric_value
+        existing = db_fetchone(
+            "SELECT id FROM student_activity_history WHERE user_id=? AND arena_type=? AND title=? AND metric_value=?",
+            (user_id, arena_type, title, str(metric_value))
+        )
+        if existing:
+            return existing[0]
+
         return db_execute_returning_id(
             """INSERT INTO student_activity_history 
-               (user_id, arena_type, title, description, metric_value, metric_unit, score_points, tier, is_posted)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)""",
-            (user_id, arena_type, title, description, str(metric_value), metric_unit, int(score_points), tier)
+               (user_id, arena_type, title, description, metric_value, metric_unit, score_points, tier, is_posted, source_ref)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)""",
+            (user_id, arena_type, title, description, str(metric_value), metric_unit, int(score_points), tier, source_ref)
         )
     except Exception:
         return None
 
 def sync_all_student_history(user_id):
-    """Backfills activity history for a student from verified scores, math sprints, chess, ratings, and badges."""
-    existing_count = (db_fetchone("SELECT COUNT(*) FROM student_activity_history WHERE user_id=?", (user_id,)) or [0])[0]
-    if existing_count > 0:
-        return
+    """Backfills activity history for a student across all standardized arenas, ratings, and badges."""
     # 1. Best verified typing scores
-    top_scores = db_fetchall("SELECT wpm, accuracy, net_wpm, created_at FROM scores WHERE user_id=? AND (verified=1 OR verified IS NULL) AND wpm <= 260 ORDER BY net_wpm DESC LIMIT 5", (user_id,))
+    top_scores = db_fetchall(
+        "SELECT id, wpm, accuracy, net_wpm, created_at, passage_category FROM scores WHERE user_id=? AND (verified=1 OR verified IS NULL) AND wpm <= 260 ORDER BY net_wpm DESC LIMIT 5",
+        (user_id,)
+    )
     for s in top_scores:
-        wpm = round(s[0], 1)
-        acc = round(s[1], 1)
-        tier = "legendary" if wpm >= 80 else ("gold" if wpm >= 60 else "silver")
-        points = int(wpm * 10)
+        sid = s[0]
+        wpm = round(s[1], 1)
+        acc = round(s[2], 1)
+        net_wpm = round(s[3], 1)
+        cat = (s[5] or "General").capitalize()
+        tier = "legendary" if net_wpm >= 80 else ("gold" if net_wpm >= 60 else "silver")
+        points = int(net_wpm * 10)
         record_activity(
             user_id=user_id,
             arena_type="typing",
-            title=f"Typing Velocity Milestone: {wpm} WPM",
-            description=f"Achieved {wpm} Net WPM with {acc}% biometric precision in Speed Typing Arena.",
-            metric_value=f"{wpm} WPM",
+            title=f"Typing Velocity Milestone: {net_wpm} WPM",
+            description=f"Achieved {net_wpm} Net WPM with {acc}% biometric precision in {cat} Speed Typing Arena.",
+            metric_value=f"{net_wpm} WPM",
             metric_unit="WPM",
             score_points=points,
-            tier=tier
+            tier=tier,
+            source_ref=f"score:{sid}"
         )
 
-    # 2. Chess & Checkers ratings
+    # 2. Math Sprints
+    math_rows = db_fetchall(
+        "SELECT id, score, correct, total, difficulty, time_limit FROM math_sprints WHERE user_id=? ORDER BY score DESC LIMIT 5",
+        (user_id,)
+    )
+    for m in math_rows:
+        mid, sc, corr, tot = m[0], m[1], m[2], m[3]
+        diff = (m[4] or "medium").capitalize()
+        tlim = m[5] or 60
+        tier = "legendary" if sc >= 200 else ("gold" if sc >= 120 else ("silver" if sc >= 60 else "bronze"))
+        record_activity(
+            user_id=user_id,
+            arena_type="math",
+            title=f"Math Sprint Velocity: {sc} Pts",
+            description=f"Rapid mental arithmetic across {tot} problems ({corr} correct) in {tlim}s ({diff} difficulty).",
+            metric_value=f"{sc} Pts ({corr}/{tot})",
+            metric_unit="Math",
+            score_points=int(sc),
+            tier=tier,
+            source_ref=f"math:{mid}"
+        )
+
+    # 3. Reaction Tests
+    reaction_rows = db_fetchall(
+        "SELECT id, best_ms, avg_ms, attempts FROM reaction_tests WHERE user_id=? ORDER BY best_ms ASC LIMIT 5",
+        (user_id,)
+    )
+    for r in reaction_rows:
+        rid, best, avg, att = r[0], r[1], r[2], r[3]
+        tier = "legendary" if best <= 200 else ("gold" if best <= 250 else ("silver" if best <= 350 else "bronze"))
+        record_activity(
+            user_id=user_id,
+            arena_type="reaction",
+            title=f"Neuromuscular Reflex: {best}ms Latency",
+            description=f"Visual stimulus response across {att} rounds with {avg}ms average latency.",
+            metric_value=f"{best}ms Reflex",
+            metric_unit="ms",
+            score_points=max(10, 500 - best),
+            tier=tier,
+            source_ref=f"reaction:{rid}"
+        )
+
+    # 4. Pattern Tests
+    pattern_rows = db_fetchall(
+        "SELECT id, puzzles_solved, difficulty, avg_time_ms FROM pattern_tests WHERE user_id=? ORDER BY puzzles_solved DESC LIMIT 5",
+        (user_id,)
+    )
+    for p in pattern_rows:
+        pid, solved = p[0], p[1]
+        diff = (p[2] or "medium").capitalize()
+        tier = "legendary" if solved >= 10 else ("gold" if solved >= 6 else ("silver" if solved >= 3 else "bronze"))
+        record_activity(
+            user_id=user_id,
+            arena_type="pattern",
+            title=f"Pattern Induction: {solved} Puzzles Solved",
+            description=f"Completed inductive visual sequence puzzles ({diff} difficulty).",
+            metric_value=f"{solved} Patterns",
+            metric_unit="Patterns",
+            score_points=solved * 40,
+            tier=tier,
+            source_ref=f"pattern:{pid}"
+        )
+
+    # 5. Memory Tests
+    memory_rows = db_fetchall(
+        "SELECT id, level_reached, max_pattern_length, attempts FROM memory_tests WHERE user_id=? ORDER BY level_reached DESC LIMIT 5",
+        (user_id,)
+    )
+    for mem in memory_rows:
+        mem_id, lvl, max_pat, att = mem[0], mem[1], mem[2], mem[3]
+        tier = "legendary" if lvl >= 10 else ("gold" if lvl >= 7 else ("silver" if lvl >= 4 else "bronze"))
+        record_activity(
+            user_id=user_id,
+            arena_type="memory",
+            title=f"Memory Palace: Level {lvl} Reached",
+            description=f"Working memory sequence retention up to {max_pat} nodes across {att} attempts.",
+            metric_value=f"Level {lvl} ({max_pat} Nodes)",
+            metric_unit="Memory",
+            score_points=lvl * 50,
+            tier=tier,
+            source_ref=f"memory:{mem_id}"
+        )
+
+    # 6. Word Blitz
+    word_rows = db_fetchall(
+        "SELECT id, score, time_limit FROM word_blitz_scores WHERE user_id=? ORDER BY score DESC LIMIT 5",
+        (user_id,)
+    )
+    for w in word_rows:
+        wid, sc, tlim = w[0], w[1], w[2] or 60
+        tier = "legendary" if sc >= 80 else ("gold" if sc >= 50 else ("silver" if sc >= 25 else "bronze"))
+        record_activity(
+            user_id=user_id,
+            arena_type="word",
+            title=f"Word Blitz Fluency: {sc} Pts",
+            description=f"Rapid lexical vocabulary fluency in {tlim} seconds.",
+            metric_value=f"{sc} Pts",
+            metric_unit="Words",
+            score_points=sc,
+            tier=tier,
+            source_ref=f"word:{wid}"
+        )
+
+    # 7. Chess & Checkers ratings
     ratings = db_fetchall("SELECT game_type, rating, games_played FROM user_ratings WHERE user_id=? AND games_played > 0", (user_id,))
     for r in ratings:
         gtype = r[0]
@@ -554,10 +657,11 @@ def sync_all_student_history(user_id):
             metric_value=f"{elo} ELO",
             metric_unit="ELO",
             score_points=int(elo / 2),
-            tier=tier
+            tier=tier,
+            source_ref=f"rating:{gtype}"
         )
 
-    # 3. Badges
+    # 8. Badges
     badges = db_fetchall("SELECT badge_id, awarded_at FROM user_badges WHERE user_id=?", (user_id,))
     for b in badges:
         bid = b[0]
@@ -570,7 +674,8 @@ def sync_all_student_history(user_id):
             metric_value=meta.get('name', 'Badge'),
             metric_unit="Badge",
             score_points=meta.get('xp', 50),
-            tier="gold"
+            tier="gold",
+            source_ref=f"badge:{bid}"
         )
 
 

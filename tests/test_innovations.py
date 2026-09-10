@@ -89,28 +89,50 @@ class TestGlobalInnovations(unittest.TestCase):
         self.assertIn(b"Student Achievement Showcase", resp_parents.data)
 
     def test_showcase_post_creation_and_like(self):
-        """Verify students can publish milestones and users can like them."""
+        """Verify students can only publish verified milestones and users can like them."""
         with self.app.app_context():
+            from models import record_activity
             rand_id = uuid.uuid4().hex[:8]
             uname = f"star_{rand_id}"
             uid = User.create(uname, "Star Typist", f"{uname}@example.com", "pass123")
+            hist_id = record_activity(
+                user_id=uid,
+                arena_type="typing",
+                title="Broke 142 WPM on C++ Algorithms! ⚡",
+                description="Zero backspaces in 60s drill sprint.",
+                metric_value="142 WPM",
+                metric_unit="WPM",
+                score_points=1420,
+                tier="legendary"
+            )
 
         with self.client.session_transaction() as sess:
             sess["_user_id"] = str(uid)
 
-        # Create post via JSON API
+        # Attempt to forge post without valid history_id should fail
+        forge_resp = self.client.post("/showcase/post", json={
+            "title": "Forged 200 WPM Record",
+            "content": "I forged this!"
+        })
+        self.assertEqual(forge_resp.status_code, 400)
+
+        # Create post via verified history_id
         post_resp = self.client.post("/showcase/post", json={
-            "title": "Broke 142 WPM on C++ Algorithms! ⚡",
-            "achievement_type": "typing_record",
-            "stat_highlight": "142 WPM • 99.8% Acc",
+            "history_id": hist_id,
             "content": "Zero backspaces in 60s drill sprint.",
-            "media_url": "https://example.com/speed.jpg",
-            "media_type": "image"
+            "media_url": "https://example.com/speed.jpg"
         })
         self.assertEqual(post_resp.status_code, 200)
         post_data = post_resp.get_json()
         self.assertTrue(post_data["success"])
         post_id = post_data["post_id"]
+
+        # Attempting to post the same history_id again should fail
+        dup_resp = self.client.post("/showcase/post", json={
+            "history_id": hist_id,
+            "content": "Trying duplicate"
+        })
+        self.assertEqual(dup_resp.status_code, 400)
 
         # Like the post
         like_resp = self.client.post(f"/showcase/like/{post_id}")
@@ -122,6 +144,7 @@ class TestGlobalInnovations(unittest.TestCase):
     def test_parent_anonymous_messaging_and_producer_audit(self):
         """Verify parent anonymous messaging: alias shown to student, real ID preserved for Producer audit."""
         with self.app.app_context():
+            from models import record_activity
             rand_id = uuid.uuid4().hex[:8]
             student_name = f"stud_{rand_id}"
             student_id = User.create(student_name, "Honors Student", f"{student_name}@example.com", "pass123")
@@ -132,11 +155,30 @@ class TestGlobalInnovations(unittest.TestCase):
             admin_name = f"admin_{rand_id}"
             admin_id = User.create(admin_name, "School Producer", f"{admin_name}@example.com", "pass123", role="admin")
 
-        # Parent logs in and sends an anonymous message on post 1
+            hist_id = record_activity(
+                user_id=student_id,
+                arena_type="olympiad",
+                title="STEM Olympiad High Score",
+                description="9/10 rapid-fire questions correct",
+                metric_value="9/10",
+                score_points=450,
+                tier="gold"
+            )
+
+        with self.client.session_transaction() as sess:
+            sess["_user_id"] = str(student_id)
+
+        post_resp = self.client.post("/showcase/post", json={
+            "history_id": hist_id,
+            "content": "Great STEM Olympiad session!"
+        })
+        post_id = post_resp.get_json()["post_id"]
+
+        # Parent logs in and sends an anonymous message on this post
         with self.client.session_transaction() as sess:
             sess["_user_id"] = str(parent_id)
 
-        msg_resp = self.client.post("/showcase/message/1", json={
+        msg_resp = self.client.post(f"/showcase/message/{post_id}", json={
             "message": "Incredible focus and poise! Keep up the brilliant work.",
             "is_anonymous": 1,
             "parent_alias": "Proud Parent"

@@ -15,6 +15,7 @@ class TestTalentEngine(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = create_app()
+        cls.app.config["TESTING"] = True
         cls.app_context = cls.app.app_context()
         cls.app_context.push()
         init_db()

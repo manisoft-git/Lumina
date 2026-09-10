@@ -779,13 +779,15 @@
                 <select id="history-select" required onchange="updateHistoryPreview(this)">
                     {% for h in history_items %}
                     <option value="{{ h[0] }}" 
+                            {% if h[8] %}disabled style="color:var(--muted);"{% endif %}
                             data-title="{{ h[2] }}" 
                             data-metric="{{ h[4] }}" 
                             data-unit="{{ h[5] }}" 
                             data-tier="{{ h[7] }}" 
                             data-score="{{ h[6] }}"
-                            data-arena="{{ h[1] }}">
-                        {{ '⭐' if h[8] else '✨' }} {{ h[2] }} — {{ h[4] }} ({{ h[7]|upper }} • {{ h[6] }} pts)
+                            data-arena="{{ h[1] }}"
+                            data-posted="{{ '1' if h[8] else '0' }}">
+                        {{ '✅ [Already Shared] ' if h[8] else '✨ ' }}{{ h[2] }} — {{ h[4] }} ({{ h[7]|upper }} • {{ h[6] }} pts)
                     </option>
                     {% endfor %}
                 </select>
@@ -998,7 +1000,18 @@ function openPostModal() {
     if (m) {
         m.style.display = 'flex';
         const sel = document.getElementById('history-select');
-        if (sel) updateHistoryPreview(sel);
+        if (sel) {
+            // Pick first enabled option if current is disabled
+            if (sel.selectedOptions[0] && sel.selectedOptions[0].disabled) {
+                for (let i = 0; i < sel.options.length; i++) {
+                    if (!sel.options[i].disabled) {
+                        sel.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            updateHistoryPreview(sel);
+        }
     }
 }
 function closePostModal() {
@@ -1017,16 +1030,22 @@ function updateHistoryPreview(sel) {
     const score = opt.getAttribute('data-score') || '0';
     const tier = opt.getAttribute('data-tier') || 'Standard';
     const arena = opt.getAttribute('data-arena') || 'Arena';
+    const isPosted = opt.disabled || opt.getAttribute('data-posted') === '1';
 
     const pArena = document.getElementById('preview-arena-tag');
     const pScore = document.getElementById('preview-score-tag');
     const pTitle = document.getElementById('preview-title');
     const pStat = document.getElementById('preview-stat');
+    const submitBtn = document.getElementById('post-submit-btn');
 
     if (pArena) pArena.textContent = `${arena.toUpperCase()} • ${tier.toUpperCase()} TIER`;
-    if (pScore) pScore.innerHTML = `🔥 ${score} Rank Pts`;
+    if (pScore) pScore.innerHTML = isPosted ? '✅ ALREADY PUBLISHED' : `🔥 ${score} Rank Pts`;
     if (pTitle) pTitle.textContent = title;
     if (pStat) pStat.textContent = `Verified Result: ${metric}`;
+    if (submitBtn) {
+        submitBtn.disabled = isPosted;
+        submitBtn.textContent = isPosted ? 'Already Published' : '🚀 Publish Milestone';
+    }
 }
 
 function submitShowcasePost(e) {
