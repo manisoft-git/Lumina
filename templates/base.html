@@ -77,8 +77,8 @@
                         <a href="{{ url_for('games_hub') }}" class="nav-dropdown-item">
                             <span class="item-icon">🎮</span>
                             <div>
-                                <div class="item-title">All 12 Cognitive Arenas</div>
-                                <div class="item-desc">Chess, Math, Olympiad, Code, Sudoku, etc.</div>
+                                <div class="item-title">All 14 Cognitive Arenas</div>
+                                <div class="item-desc">Chess, Math, GeoQuest, Grammar, Sudoku, etc.</div>
                             </div>
                         </a>
                         <a href="{{ url_for('tournament_list') }}" class="nav-dropdown-item">
@@ -290,6 +290,8 @@
             { title: "Code Debugger & Algorithmic Sprint", category: "Play & Compete", icon: "💻", url: "{{ url_for('code_sprint_arena') }}", badge: "Algorithms" },
             { title: "Oratory Spelling Bee", category: "Play & Compete", icon: "🐝", url: "{{ url_for('spelling_bee_arena') }}", badge: "Lexicon" },
             { title: "Sudoku Deductive Grid", category: "Play & Compete", icon: "🔢", url: "{{ url_for('sudoku_arena') }}", badge: "Logic" },
+            { title: "African & Global GeoQuest", category: "Play & Compete", icon: "🌍", url: "{{ url_for('geo_quest_arena') }}", badge: "Geography" },
+            { title: "English Grammar & Syntax Scalpel", category: "Play & Compete", icon: "✒️", url: "{{ url_for('grammar_scalpel_arena') }}", badge: "Grammar & Concord" },
             { title: "Tournaments Bracket", category: "Play & Compete", icon: "🏆", url: "{{ url_for('tournament_list') }}", badge: "Bracket" },
             { title: "7-Axis Talent Profile", category: "Talent & Growth", icon: "🎯", url: "{{ url_for('talent_profile_page') }}", badge: "LTI Radar" },
             { title: "Performance Analytics", category: "Talent & Growth", icon: "📊", url: "{{ url_for('analytics') }}", badge: "Telemetry" },

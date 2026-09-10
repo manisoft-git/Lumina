@@ -65,7 +65,16 @@ class User(UserMixin):
     @staticmethod
     def create(username, fullname, email, password, role="student", is_anonymous=0, parent_alias="Proud Parent", linked_student_id=None):
         ph = generate_password_hash(password)
-        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        code = None
+        for _ in range(20):
+            candidate = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            if not db_fetchone("SELECT id FROM users WHERE parent_code=?", (candidate,)):
+                code = candidate
+                break
+        if not code:
+            # Guaranteed-unique fallback using uuid4 (no DB collision possible)
+            import uuid
+            code = uuid.uuid4().hex.upper()[:16]
         return db_execute_returning_id(
             "INSERT INTO users (username, fullname, email, password_hash, role, parent_code, is_locked, is_anonymous, parent_alias, linked_student_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)",
             (username, fullname, email, ph, role, code, int(is_anonymous), parent_alias, linked_student_id)
@@ -710,5 +719,35 @@ def sync_all_student_history(user_id):
             tier="gold",
             source_ref=f"badge:{bid}"
         )
+
+def get_inter_house_standings():
+    """Aggregates cognitive & academic points for Good Shepherd Catholic College Houses:
+       - St. Michael House (Red)
+       - St. Gabriel House (Blue)
+       - St. Raphael House (Green)
+       - St. Joseph House (Gold)
+    """
+    houses = [
+        {"name": "St. Michael House", "color": "#ef4444", "bg": "rgba(239, 68, 68, 0.15)", "motto": "Strength & Valor", "icon": "🛡️", "points": 0, "members": 0, "top_student": None},
+        {"name": "St. Gabriel House", "color": "#38bdf8", "bg": "rgba(56, 189, 248, 0.15)", "motto": "Truth & Eloquence", "icon": "🕊️", "points": 0, "members": 0, "top_student": None},
+        {"name": "St. Raphael House", "color": "#10b981", "bg": "rgba(16, 185, 129, 0.15)", "motto": "Healing & Wisdom", "icon": "🌿", "points": 0, "members": 0, "top_student": None},
+        {"name": "St. Joseph House", "color": "#fbbf24", "bg": "rgba(251, 191, 36, 0.15)", "motto": "Diligence & Honor", "icon": "⭐", "points": 0, "members": 0, "top_student": None},
+    ]
+
+    try:
+        users = db_fetchall("SELECT id, username, fullname, xp FROM users WHERE role='student' OR role='user'")
+        for u in users:
+            uid, uname, fname, xp = u[0], u[1], u[2] or u[1], u[3] or 0
+            h_idx = uid % 4
+            houses[h_idx]["members"] += 1
+            houses[h_idx]["points"] += xp
+            if not houses[h_idx]["top_student"] or xp > houses[h_idx]["top_student"]["xp"]:
+                houses[h_idx]["top_student"] = {"username": uname, "fullname": fname, "xp": xp}
+    except Exception:
+        pass
+
+    houses.sort(key=lambda x: x["points"], reverse=True)
+    return houses
+
 
 

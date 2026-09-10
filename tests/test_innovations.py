@@ -67,7 +67,10 @@ class TestGlobalInnovations(unittest.TestCase):
 
     def test_chess_bot_engine(self):
         """Verify the Chess Bot plays legal tactical moves without unpacking errors."""
-        from sockets import SimpleChessBot
+        from sockets import SimpleChessBot, CHESS_AVAILABLE
+        if not CHESS_AVAILABLE:
+            self.skipTest("chess library not installed in environment")
+            return
         import chess
         bot = SimpleChessBot(depth=2)
         board = chess.Board()

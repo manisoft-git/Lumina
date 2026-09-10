@@ -38,16 +38,18 @@ class TestTalentArenasAndInbox(unittest.TestCase):
         self.assertIn('🎓 Briefing', html)
         self.assertNotIn('🎓 Principal Briefing', html)
 
-    def test_games_hub_twelve_domains(self):
-        """Verify Games Hub displays all 12 domains including Cowbellpedia Olympiad, Code Debugger, Spelling Bee, and Sudoku."""
+    def test_games_hub_fourteen_domains(self):
+        """Verify Games Hub displays all 14 domains including Cowbellpedia Olympiad, Code Debugger, Spelling Bee, Sudoku, GeoQuest, and Grammar Scalpel."""
         resp = self.client.get('/games')
         self.assertEqual(resp.status_code, 200)
         html = resp.data.decode('utf-8')
-        self.assertIn('12 standardized cognitive domains', html)
+        self.assertIn('14 standardized cognitive & academic domains', html)
         self.assertIn('/olympiad', html)
         self.assertIn('/code_sprint', html)
         self.assertIn('/spelling_bee', html)
         self.assertIn('/sudoku', html)
+        self.assertIn('/geo_quest', html)
+        self.assertIn('/grammar_scalpel', html)
 
     def test_olympiad_arena_and_submit(self):
         """Verify Cowbellpedia STEM Olympiad arena loads and records score/XP."""
@@ -126,6 +128,46 @@ class TestTalentArenasAndInbox(unittest.TestCase):
         self.assertEqual(data.get('status'), 'ok')
         self.assertGreater(data.get('xp_earned', 0), 0)
 
+    def test_geo_quest_arena_and_submit(self):
+        """Verify African & Global GeoQuest arena loads and records score/XP."""
+        with self.client.session_transaction() as sess:
+            sess['_user_id'] = str(self.uid)
+
+        resp = self.client.get('/geo_quest')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'GeoQuest', resp.data)
+
+        # Submit GeoQuest score
+        sub_resp = self.client.post('/api/geo_quest/submit', json={
+            'score': 12,
+            'total': 15
+        })
+        self.assertEqual(sub_resp.status_code, 200)
+        data = sub_resp.get_json()
+        self.assertEqual(data.get('status'), 'ok')
+        self.assertEqual(data.get('score'), 12)
+        self.assertGreater(data.get('xp_earned', 0), 0)
+
+    def test_grammar_scalpel_arena_and_submit(self):
+        """Verify English Grammar & Syntax Scalpel arena loads and records score/XP."""
+        with self.client.session_transaction() as sess:
+            sess['_user_id'] = str(self.uid)
+
+        resp = self.client.get('/grammar_scalpel')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Grammar', resp.data)
+
+        # Submit Grammar Scalpel score
+        sub_resp = self.client.post('/api/grammar_scalpel/submit', json={
+            'score': 14,
+            'total': 15
+        })
+        self.assertEqual(sub_resp.status_code, 200)
+        data = sub_resp.get_json()
+        self.assertEqual(data.get('status'), 'ok')
+        self.assertEqual(data.get('score'), 14)
+        self.assertGreater(data.get('xp_earned', 0), 0)
+
     def test_whatsapp_unread_cleared_on_reply(self):
         """Verify that answering a WhatsApp message clears unread signs completely."""
         cid = f'direct_{min(self.uid, self.pid)}_{max(self.uid, self.pid)}'
@@ -182,3 +224,45 @@ class TestTalentArenasAndInbox(unittest.TestCase):
         resp = self.client.post('/api/messages/mark_read', json={'conversation_id': cid})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.get_json().get('unread_count'), 0)
+
+    def test_inter_house_standings_aggregation(self):
+        """Verify get_inter_house_standings aggregates all 4 Good Shepherd houses."""
+        from models import get_inter_house_standings
+        with self.app.app_context():
+            standings = get_inter_house_standings()
+            self.assertEqual(len(standings), 4)
+            names = [h['name'] for h in standings]
+            self.assertIn('St. Michael House', names)
+            self.assertIn('St. Gabriel House', names)
+            self.assertIn('St. Raphael House', names)
+            self.assertIn('St. Joseph House', names)
+            for h in standings:
+                self.assertIn('points', h)
+                self.assertIn('members', h)
+                self.assertIn('color', h)
+
+    def test_certificates_distinction_page(self):
+        """Verify certificates page loads with Good Shepherd distinction diploma."""
+        with self.client.session_transaction() as sess:
+            sess['_user_id'] = str(self.uid)
+
+        resp = self.client.get('/certificates')
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode('utf-8')
+        self.assertIn('Good Shepherd Catholic College', html)
+        self.assertIn('Certificate of Academic Distinction', html)
+        self.assertIn('GeoQuest', html)
+        self.assertIn('Grammar Scalpel', html)
+
+    def test_principal_briefing_inter_house_and_fourteen_arenas(self):
+        """Verify Principal Briefing presents 14 arenas and Good Shepherd House Championship."""
+        with self.client.session_transaction() as sess:
+            sess['principal_unlocked'] = True
+
+        resp = self.client.get('/principal')
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode('utf-8')
+        self.assertIn('14 Arenas', html)
+        self.assertIn('Inter-House Cognitive & Academic Championship', html)
+        self.assertIn('St. Michael House', html)
+

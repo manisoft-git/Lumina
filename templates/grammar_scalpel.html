@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+{% block title %}Grammar & Syntax Scalpel — Lumina{% endblock %}
+{% block head %}
+<style>
+.grammar-container { max-width: 840px; margin: 20px auto 40px; padding: 0 16px; }
+.grammar-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+    position: relative;
+    overflow: hidden;
+}
+.grammar-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+}
+.grammar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.grammar-badge {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.grammar-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+.grammar-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #a855f7);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+.q-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.5;
+    margin-bottom: 22px;
+    color: var(--text);
+}
+.sentence-box {
+    background: rgba(99, 102, 241, 0.08);
+    border-left: 4px solid #6366f1;
+    padding: 16px 20px;
+    border-radius: 4px 8px 8px 4px;
+    font-size: 1.15rem;
+    font-style: italic;
+    color: #e0e7ff;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+@media (max-width: 600px) {
+    .options-grid { grid-template-columns: 1fr; }
+    .grammar-card { padding: 20px 14px; }
+    .q-title { font-size: 1.15rem; }
+    .sentence-box { font-size: 1rem; padding: 12px 14px; }
+}
+.opt-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    text-align: left;
+    font-size: 0.98rem;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.opt-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+}
+.opt-btn.correct {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border-color: #10b981 !important;
+    color: #34d399 !important;
+    font-weight: 700;
+}
+.opt-btn.wrong {
+    background: rgba(239, 68, 68, 0.2) !important;
+    border-color: #ef4444 !important;
+    color: #f87171 !important;
+}
+.opt-letter {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+.explanation-box {
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    display: none;
+    line-height: 1.5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grammar-container">
+    <div class="grammar-card">
+        <!-- Start Screen -->
+        <div id="start-screen" style="text-align:center; padding:30px 10px;">
+            <div style="font-size:3.8rem; margin-bottom:12px;">✍️</div>
+            <span class="grammar-badge">Arena 14: Lexical & Syntactic Precision</span>
+            <h1 style="font-size:2.2rem; font-weight:900; margin:14px 0 8px;">Grammar & Syntax Scalpel</h1>
+            <p style="color:var(--muted); font-size:1.05rem; max-width:600px; margin:0 auto 24px; line-height:1.5;">
+                10 surgical challenges in English concord, subject-verb agreement, idiomatic accuracy, and prepositional mastery based on WAEC, NECO & JAMB standards. Repair linguistic defects with surgical precision!
+            </p>
+            <button class="btn btn-primary" onclick="startGrammarScalpel()" style="padding:12px 36px; font-size:1.1rem; font-weight:800; background:linear-gradient(135deg,#6366f1,#4f46e5); border:none;">
+                🔬 Enter Grammar Scalpel
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" style="display:none;">
+            <div class="grammar-header">
+                <div>
+                    <span class="grammar-badge" id="category-badge">Subject-Verb Concord</span>
+                    <span style="margin-left:10px; font-weight:700; font-size:0.9rem; color:var(--muted);" id="q-counter">Question 1/10</span>
+                </div>
+                <div style="display:flex; gap:16px; font-weight:700;">
+                    <div style="color:var(--accent); font-size:1.1rem;">⏱️ <span id="timer-val">15</span>s</div>
+                    <div style="color:var(--primary);">Score: <span id="current-score">0</span></div>
+                </div>
+            </div>
+
+            <div class="grammar-progress-bar">
+                <div class="grammar-progress-fill" id="progress-fill"></div>
+            </div>
+
+            <div style="font-size:0.8rem; color:#818cf8; text-transform:uppercase; font-weight:800; margin-bottom:6px;">Syntactic Examination</div>
+            <div class="sentence-box" id="sentence-text">Loading sentence...</div>
+            <div class="q-title" id="q-prompt">Select the correct completion:</div>
+
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="explanation-box" id="explanation-box"></div>
+
+            <button id="next-btn" class="btn btn-primary" onclick="nextQuestion()" style="display:none; width:100%; padding:12px; font-weight:800; background:#6366f1;">
+                Next Challenge →
+            </button>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" style="display:none; text-align:center; padding:30px 10px;">
+            <div id="res-icon" style="font-size:4rem; margin-bottom:12px;">🏅</div>
+            <h2 style="font-size:2rem; font-weight:900; margin-bottom:6px;">Syntactic Audit Complete!</h2>
+            <p style="color:var(--muted); font-size:1.05rem; margin-bottom:24px;">Your grammatical precision and verbal fluency index have been calibrated.</p>
+
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; max-width:480px; margin:0 auto 28px;">
+                <div style="background:var(--surface2); padding:16px; border-radius:12px; border:1px solid var(--border);">
+                    <div style="font-size:0.75rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Score</div>
+                    <div id="res-score" style="font-size:1.8rem; font-weight:900; color:#818cf8; margin-top:4px;">0/10</div>
+                </div>
+                <div style="background:var(--surface2); padding:16px; border-radius:12px; border:1px solid var(--border);">
+                    <div style="font-size:0.75rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Accuracy</div>
+                    <div id="res-acc" style="font-size:1.8rem; font-weight:900; color:var(--primary); margin-top:4px;">0%</div>
+                </div>
+                <div style="background:var(--surface2); padding:16px; border-radius:12px; border:1px solid var(--border);">
+                    <div style="font-size:0.75rem; color:var(--muted); font-weight:700; text-transform:uppercase;">XP Awarded</div>
+                    <div id="res-xp" style="font-size:1.8rem; font-weight:900; color:#fbbf24; margin-top:4px;">+0</div>
+                </div>
+            </div>
+
+            <div id="res-feedback" style="font-size:1.1rem; font-weight:700; color:var(--text); margin-bottom:24px;"></div>
+
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="startGrammarScalpel()" style="padding:10px 24px; font-weight:700; background:#6366f1;">
+                    🔄 Retest Syntax
+                </button>
+                <a href="{{ url_for('showcase_feed') }}" class="btn btn-secondary" style="padding:10px 24px; font-weight:700;">
+                    🌟 View Showcase Feed
+                </a>
+                <a href="{{ url_for('games_hub') }}" class="btn btn-secondary" style="padding:10px 24px; font-weight:700;">
+                    🎮 Games Hub
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const GRAMMAR_QUESTIONS = [
+    {
+        cat: "Subject-Verb Concord",
+        sentence: "Neither of the two candidates _____ qualified for the academic scholarship.",
+        prompt: "Choose the grammatically sound verb:",
+        options: ["is", "are", "were", "have been"],
+        ans: 0,
+        exp: "Rule: 'Neither of' followed by a plural noun takes a singular verb in formal grammatical concord ('Neither of the two candidates is...')."
+    },
+    {
+        cat: "Parenthetical Concord",
+        sentence: "The principal, along with all the senior science teachers, _____ attending the conference.",
+        prompt: "Choose the correct verb form:",
+        options: ["is", "are", "were", "have been"],
+        ans: 0,
+        exp: "Rule: Phrases beginning with 'along with', 'as well as', or 'in addition to' are parenthetical and do not alter the singular subject ('The principal... is')."
+    },
+    {
+        cat: "Prepositional Precision",
+        sentence: "The brilliant student was congratulated _____ his outstanding WAEC result.",
+        prompt: "Choose the correct preposition:",
+        options: ["on", "for", "at", "about"],
+        ans: 0,
+        exp: "Rule: Standard English syntax requires the preposition 'on' with congratulate ('congratulate someone ON an achievement')."
+    },
+    {
+        cat: "Correlative Concord",
+        sentence: "Not only the students but also the teacher _____ astonished by the robotic demonstration.",
+        prompt: "Choose the correct verb:",
+        options: ["was", "were", "are", "have been"],
+        ans: 0,
+        exp: "Rule: In 'not only... but also', the verb agrees in number with the closer subject ('the teacher was')."
+    },
+    {
+        cat: "Conditional Subjunctive",
+        sentence: "If I _____ the Minister of Education, I would introduce coding to every primary school.",
+        prompt: "Choose the correct hypothetical subjunctive verb:",
+        options: ["were", "was", "am", "would be"],
+        ans: 0,
+        exp: "Rule: The past subjunctive mood uses 'were' for all persons in hypothetical, contrary-to-fact conditions ('If I were...')."
+    },
+    {
+        cat: "Collective Noun Concord",
+        sentence: "The committee _____ divided in their opinions regarding the new grading policy.",
+        prompt: "Choose the verb reflecting individual members acting separately:",
+        options: ["were", "was", "is", "has been"],
+        ans: 0,
+        exp: "Rule: When collective nouns act as individual members with divergent actions/opinions, a plural verb ('were divided in their opinions') is appropriate."
+    },
+    {
+        cat: "Idiomatic Precision",
+        sentence: "Manifest resolved to work hard in order to pass his exams _____ flying colours.",
+        prompt: "Choose the exact idiomatic preposition:",
+        options: ["with", "in", "by", "on"],
+        ans: 0,
+        exp: "Idiom: The established English idiom is 'to pass WITH flying colours', meaning with exceptional distinction."
+    },
+    {
+        cat: "Dangling Modifiers",
+        sentence: "Walking across the campus library, _____.",
+        prompt: "Select the grammatically correct completion avoiding a dangling participle:",
+        options: [
+            "the student noticed the new research journals",
+            "the books were neatly arranged on the shelves",
+            "a loud bell suddenly interrupted the study session",
+            "the exam papers were being distributed"
+        ],
+        ans: 0,
+        exp: "Rule: The introductory participle 'Walking across the campus library' must logically modify the immediate subject of the sentence ('the student')."
+    },
+    {
+        cat: "Indefinite Pronouns",
+        sentence: "Each of the prize-winning essays _____ thoroughly examined by the external moderators.",
+        prompt: "Choose the correct verb:",
+        options: ["was", "were", "are", "have been"],
+        ans: 0,
+        exp: "Rule: The distributive pronoun 'Each' is singular and strictly governs a singular verb ('Each was thoroughly examined')."
+    },
+    {
+        cat: "Question Tags",
+        sentence: "The students hardly made any noise during the physics practical, _____?",
+        prompt: "Select the correct tag question:",
+        options: ["did they", "didn't they", "do they", "don't they"],
+        ans: 0,
+        exp: "Rule: 'Hardly' carries a negative sense, requiring a positive tag question in the simple past ('did they?')."
+    },
+    {
+        cat: "Pluralia Tantum & Concord",
+        sentence: "The pairs of scissors on the laboratory counter _____ sharpened yesterday.",
+        prompt: "Choose the correct verb form:",
+        options: ["were", "was", "is", "has been"],
+        ans: 0,
+        exp: "Rule: 'The pairs' is plural and takes the plural verb 'were'."
+    },
+    {
+        cat: "Lexical Nuance",
+        sentence: "The academic council found the evidence presented by the scholar to be completely _____.",
+        prompt: "Select the word meaning undeniable and unquestionable:",
+        options: ["irrefutable", "inflammable", "ambivalent", "illusory"],
+        ans: 0,
+        exp: "Vocabulary: 'Irrefutable' means impossible to deny or disprove, fitting scholarly scientific verification."
+    },
+    {
+        cat: "Conjunctions & Concord",
+        sentence: "Neither the captain nor the sailors _____ prepared for the tempestuous sea.",
+        prompt: "Choose the verb agreeing with the closest subject:",
+        options: ["were", "was", "is", "has been"],
+        ans: 0,
+        exp: "Rule: With 'neither... nor', the verb agrees with the closer subject ('sailors were')."
+    },
+    {
+        cat: "Tense Sequence",
+        sentence: "By the time the bell rings, the SS3 students _____ their final mock paper.",
+        prompt: "Select the future perfect tense:",
+        options: ["will have submitted", "would submit", "have submitted", "will submit"],
+        ans: 0,
+        exp: "Rule: The future perfect tense ('will have submitted') expresses an action completed prior to a specific future moment."
+    },
+    {
+        cat: "Concord with Amounts",
+        sentence: "Ten thousand naira _____ considered an adequate stipend for the student's weekly upkeep.",
+        prompt: "Choose the singular verb for a unified quantity:",
+        options: ["is", "are", "were", "have been"],
+        ans: 0,
+        exp: "Rule: Expressions of money, time, and distance functioning as a unified sum take a singular verb ('Ten thousand naira is...')."
+    }
+];
+
+let sessionQuestions = [];
+let currentQIndex = 0;
+let score = 0;
+let timer = null;
+let timeLeft = 15;
+let answered = false;
+
+function playSound(type) {
+    if (window.soundFx && window.soundFx.play) {
+        window.soundFx.play(type);
+    } else {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            if (type === 'correct') {
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+                osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+            } else {
+                osc.frequency.setValueAtTime(200, ctx.currentTime);
+            }
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.3);
+        } catch(e) {}
+    }
+}
+
+function startGrammarScalpel() {
+    sessionQuestions = [...GRAMMAR_QUESTIONS].sort(() => 0.5 - Math.random()).slice(0, 10);
+    currentQIndex = 0;
+    score = 0;
+    
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('results-screen').style.display = 'none';
+    document.getElementById('quiz-screen').style.display = 'block';
+    
+    loadQuestion();
+}
+
+function loadQuestion() {
+    answered = false;
+    clearInterval(timer);
+    
+    const q = sessionQuestions[currentQIndex];
+    document.getElementById('category-badge').textContent = q.cat;
+    document.getElementById('q-counter').textContent = `Question ${currentQIndex + 1}/10`;
+    document.getElementById('current-score').textContent = score;
+    document.getElementById('sentence-text').textContent = `"${q.sentence}"`;
+    document.getElementById('q-prompt').textContent = q.prompt;
+    document.getElementById('explanation-box').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+    
+    document.getElementById('progress-fill').style.width = `${(currentQIndex / 10) * 100}%`;
+    
+    const container = document.getElementById('options-container');
+    container.innerHTML = '';
+    
+    const letters = ['A', 'B', 'C', 'D'];
+    q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.innerHTML = `<span class="opt-letter">${letters[idx]}</span> <span>${opt}</span>`;
+        btn.onclick = () => selectAnswer(idx);
+        container.appendChild(btn);
+    });
+    
+    timeLeft = 15;
+    document.getElementById('timer-val').textContent = timeLeft;
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer-val').textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            timeOut();
+        }
+    }, 1000);
+}
+
+function selectAnswer(selectedIdx) {
+    if (answered) return;
+    answered = true;
+    clearInterval(timer);
+    
+    const q = sessionQuestions[currentQIndex];
+    const buttons = document.querySelectorAll('.opt-btn');
+    buttons.forEach(b => b.disabled = true);
+    
+    if (selectedIdx === q.ans) {
+        buttons[selectedIdx].classList.add('correct');
+        score++;
+        document.getElementById('current-score').textContent = score;
+        playSound('correct');
+    } else {
+        buttons[selectedIdx].classList.add('wrong');
+        buttons[q.ans].classList.add('correct');
+        playSound('wrong');
+    }
+    
+    const expBox = document.getElementById('explanation-box');
+    expBox.innerHTML = `<strong>📝 Grammatical Rule:</strong> ${q.exp}`;
+    expBox.style.display = 'block';
+    
+    document.getElementById('next-btn').style.display = 'block';
+}
+
+function timeOut() {
+    if (answered) return;
+    answered = true;
+    const q = sessionQuestions[currentQIndex];
+    const buttons = document.querySelectorAll('.opt-btn');
+    buttons.forEach(b => b.disabled = true);
+    buttons[q.ans].classList.add('correct');
+    playSound('wrong');
+    
+    const expBox = document.getElementById('explanation-box');
+    expBox.innerHTML = `<strong>⏱️ Time Expired!</strong> Correct: <strong>${q.options[q.ans]}</strong>. ${q.exp}`;
+    expBox.style.display = 'block';
+    document.getElementById('next-btn').style.display = 'block';
+}
+
+function nextQuestion() {
+    currentQIndex++;
+    if (currentQIndex < sessionQuestions.length) {
+        loadQuestion();
+    } else {
+        finishGrammarScalpel();
+    }
+}
+
+function finishGrammarScalpel() {
+    document.getElementById('quiz-screen').style.display = 'none';
+    document.getElementById('results-screen').style.display = 'block';
+    
+    const acc = Math.round((score / 10) * 100);
+    const xp = score * 15;
+    
+    document.getElementById('res-score').textContent = `${score}/10`;
+    document.getElementById('res-acc').textContent = `${acc}%`;
+    document.getElementById('res-xp').textContent = `+${xp}`;
+    
+    let feedback = "";
+    let icon = "🏅";
+    if (score >= 9) {
+        feedback = "🌟 Master Grammarian! Exemplary syntactic precision and flawless concord mastery.";
+        icon = "👑";
+    } else if (score >= 7) {
+        feedback = "✒️ Skilled Syntactician! Strong command of English rules and sentence mechanics.";
+        icon = "🎓";
+    } else if (score >= 5) {
+        feedback = "📖 Competent Lexicographer! Reviewing correlatives and subjunctive mood will sharpen your score.";
+        icon = "📘";
+    } else {
+        feedback = "🔍 Scholar in Training. Review the grammar rule cards and conquer syntax again!";
+        icon = "✏️";
+    }
+    
+    document.getElementById('res-feedback').textContent = feedback;
+    document.getElementById('res-icon').textContent = icon;
+    
+    // Submit results to server
+    fetch('/api/grammar_scalpel/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score: score, total: 10 })
+    }).catch(e => console.log('Score submit offline or cached', e));
+}
+</script>
+{% endblock %}

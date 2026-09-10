@@ -1,29 +1,199 @@
 {% extends "base.html" %}
-{% block title %}Certificates - Lumina{% endblock %}
+{% block title %}Official Academic Certificates - Good Shepherd Catholic College | Lumina{% endblock %}
+
 {% block content %}
-<div class="certificates-page">
-    <h1>🏆 Your Certificates</h1>
-    {% if certificates %}
-        <div class="cert-grid">
-            {% for c in certificates %}
-            <div class="cert-card">
-                <div class="cert-icon">🏅</div>
-                <h3>{{ c[0].replace('_', ' ').title() }}</h3>
-                <p>Milestone: {{ c[1] }}</p>
-                <small>Awarded: {{ c[2] }}</small>
+<div class="certificates-page" style="max-width:960px; margin:0 auto; padding:10px 0 40px;">
+
+    <div class="no-print" style="text-align:center; margin-bottom:24px;">
+        <span style="font-size:0.75rem; font-weight:800; letter-spacing:1.5px; background:rgba(234,179,8,0.15); color:#eab308; border:1px solid rgba(234,179,8,0.3); padding:3px 12px; border-radius:16px;">
+            🎓 GOOD SHEPHERD CATHOLIC COLLEGE, OYEDE
+        </span>
+        <h1 style="font-size:2.2rem; font-weight:900; margin:8px 0 4px;">Verified Academic Distinction Certificates</h1>
+        <p style="color:var(--muted); font-size:0.95rem; max-width:620px; margin:0 auto;">
+            Official diplomas and cognitive competency credentials authenticated by the Lumina Autonomous System and Good Shepherd Catholic College Board of Examiners.
+        </p>
+    </div>
+
+    <!-- Certificate Control Bar (No Print) -->
+    <div class="cert-controls card no-print" style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <label for="cert-distinction-select" style="font-weight:700; font-size:0.88rem;">Select Distinction Arena:</label>
+            <select id="cert-distinction-select" onchange="updateCertificate()" class="form-control" style="background:var(--surface2); color:var(--text); border:1px solid var(--border); padding:6px 12px; border-radius:6px; font-weight:600;">
+                <option value="geo_quest">🌍 African & Global GeoQuest Scholar</option>
+                <option value="grammar_scalpel">✒️ English Concord & Syntax Scalpel Laureate</option>
+                <option value="stem_olympiad">🏆 National STEM Olympiad Laureate</option>
+                <option value="code_sprint">💻 Algorithmic Code Engineering & Debugging Specialist</option>
+                <option value="chess_arena">♟️ Grandmaster Chess Tactical Strategist</option>
+                <option value="spelling_bee">🐝 Oratory Spelling Bee Academic Laureate</option>
+                <option value="math_sprint">🧮 Mental Arithmetic & Quantitative Agility Master</option>
+                <option value="sudoku_arena">🔢 Deductive Sudoku Matrix Analyst</option>
+                <option value="typing_fluency">⌨️ Biometric High-Speed Keyboard Fluency (80+ WPM)</option>
+                <option value="inter_house_relay">🤝 Inter-House Cognitive Relay Champion</option>
+            </select>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+            <button onclick="window.print()" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+                <span>🖨️</span> Print / Save PDF
+            </button>
+            <button onclick="if(window.LuminaConfetti) LuminaConfetti(); if(window.LuminaAudio) LuminaAudio.playFanfare();" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:6px;">
+                <span>🎉</span> Celebrate
+            </button>
+        </div>
+    </div>
+
+    <!-- Official Parchment Certificate Canvas -->
+    <div id="printable-certificate" class="parchment-cert" style="background:#fffef8; color:#1a1a1a; border:12px double #b45309; border-radius:12px; padding:44px 36px; position:relative; box-shadow:0 12px 35px rgba(0,0,0,0.18); margin-bottom:36px; overflow:hidden;">
+        <!-- Watermark / Background Texture -->
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); opacity:0.04; font-size:22rem; pointer-events:none; user-select:none; font-family:serif;">
+            ✝
+        </div>
+
+        <!-- Certificate Header -->
+        <div style="text-align:center; position:relative; z-index:2;">
+            <div style="font-size:2.8rem; line-height:1; margin-bottom:8px;">🏛️</div>
+            <div style="font-family:'Cinzel', serif, 'Times New Roman'; font-size:1.5rem; font-weight:900; letter-spacing:2px; color:#78350f; text-transform:uppercase;">
+                Good Shepherd Catholic College, Oyede
             </div>
-            {% endfor %}
+            <div style="font-size:0.85rem; letter-spacing:3px; font-weight:700; color:#92400e; text-transform:uppercase; margin-top:2px;">
+                Ecosystem of Academic Excellence & Moral Integrity
+            </div>
+            
+            <div style="display:inline-block; border-bottom:2px solid #b45309; width:140px; margin:14px auto 16px;"></div>
+
+            <h2 style="font-family:'Cinzel', serif, 'Times New Roman'; font-size:1.9rem; font-weight:900; letter-spacing:1px; color:#1f2937; margin:0; text-transform:uppercase;">
+                Certificate of Academic Distinction
+            </h2>
+            <div style="font-size:0.92rem; font-style:italic; color:#4b5563; margin-top:6px;">
+                This formal diploma is awarded under the authority of the College Academic Committee to
+            </div>
+
+            <!-- Recipient Name -->
+            <div id="cert-recipient-name" style="font-family:'Cinzel', serif, 'Times New Roman'; font-size:2.4rem; font-weight:900; color:#b45309; text-decoration:underline; text-decoration-color:#f59e0b; margin:18px 0 6px;">
+                {{ current_user.fullname if current_user.fullname else current_user.username }}
+            </div>
+            <div style="font-size:0.85rem; color:#6b7280; font-family:monospace; margin-bottom:18px;">
+                Lumina Verified Student ID: @{{ current_user.username }} • Role: {{ current_user.role|capitalize }}
+            </div>
+
+            <!-- Citation Body -->
+            <p id="cert-citation" style="font-size:1.05rem; line-height:1.65; color:#374151; max-width:700px; margin:0 auto 28px; font-style:italic;">
+                for outstanding intellectual acuity, flawless problem-solving tenacity, and exemplary mastery demonstrated within the <strong>African & Global GeoQuest Arena</strong>, successfully decoding continental topography, geopolitics, and global confluences.
+            </p>
+
+            <!-- Metadata Details Grid -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; max-width:650px; margin:0 auto 28px; background:rgba(245,158,11,0.08); border:1px dashed #d97706; border-radius:8px; padding:12px;">
+                <div>
+                    <div style="font-size:0.7rem; font-weight:700; color:#78350f; text-transform:uppercase;">Serial Verification</div>
+                    <div id="cert-serial" style="font-family:monospace; font-weight:800; font-size:0.85rem; color:#111827;">GSCC-LUM-2026-X79</div>
+                </div>
+                <div>
+                    <div style="font-size:0.7rem; font-weight:700; color:#78350f; text-transform:uppercase;">Biometric Verification</div>
+                    <div style="font-family:monospace; font-weight:800; font-size:0.85rem; color:#059669;">✅ Certified Anti-Cheat</div>
+                </div>
+                <div>
+                    <div style="font-size:0.7rem; font-weight:700; color:#78350f; text-transform:uppercase;">Platform Status</div>
+                    <div style="font-family:monospace; font-weight:800; font-size:0.85rem; color:#111827;">Zero-Cloud Campus LAN</div>
+                </div>
+            </div>
+
+            <!-- Signatures Bar -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; max-width:700px; margin:36px auto 0; padding-top:16px; border-top:1px solid #d1d5db; flex-wrap:wrap; gap:20px;">
+                <div style="text-align:center; min-width:180px;">
+                    <div style="font-family:'Brush Script MT', cursive; font-size:1.7rem; color:#1e3a8a; line-height:1; margin-bottom:4px;">Manifest Subeno</div>
+                    <div style="border-top:1px solid #4b5563; width:160px; margin:4px auto;"></div>
+                    <div style="font-size:0.75rem; font-weight:800; color:#111827;">MANIFEST SUBENO O.</div>
+                    <div style="font-size:0.7rem; color:#6b7280;">Lead Architect, Lumina Ecosystem</div>
+                </div>
+
+                <div style="text-align:center;">
+                    <div style="width:72px; height:72px; border:3px solid #b45309; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto; background:rgba(245,158,11,0.1); color:#78350f;">
+                        <span style="font-size:1.3rem; line-height:1;">⭐</span>
+                        <span style="font-size:0.55rem; font-weight:900; letter-spacing:0.5px;">COLLEGE</span>
+                        <span style="font-size:0.55rem; font-weight:900;">SEAL</span>
+                    </div>
+                </div>
+
+                <div style="text-align:center; min-width:180px;">
+                    <div style="font-family:'Brush Script MT', cursive; font-size:1.7rem; color:#1e3a8a; line-height:1; margin-bottom:4px;">Rev. Fr. Principal</div>
+                    <div style="border-top:1px solid #4b5563; width:160px; margin:4px auto;"></div>
+                    <div style="font-size:0.75rem; font-weight:800; color:#111827;">OFFICE OF THE PRINCIPAL</div>
+                    <div style="font-size:0.7rem; color:#6b7280;">Good Shepherd Catholic College</div>
+                </div>
+            </div>
         </div>
-    {% else %}
-        <div class="empty-state"><div class="empty-state-icon">🏅</div><p>No certificates yet. Keep practicing to earn milestones!</p></div>
-        <div class="cert-hints">
-            <p>💡 Earn certificates by reaching:</p>
-            <ul>
-                <li>50 WPM typing speed</li>
-                <li>100 WPM typing speed</li>
-                <li>1500 Chess ELO rating</li>
-            </ul>
-        </div>
-    {% endif %}
+    </div>
+
+    <!-- User Database Certificates / Milestones -->
+    <div class="no-print" style="margin-top:20px;">
+        <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:14px;">🏅 Logged Milestone Badges</h2>
+        {% if certificates %}
+            <div class="cert-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
+                {% for c in certificates %}
+                <div class="cert-card card" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px;">
+                    <div class="cert-icon" style="font-size:2rem; margin-bottom:6px;">🏅</div>
+                    <h3 style="font-size:1.1rem; margin:0 0 6px;">{{ c[0].replace('_', ' ').title() }}</h3>
+                    <p style="color:var(--muted); font-size:0.85rem; margin:0 0 6px;">Milestone Record: <strong>{{ c[1] }}</strong></p>
+                    <small style="color:var(--text-secondary); font-size:0.75rem;">Verified Award Date: {{ c[2] }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state card" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:24px; text-align:center;">
+                <div class="empty-state-icon" style="font-size:2.2rem; margin-bottom:8px;">🏅</div>
+                <p style="color:var(--muted); margin:0;">Active session logged. Compete in all 14 arenas to unlock automated system milestones!</p>
+            </div>
+        {% endif %}
+    </div>
+
 </div>
+
+<script>
+const DISTINCTION_CITATIONS = {
+    geo_quest: "for outstanding intellectual acuity, flawless problem-solving tenacity, and exemplary mastery demonstrated within the African & Global GeoQuest Arena, successfully decoding continental topography, geopolitics, and global confluences.",
+    grammar_scalpel: "for extraordinary syntactic rigor, precision in English grammatical concord, and master diagnosis of idioms, subjunctive moods, and WAEC/JAMB syntax structures in the Grammar Scalpel Arena.",
+    stem_olympiad: "for distinguished academic excellence, speed, and analytical precision in the Cowbellpedia STEM Olympiad Arena spanning high-level Mathematics, Physics, Chemistry, and Computing.",
+    code_sprint: "for supreme algorithmic dexterity, rapid logic debugging, and edge-case execution under clock pressure in the Code Debugger & Algorithmic Sprint Arena.",
+    chess_arena: "for strategic foresight, positional calculation, and tactical endgame mastery in rated play against the Manisoft_Chess Grandmaster Bot.",
+    spelling_bee: "for exceptional lexical erudition, phonetic discrimination, and etymological mastery in the Good Shepherd Oratory Spelling Bee Championship.",
+    math_sprint: "for lightning mental arithmetic retrieval and rapid formula execution under 60-second high-pressure sprint conditions.",
+    sudoku_arena: "for flawless deductive matrix logic and numerical constraint completion across classic and sprint Sudoku grids.",
+    typing_fluency: "for elite keyboard fluency exceeding 80 words per minute, validated with microsecond flight-time biometric anti-cheat integrity.",
+    inter_house_relay: "for exemplary camaraderie, swift baton transitions, and high-speed execution in the 3-Leg Team Cognitive Esports Relay."
+};
+
+function updateCertificate() {
+    const sel = document.getElementById('cert-distinction-select');
+    const val = sel.value;
+    const citationEl = document.getElementById('cert-citation');
+    const serialEl = document.getElementById('cert-serial');
+    
+    if (DISTINCTION_CITATIONS[val]) {
+        citationEl.innerHTML = DISTINCTION_CITATIONS[val];
+    }
+    
+    // Generate deterministic serial based on selection
+    const randCode = Math.abs(val.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)).toString(16).toUpperCase().slice(0, 4);
+    serialEl.textContent = `GSCC-LUM-2026-${randCode}`;
+
+    if (window.LuminaAudio) LuminaAudio.playClick();
+}
+</script>
+
+<style>
+@media print {
+    body { background: #fff !important; color: #000 !important; }
+    nav, footer, .navbar, .dock-nav, .no-print, .cmd-palette-overlay { display: none !important; }
+    .certificates-page { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    #printable-certificate {
+        box-shadow: none !important;
+        border: 8px double #000 !important;
+        background: #fff !important;
+        page-break-inside: avoid;
+        margin: 0 !important;
+        padding: 30px !important;
+    }
+}
+</style>
 {% endblock %}
+

@@ -16,7 +16,7 @@ from flask_login import login_required, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash
 
 from db import db_execute, db_fetchall, db_fetchone
-from models import User, update_elo, check_badges, award_xp, check_streak, BADGES, record_activity, sync_all_student_history
+from models import User, update_elo, check_badges, award_xp, check_streak, BADGES, record_activity, sync_all_student_history, get_inter_house_standings
 from talent_engine import compute_cognitive_profile, compute_institutional_profile
 from anti_cheat import AntiCheatEngine
 
@@ -594,7 +594,7 @@ def register_routes(app):
         classrooms = db_fetchall("SELECT id, name, code, created_at FROM classrooms WHERE teacher_id=?", (current_user.id,))
         custom_passages = db_fetchall("SELECT id, title, category, created_at FROM custom_passages WHERE teacher_id=?", (current_user.id,))
         homeworks = db_fetchall("SELECT id, title, due_date, classroom_id FROM homework WHERE teacher_id=? ORDER BY created_at DESC", (current_user.id,))
-        return render_template("teacher.html", classrooms=classrooms, custom_passages=custom_passages, homeworks=homeworks)
+        return render_template("teacher.html", classrooms=classrooms, custom_passages=custom_passages, homeworks=homeworks, inter_house_standings=get_inter_house_standings())
 
     @app.route("/teacher/monitor/<classroom_code>")
     @login_required
@@ -2248,6 +2248,64 @@ def register_routes(app):
         award_xp(current_user.id, 50)
         return jsonify({"status": "ok", "time_sec": time_sec, "points": pts, "xp_earned": 50, "tier": tier})
 
+    @app.route("/geo_quest")
+    def geo_quest_arena():
+        """Arena 13: African & Global Spatial Geopolitical Mastery"""
+        return render_template("geo_quest.html")
+
+    @app.route("/api/geo_quest/submit", methods=["POST"])
+    @login_required
+    def api_geo_quest_submit():
+        data = request.get_json() or {}
+        score = int(data.get("score", 0))
+        total = int(data.get("total", 10))
+        acc = round((score / max(total, 1)) * 100, 1)
+        xp = score * 15
+        tier = "legendary" if score >= 9 else ("gold" if score >= 7 else "silver")
+
+        record_activity(
+            user_id=current_user.id,
+            arena_type="geo_quest",
+            title=f"GeoQuest Global Mastery: {score}/{total}",
+            description=f"African & World Geopolitical Atlas Sprint with {acc}% accuracy.",
+            metric_value=f"{score}/{total} ({acc}%)",
+            metric_unit="GeoQuest",
+            score_points=score * 50,
+            tier=tier
+        )
+        award_xp(current_user.id, xp)
+        check_badges(current_user.id)
+        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier})
+
+    @app.route("/grammar_scalpel")
+    def grammar_scalpel_arena():
+        """Arena 14: English Language, Concord & Syntactic Precision"""
+        return render_template("grammar_scalpel.html")
+
+    @app.route("/api/grammar_scalpel/submit", methods=["POST"])
+    @login_required
+    def api_grammar_scalpel_submit():
+        data = request.get_json() or {}
+        score = int(data.get("score", 0))
+        total = int(data.get("total", 10))
+        acc = round((score / max(total, 1)) * 100, 1)
+        xp = score * 15
+        tier = "legendary" if score >= 9 else ("gold" if score >= 7 else "silver")
+
+        record_activity(
+            user_id=current_user.id,
+            arena_type="grammar_scalpel",
+            title=f"Grammar & Syntax Precision: {score}/{total}",
+            description=f"WAEC & JAMB English Concord & Syntactic Scalpel with {acc}% accuracy.",
+            metric_value=f"{score}/{total} ({acc}%)",
+            metric_unit="Syntax",
+            score_points=score * 50,
+            tier=tier
+        )
+        award_xp(current_user.id, xp)
+        check_badges(current_user.id)
+        return jsonify({"status": "ok", "score": score, "total": total, "accuracy": acc, "xp_earned": xp, "tier": tier})
+
     @app.route("/api_docs")
     def api_docs():
         return render_template("api_docs.html")
@@ -2260,8 +2318,8 @@ def register_routes(app):
     def public_telemetry_feed():
         return jsonify({
             "status": "operational",
-            "platform": "Lumina v5.1",
-            "features": ["typing", "chess", "checkers", "math", "memory", "reaction", "pattern", "word", "tournaments", "olympiad", "code_sprint", "spelling_bee", "sudoku"],
+            "platform": "Lumina v5.2",
+            "features": ["typing", "chess", "checkers", "math", "memory", "reaction", "pattern", "word", "tournaments", "olympiad", "code_sprint", "spelling_bee", "sudoku", "geo_quest", "grammar_scalpel"],
             "websocket": True,
             "timestamp": datetime.utcnow().isoformat()
         })
@@ -2313,7 +2371,7 @@ def register_routes(app):
             "cohort_base": cohort_base,
             "est_savings_annual": est_savings_annual
         }
-        return render_template("principal_briefing.html", stats=stats)
+        return render_template("principal_briefing.html", stats=stats, inter_house_standings=get_inter_house_standings())
 
     @app.route("/principal/lock")
     def principal_lock_route():

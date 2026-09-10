@@ -5,7 +5,7 @@
     <div style="text-align:center; margin-bottom:32px;">
         <h1 style="font-size:2.4rem; font-weight:900; letter-spacing:-0.5px;">Cognitive & Strategy Arenas</h1>
         <p style="color:var(--muted); font-size:1.05rem; max-width:650px; margin:8px auto 0;">
-            Calibrate your mind across 12 standardized cognitive domains and talent arenas. Every session feeds your verified Lumina Talent Index (LTI) profile and earns XP.
+            Calibrate your mind across 14 standardized cognitive & academic domains and talent arenas. Every session feeds your verified Lumina Talent Index (LTI) profile and earns XP.
         </p>
     </div>
 
@@ -202,6 +202,38 @@
             </div>
             <div style="margin-top:16px;">
                 <a href="{{ url_for('sudoku_arena') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#ec4899; color:#fff; font-weight:800;">Play Sudoku</a>
+            </div>
+        </div>
+
+        <!-- African & Global GeoQuest (Arena 13) -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #10b981;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">🌍 GeoQuest</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; padding:4px 10px; border-radius:12px;">African & Global Geography</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    Continental landmarks, Nigerian confluences, African capitals, and world flags. Sharpen spatial geopolitics and cultural topography.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('geo_quest_arena') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#10b981; color:#000; font-weight:800;">Launch GeoQuest</a>
+            </div>
+        </div>
+
+        <!-- Grammar & Syntax Scalpel (Arena 14) -->
+        <div class="game-card" style="display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #6366f1;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <h2 style="font-size:1.35rem; margin:0;">✒️ Grammar Scalpel</h2>
+                    <span style="font-size:0.75rem; font-weight:700; background:rgba(99,102,241,0.15); color:#818cf8; padding:4px 10px; border-radius:12px;">Concord & Syntax Precision</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.5;">
+                    WAEC, NECO & JAMB grammar rigor. Diagnose subject-verb concord, subjunctive moods, idioms, and dangling modifiers.
+                </p>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="{{ url_for('grammar_scalpel_arena') }}" class="btn btn-primary" style="width:100%; text-align:center; background:#6366f1; color:#fff; font-weight:800;">Launch Grammar Scalpel</a>
             </div>
         </div>
 

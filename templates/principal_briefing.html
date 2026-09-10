@@ -45,9 +45,9 @@
         </div>
         <div class="kpi-card">
             <div class="kpi-icon">🧠</div>
-            <div class="kpi-val">12 Arenas</div>
+            <div class="kpi-val">14 Arenas</div>
             <div class="kpi-label">Talent Incubator Domains</div>
-            <div class="kpi-sub">STEM Olympiad, Code Debugger, Chess, Spelling Bee, Math, Sudoku, Reflex</div>
+            <div class="kpi-sub">STEM, Code, Chess, GeoQuest, Grammar, Spelling, Math, Sudoku, Reflex</div>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon">🛡️</div>
@@ -104,7 +104,7 @@
                     <strong>Zero-Cloud LAN & Boarding House Tolerance:</strong> When campus broadband fluctuates or shuts off during evening prep, Lumina continues operating flawlessly over the internal school LAN, ensuring uninterrupted academic sprints and talent discovery.
                 </li>
                 <li>
-                    <strong>Nurturing Multi-Disciplinary Talents:</strong> Encompasses 12 arenas covering STEM Olympiad competitions, algorithmic code debugging, grandmaster chess, oratory spelling bees, and keyboard fluency.
+                    <strong>Nurturing Multi-Disciplinary Talents:</strong> Encompasses 14 arenas covering STEM Olympiad competitions, algorithmic code debugging, grandmaster chess, African & global GeoQuest, English grammar & syntax precision, oratory spelling bees, deductive sudoku grids, and keyboard fluency.
                 </li>
                 <li>
                     <strong>Keystroke Biometric Anti-Cheat:</strong> Academic integrity is preserved via real-time flight-time microsecond variance analysis, preventing automated script dumping and unverified homework submissions.
@@ -219,6 +219,101 @@
                     Open Offline Hotspot Hub 📶
                 </a>
             </div>
+        </div>
+    </section>
+
+    <!-- Good Shepherd Catholic College Inter-House Cognitive Championship -->
+    <section class="inter-house-championship-section" style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:28px 24px; margin-bottom:28px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+            <div>
+                <span style="display:inline-block; font-size:0.75rem; font-weight:800; letter-spacing:1.5px; background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3); padding:3px 12px; border-radius:16px; margin-bottom:8px;">
+                    🏆 GOOD SHEPHERD CATHOLIC COLLEGE HOUSE SYSTEM
+                </span>
+                <h2 style="font-size:1.6rem; margin:0; font-weight:900;">Inter-House Cognitive & Academic Championship</h2>
+                <p style="color:var(--muted); font-size:0.92rem; margin:4px 0 0;">
+                    Live aggregation of student XP across all 14 talent arenas into the four official College Houses. Every keyboard sprint, chess victory, grammar correction, and STEM problem solved elevates your House!
+                </p>
+            </div>
+            <div>
+                <button onclick="if(window.LuminaAudio) LuminaAudio.playFanfare(); if(window.LuminaConfetti) LuminaConfetti();" class="btn btn-sm btn-primary" style="display:inline-flex; align-items:center; gap:6px;">
+                    🎉 Celebrate House Champions
+                </button>
+            </div>
+        </div>
+
+        <!-- 4 Houses Cards Grid -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;">
+            {% for house in inter_house_standings %}
+            <div style="background:var(--surface2); border:1px solid var(--border); border-top:4px solid {{ house.color }}; border-radius:8px; padding:18px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span style="font-size:1.6rem;">{{ house.icon }}</span>
+                        <span style="font-size:0.72rem; font-weight:800; background:{{ house.bg }}; color:{{ house.color }}; padding:3px 8px; border-radius:10px;">Rank #{{ loop.index }}</span>
+                    </div>
+                    <h3 style="font-size:1.15rem; margin:0 0 4px; font-weight:800; color:var(--text);">{{ house.name }}</h3>
+                    <div style="font-size:0.78rem; color:var(--muted); font-style:italic; margin-bottom:12px;">"{{ house.motto }}"</div>
+                    
+                    <div style="font-size:1.8rem; font-weight:900; color:{{ house.color }}; margin-bottom:2px;">
+                        {{ "{:,}".format(house.points) }} <span style="font-size:0.85rem; font-weight:600; color:var(--muted);">XP</span>
+                    </div>
+                    <div style="font-size:0.78rem; color:var(--text-secondary);">
+                        👥 {{ house.members }} active student champions
+                    </div>
+                </div>
+
+                <div style="margin-top:14px; padding-top:10px; border-top:1px solid var(--border); font-size:0.78rem;">
+                    {% if house.top_student %}
+                    <div style="color:var(--muted); margin-bottom:2px;">Top House Contributor:</div>
+                    <div style="font-weight:700; color:var(--text); display:flex; justify-content:space-between;">
+                        <span>⭐ {{ house.top_student.fullname }}</span>
+                        <span style="color:{{ house.color }};">{{ house.top_student.xp }} XP</span>
+                    </div>
+                    {% else %}
+                    <div style="color:var(--muted);">Awaiting active house entrants</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%; border:1px solid var(--border); border-radius:8px;">
+                <thead>
+                    <tr style="background:var(--surface2);">
+                        <th style="padding:10px 14px;">Standing</th>
+                        <th style="padding:10px 14px;">House Name & Motto</th>
+                        <th style="padding:10px 14px;">Total Cumulative Points</th>
+                        <th style="padding:10px 14px;">Student Roster</th>
+                        <th style="padding:10px 14px;">House Valedictorian</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for house in inter_house_standings %}
+                    <tr>
+                        <td style="font-weight:800; padding:10px 14px;">
+                            {% if loop.index == 1 %}🥇 1st Place
+                            {% elif loop.index == 2 %}🥈 2nd Place
+                            {% elif loop.index == 3 %}🥉 3rd Place
+                            {% else %}⭐ 4th Place
+                            {% endif %}
+                        </td>
+                        <td style="padding:10px 14px;">
+                            <strong style="color:{{ house.color }};">{{ house.icon }} {{ house.name }}</strong>
+                            <div style="font-size:0.75rem; color:var(--muted);">{{ house.motto }}</div>
+                        </td>
+                        <td style="font-weight:800; color:{{ house.color }}; padding:10px 14px;">{{ "{:,}".format(house.points) }} XP</td>
+                        <td style="padding:10px 14px;">{{ house.members }} Scholars</td>
+                        <td style="padding:10px 14px;">
+                            {% if house.top_student %}
+                            <strong>{{ house.top_student.fullname }}</strong> ({{ house.top_student.xp }} XP)
+                            {% else %}
+                            <span style="color:var(--muted);">None yet</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </section>
 

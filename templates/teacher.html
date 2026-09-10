@@ -50,6 +50,25 @@
         </form>
         <ul>{% for h in homeworks %}<li>{{ h[1] }} — Due {{ h[2] }}</li>{% endfor %}</ul>
     </section>
+    <section class="teacher-section" style="border-top:3px solid #fbbf24;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <h2>🏆 Good Shepherd Inter-House Standings</h2>
+            <span style="font-size:0.8rem; color:var(--muted);">Aggregated across 14 talent & cognitive arenas</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin:16px 0;">
+            {% for house in inter_house_standings %}
+            <div style="background:var(--surface2); border:1px solid var(--border); border-left:4px solid {{ house.color }}; border-radius:6px; padding:12px;">
+                <div style="font-size:1.1rem; font-weight:800; color:var(--text); display:flex; justify-content:space-between; align-items:center;">
+                    <span>{{ house.icon }} {{ house.name }}</span>
+                    <span style="font-size:0.75rem; color:{{ house.color }}; font-weight:700;">#{{ loop.index }}</span>
+                </div>
+                <div style="font-size:0.75rem; color:var(--muted); margin:2px 0 8px;">{{ house.motto }}</div>
+                <div style="font-size:1.4rem; font-weight:900; color:{{ house.color }};">{{ "{:,}".format(house.points) }} <span style="font-size:0.75rem; font-weight:500; color:var(--muted);">XP</span></div>
+                <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">{{ house.members }} students</div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
     <section class="teacher-section">
         <h2>Export Data</h2>
         <a href="{{ url_for('export_csv') }}" class="btn btn-primary">Download CSV (All Scores)</a>
