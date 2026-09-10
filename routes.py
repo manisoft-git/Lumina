@@ -172,7 +172,7 @@ def register_routes(app):
                     session["producer_unlocked"] = True
                     flash("⚡ Sovereign Video Interface Activated! Welcome, Sovereign Architect.", "success")
             else:
-                flash("Please log in with key '$$lumina11' to access the Sovereign Video Interface.", "info")
+                flash("Please log in with your Sovereign Key to access the Sovereign Video Interface.", "info")
                 return redirect(url_for("login"))
 
         session["video_ui_unlocked"] = True
