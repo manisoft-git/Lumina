@@ -73,17 +73,41 @@ class User(UserMixin):
 
     @staticmethod
     def get_by_id(user_id):
-        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at, is_locked, is_anonymous, parent_alias, linked_student_id FROM users WHERE id=?", (user_id,))
+        sql = "SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at, is_locked, is_anonymous, parent_alias, linked_student_id FROM users WHERE id=?"
+        try:
+            row = db_fetchone(sql, (user_id,))
+        except Exception as e:
+            if "no such column" in str(e).lower() or "is_locked" in str(e).lower():
+                ensure_columns()
+                row = db_fetchone(sql, (user_id,))
+            else:
+                raise
         return User(row) if row else None
 
     @staticmethod
     def get_by_username(username):
-        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at, is_locked, is_anonymous, parent_alias, linked_student_id FROM users WHERE username=?", (username,))
+        sql = "SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at, is_locked, is_anonymous, parent_alias, linked_student_id FROM users WHERE username=?"
+        try:
+            row = db_fetchone(sql, (username,))
+        except Exception as e:
+            if "no such column" in str(e).lower() or "is_locked" in str(e).lower():
+                ensure_columns()
+                row = db_fetchone(sql, (username,))
+            else:
+                raise
         return User(row) if row else None
 
     @staticmethod
     def get_by_parent_code(code):
-        row = db_fetchone("SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at, is_locked, is_anonymous, parent_alias, linked_student_id FROM users WHERE parent_code=?", (code,))
+        sql = "SELECT id, username, fullname, email, password_hash, role, xp, level, streak, longest_streak, last_active, parent_code, created_at, is_locked, is_anonymous, parent_alias, linked_student_id FROM users WHERE parent_code=?"
+        try:
+            row = db_fetchone(sql, (code,))
+        except Exception as e:
+            if "no such column" in str(e).lower() or "is_locked" in str(e).lower():
+                ensure_columns()
+                row = db_fetchone(sql, (code,))
+            else:
+                raise
         return User(row) if row else None
 
 def award_xp(user_id, amount):
