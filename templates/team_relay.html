@@ -191,11 +191,7 @@ function initSandboxForLeg(leg) {
         if (!mathAns) nextMathProblem();
     } else if (leg === 2) {
         title.textContent = `Leg 2: Pattern Logic (${currentProgress} / 2 solved)`;
-        content.innerHTML = `
-            <p style="font-size:1.2rem; margin-bottom:14px;">Find the next number in sequence: <strong>2, 4, 8, 16, ?</strong></p>
-            <input type="number" id="pattern-ans" style="padding:10px; font-size:1.2rem; width:120px; text-align:center; border-radius:8px; border:1px solid var(--border);" autofocus>
-            <button class="btn btn-primary" onclick="checkPattern()" style="margin-left:10px;">Submit</button>
-        `;
+        nextPatternProblem();
     } else if (leg === 3) {
         title.textContent = "Leg 3: Anchor Typing Sprint to Finish Line!";
         content.innerHTML = `
@@ -223,21 +219,44 @@ function checkMath() {
     if (val === mathAns) {
         currentProgress++;
         socket.emit('relay_progress', { room_id: roomId, team: currentTeam, leg: 1, progress: currentProgress });
-        if (typeof LuminaAudio !== 'undefined') LuminaAudio.keyCorrect();
+        try { if (typeof LuminaAudio !== 'undefined' && LuminaAudio.keyCorrect) LuminaAudio.keyCorrect(); } catch(e) {}
         if (currentProgress < 5) nextMathProblem();
     } else {
-        if (typeof LuminaAudio !== 'undefined') LuminaAudio.keyWrong();
+        try { if (typeof LuminaAudio !== 'undefined' && LuminaAudio.keyWrong) LuminaAudio.keyWrong(); } catch(e) {}
     }
 }
 
+const PATTERNS = [
+    { seq: "2, 4, 8, 16, ?", ans: 32 },
+    { seq: "3, 6, 12, 24, ?", ans: 48 },
+    { seq: "5, 10, 20, 40, ?", ans: 80 },
+    { seq: "1, 4, 9, 16, ?", ans: 25 },
+    { seq: "7, 14, 21, 28, ?", ans: 35 }
+];
+let patternIdx = 0;
+
+function nextPatternProblem() {
+    const p = PATTERNS[patternIdx % PATTERNS.length];
+    const content = document.getElementById('sandbox-content');
+    content.innerHTML = `
+        <p style="font-size:1.2rem; margin-bottom:14px;">Find the next number in sequence: <strong>${p.seq}</strong></p>
+        <input type="number" id="pattern-ans" style="padding:10px; font-size:1.2rem; width:120px; text-align:center; border-radius:8px; border:1px solid var(--border);" autofocus onkeydown="if(event.key==='Enter') checkPattern()">
+        <button class="btn btn-primary" onclick="checkPattern()" style="margin-left:10px;">Submit</button>
+    `;
+    setTimeout(() => { const el = document.getElementById('pattern-ans'); if (el) el.focus(); }, 50);
+}
+
 function checkPattern() {
+    const p = PATTERNS[patternIdx % PATTERNS.length];
     const val = parseInt(document.getElementById('pattern-ans').value);
-    if (val === 32) {
+    if (val === p.ans) {
         currentProgress++;
+        patternIdx++;
         socket.emit('relay_progress', { room_id: roomId, team: currentTeam, leg: 2, progress: currentProgress });
-        if (typeof LuminaAudio !== 'undefined') LuminaAudio.keyCorrect();
+        try { if (typeof LuminaAudio !== 'undefined' && LuminaAudio.keyCorrect) LuminaAudio.keyCorrect(); } catch(e) {}
+        if (currentProgress < 2) nextPatternProblem();
     } else {
-        if (typeof LuminaAudio !== 'undefined') LuminaAudio.keyWrong();
+        try { if (typeof LuminaAudio !== 'undefined' && LuminaAudio.keyWrong) LuminaAudio.keyWrong(); } catch(e) {}
     }
 }
 

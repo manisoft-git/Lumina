@@ -5,13 +5,13 @@
     <h1>Create Account</h1>
     <form method="POST" action="{{ url_for('register') }}" class="auth-form">
         <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
-        <label for="fullname">Full Name</label>
-        <input type="text" id="fullname" name="fullname" required>
+        <input type="text" id="username" name="username" placeholder="e.g. subenom or scholar10" required>
+        <label for="fullname">Full Name (Surname First)</label>
+        <input type="text" id="fullname" name="fullname" placeholder="Surname Firstname (e.g. Subeno Manifest)" required>
         <label for="email">Email</label>
-        <input type="email" id="email" name="email" required>
+        <input type="email" id="email" name="email" placeholder="name@school.edu" required>
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" required minlength="6">
+        <input type="password" id="password" name="password" placeholder="••••••••" required minlength="6">
         <label for="role">Account Type</label>
         <select id="role" name="role" onchange="document.getElementById('teacher-key-group').style.display = this.value=='teacher'?'block':'none'">
             <option value="student">Student</option>

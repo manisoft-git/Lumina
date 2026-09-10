@@ -74,10 +74,18 @@
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && active) {
             total++;
-            if (parseFloat(input.value) === currentAnswer) { correct++; streak++; score += 10 + streak * 2; }
-            else { streak = 0; }
+            if (parseFloat(input.value) === currentAnswer) {
+                correct++; streak++; score += 10 + streak * 2;
+                problemEl.style.color = '#10b981';
+                try { if (window.LuminaAudio && LuminaAudio.playKey) LuminaAudio.playKey(); } catch(e) {}
+            } else {
+                streak = 0;
+                problemEl.style.color = '#ef4444';
+                try { if (window.LuminaAudio && LuminaAudio.playError) LuminaAudio.playError(); } catch(e) {}
+            }
             scoreEl.textContent = 'Score: ' + score;
             streakEl.textContent = 'Streak: ' + streak;
+            setTimeout(() => { if (problemEl) problemEl.style.color = 'var(--text)'; }, 350);
             genProblem();
         }
     });

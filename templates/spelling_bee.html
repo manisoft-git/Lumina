@@ -95,17 +95,22 @@
         </div>
 
         <!-- In-Quiz Screen -->
+        <!-- In-Quiz Screen -->
         <div id="quiz-screen" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:20px;">
-                <span class="bee-badge">Word <span id="word-idx">1</span> of 10</span>
-                <div style="display:flex; gap:16px; font-weight:700;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                <span class="bee-badge">Word <span id="word-idx">1</span> of <span id="total-words-count">10</span></span>
+                <div style="display:flex; gap:16px; font-weight:700; align-items:center;">
                     <span style="color:var(--primary);">Score: <span id="current-score">0</span></span>
+                    <span style="color:#f59e0b;" id="streak-badge">🔥 Streak: <span id="current-streak">0</span></span>
                     <span style="color:var(--accent);">⏱️ <span id="timer-val">25</span>s</span>
                 </div>
             </div>
 
             <p style="color:var(--muted); font-size:0.9rem; margin-bottom:4px;">Tap the speaker button to hear the word pronounced aloud:</p>
-            <button class="audio-speak-btn" onclick="speakCurrentWord()" title="Listen to pronunciation">🔊</button>
+            <div style="display:flex; align-items:center; justify-content:center; gap:14px;">
+                <button class="audio-speak-btn" onclick="speakCurrentWord()" title="Listen to pronunciation">🔊</button>
+                <button class="btn btn-secondary btn-small" onclick="spellOutLetters()" title="Hear letters slowly spelled" style="font-size:0.8rem; padding:6px 12px;">🎧 Slow Accent</button>
+            </div>
 
             <div class="hint-pill">
                 <div><strong>Phonetic Guide:</strong> <span id="phonetic-val" style="font-family:monospace; color:#38bdf8;">/ ... /</span></div>
@@ -116,13 +121,19 @@
 
             <form onsubmit="submitSpelling(event)">
                 <input type="text" id="spell-input" class="bee-input" placeholder="TYPE SPELLING" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
-                <div style="display:flex; gap:10px; justify-content:center;">
+                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                     <button type="button" class="btn btn-secondary" onclick="speakCurrentWord()">🔊 Replay Word</button>
-                    <button type="submit" class="btn btn-primary" style="background:#f59e0b; color:#000; font-weight:800;">Verify Spelling ➤</button>
+                    <button type="submit" id="submit-spell-btn" class="btn btn-primary" style="background:#f59e0b; color:#000; font-weight:800;">Verify Spelling ➤</button>
+                    <button type="button" class="btn btn-secondary" onclick="skipWord()" style="background:rgba(255,255,255,0.06);">Skip ⏭️</button>
                 </div>
             </form>
 
-            <div id="feedback-box" style="display:none; margin-top:20px; font-weight:800; font-size:1.15rem;"></div>
+            <div id="feedback-box" style="display:none; margin-top:20px; padding:14px; border-radius:10px; background:var(--surface2); font-weight:800; font-size:1.15rem; text-align:center;">
+                <div id="feedback-msg"></div>
+                <div style="margin-top:10px; display:flex; justify-content:center; gap:10px; align-items:center;">
+                    <button type="button" id="manual-next-btn" class="btn btn-primary" onclick="proceedToNext()" style="padding:6px 20px; font-weight:800; background:#38bdf8; color:#000;">Next Word ➤</button>
+                </div>
+            </div>
         </div>
 
         <!-- Results Screen -->
@@ -137,6 +148,7 @@
             <div style="display:flex; justify-content:center; gap:24px; margin-bottom:28px;">
                 <div><div style="font-weight:800; font-size:1.25rem; color:#10b981;" id="xp-val">+0 XP</div><div style="font-size:0.78rem; color:var(--muted);">Experience Earned</div></div>
                 <div><div style="font-weight:800; font-size:1.25rem; color:#f59e0b;" id="words-mastered-val">0</div><div style="font-size:0.78rem; color:var(--muted);">Mastered Words</div></div>
+                <div><div style="font-weight:800; font-size:1.25rem; color:#38bdf8;" id="max-streak-val">0</div><div style="font-size:0.78rem; color:var(--muted);">Max Streak</div></div>
             </div>
 
             <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
@@ -149,7 +161,7 @@
 </div>
 
 <script>
-const BEE_WORDS = [
+const ALL_BEE_WORDS = [
     { word: "ALGORITHM", pos: "noun", phonetic: "/ˈæl.ɡə.rɪ.ðəm/", def: "A step-by-step procedure or set of rules for solving a computational problem.", origin: "From Medieval Latin algorismus, honoring Persian polymath al-Khwārizmī." },
     { word: "HEURISTIC", pos: "adjective / noun", phonetic: "/hjʊəˈrɪs.tɪk/", def: "Enabling a person to discover or learn something for themselves; a practical shortcut method.", origin: "Greek heuriskein, meaning to find or discover." },
     { word: "SYNTHESIS", pos: "noun", phonetic: "/ˈsɪn.θə.sɪs/", def: "The combination of components or elements to form a connected whole.", origin: "Greek sun- (together) + tithenai (to place)." },
@@ -159,24 +171,68 @@ const BEE_WORDS = [
     { word: "OSCILLATION", pos: "noun", phonetic: "/ˌɒs.ɪˈleɪ.ʃən/", def: "Repetitive variation, typically in time, of some measure about a central value.", origin: "Latin oscillare, meaning to swing." },
     { word: "POLYMORPHISM", pos: "noun", phonetic: "/ˌpɒl.iˈmɔː.fɪ.zəm/", def: "The condition of occurring in several different forms, especially in object-oriented programming.", origin: "Greek polus (many) + morphe (form)." },
     { word: "AMORTIZATION", pos: "noun", phonetic: "/əˌmɔː.tɪˈzeɪ.ʃən/", def: "The action or process of gradually writing off the initial cost of an asset.", origin: "Old French amortir, meaning to extinguish." },
-    { word: "UBIQUITOUS", pos: "adjective", phonetic: "/juːˈbɪk.wɪ.təs/", def: "Present, appearing, or found everywhere simultaneously.", origin: "Latin ubique, meaning everywhere." }
+    { word: "UBIQUITOUS", pos: "adjective", phonetic: "/juːˈbɪk.wɪ.təs/", def: "Present, appearing, or found everywhere simultaneously.", origin: "Latin ubique, meaning everywhere." },
+    { word: "RENAISSANCE", pos: "noun", phonetic: "/rəˈneɪ.səns/", def: "A revival of or renewed interest in something, especially art, literature, and learning.", origin: "French renaissance, from re- (again) + naître (to be born)." },
+    { word: "SOVEREIGNTY", pos: "noun", phonetic: "/ˈsɒv.rən.ti/", def: "Supreme power, self-determination, and autonomous institutional authority.", origin: "Old French souverainete, from super (above)." },
+    { word: "INDIGENOUS", pos: "adjective", phonetic: "/ɪnˈdɪdʒ.ɪ.nəs/", def: "Originating or occurring naturally in a particular place; native to a land.", origin: "Latin indigenus, meaning born in a place." },
+    { word: "ASYNCHRONOUS", pos: "adjective", phonetic: "/eɪˈsɪŋ.krə.nəs/", def: "Not occurring at the same time; happening independently of a primary clock signal.", origin: "Greek a- (not) + sun- (together) + khronos (time)." },
+    { word: "CRYPTOGRAPHY", pos: "noun", phonetic: "/krɪpˈtɒɡ.rə.fi/", def: "The art of writing or solving codes to protect sensitive computational information.", origin: "Greek kruptos (hidden) + graphein (to write)." },
+    { word: "EPISTEMOLOGY", pos: "noun", phonetic: "/ɪˌpɪs.təˈmɒl.ə.dʒi/", def: "The theory of knowledge, especially with regard to its methods, validity, and scope.", origin: "Greek episteme (knowledge) + -logia (discourse)." },
+    { word: "JUXTAPOSITION", pos: "noun", phonetic: "/ˌdʒʌk.stə.pəˈzɪʃ.ən/", def: "The fact of two things being placed close together with contrasting effect.", origin: "Latin juxta (near) + French position." },
+    { word: "METAMORPHOSIS", pos: "noun", phonetic: "/ˌmet.əˈmɔː.fə.sɪs/", def: "A change of the form or nature of a thing or person into a completely different one.", origin: "Greek meta- (change) + morphe (form)." },
+    { word: "QUINTESSENTIAL", pos: "adjective", phonetic: "/ˌkwɪn.tɪˈsen.ʃəl/", def: "Representing the most perfect or typical example of a quality or class.", origin: "Latin quinta essentia, fifth essence." },
+    { word: "SERENDIPITY", pos: "noun", phonetic: "/ˌser.ənˈdɪp.ə.ti/", def: "The occurrence and development of events by chance in a happy or beneficial way.", origin: "Coined by Horace Walpole from Persian fairy tale The Three Princes of Serendip." },
+    { word: "IDIOSYNCRASY", pos: "noun", phonetic: "/ˌɪd.i.əˈsɪŋ.krə.si/", def: "A mode of behavior or way of thought peculiar to an individual.", origin: "Greek idios (one's own) + sun- (with) + krasis (mixture)." },
+    { word: "PHILANTHROPY", pos: "noun", phonetic: "/fɪˈlæn.θrə.pi/", def: "The desire to promote the welfare of others, expressed especially by the generous donation of money or effort.", origin: "Greek philos (loving) + anthropos (mankind)." },
+    { word: "ACQUIESCE", pos: "verb", phonetic: "/ˌæk.wiˈes/", def: "Accept something reluctantly but without protest.", origin: "Latin ad- (to) + quiescere (to rest)." },
+    { word: "RECALCITRANT", pos: "adjective", phonetic: "/rɪˈkæl.sɪ.trənt/", def: "Having an obstinately uncooperative attitude toward authority or discipline.", origin: "Latin recalcitrare, to kick back with heels." },
+    { word: "EFFOCACIOUS", pos: "adjective", phonetic: "/ˌef.ɪˈkeɪ.ʃəs/", def: "Successful in producing a desired or intended result; effective.", origin: "Latin efficere, meaning to accomplish." },
+    { word: "CIRCUMSLOCUTION", pos: "noun", phonetic: "/ˌsɜː.kəm.ləˈkjuː.ʃən/", def: "The use of many words where fewer would do, especially in a deliberate attempt to be vague.", origin: "Latin circum (around) + loqui (to speak)." },
+    { word: "MAGNANIMOUS", pos: "adjective", phonetic: "/mæɡˈnæn.ɪ.məs/", def: "Generous or forgiving, especially toward a rival or less powerful person.", origin: "Latin magnus (great) + animus (soul/mind)." },
+    { word: "PERSPICACITY", pos: "noun", phonetic: "/ˌpɜː.spɪˈkæs.ə.ti/", def: "The quality of having a ready insight into things; mental shrewdness.", origin: "Latin perspicax, sharp-sighted." }
 ];
 
-let curIdx = 0, score = 0, timer = 25, timerId = null;
+let roundWords = [];
+let curIdx = 0, score = 0, streak = 0, maxStreak = 0, timer = 25, timerId = null, autoAdvanceTimer = null;
+
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
 
 function startBee() {
+    clearTimeout(autoAdvanceTimer);
+    clearInterval(timerId);
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('results-screen').style.display = 'none';
     document.getElementById('quiz-screen').style.display = 'block';
-    curIdx = 0; score = 0;
+
+    roundWords = shuffleArray(ALL_BEE_WORDS).slice(0, 10);
+    curIdx = 0;
+    score = 0;
+    streak = 0;
+    maxStreak = 0;
+    document.getElementById('total-words-count').textContent = roundWords.length;
     loadWord(0);
 }
 
 function loadWord(idx) {
-    if (idx >= BEE_WORDS.length) { finishBee(); return; }
-    const w = BEE_WORDS[idx];
+    clearTimeout(autoAdvanceTimer);
+    clearInterval(timerId);
+
+    if (idx >= roundWords.length) {
+        finishBee();
+        return;
+    }
+
+    const w = roundWords[idx];
     document.getElementById('word-idx').textContent = `${idx + 1}`;
     document.getElementById('current-score').textContent = score;
+    document.getElementById('current-streak').textContent = streak;
     document.getElementById('phonetic-val').textContent = w.phonetic;
     document.getElementById('pos-val').textContent = w.pos;
     document.getElementById('def-val').textContent = w.def;
@@ -185,14 +241,17 @@ function loadWord(idx) {
     const inp = document.getElementById('spell-input');
     inp.value = '';
     inp.disabled = false;
-    inp.focus();
+
+    const subBtn = document.getElementById('submit-spell-btn');
+    if (subBtn) subBtn.disabled = false;
 
     const fb = document.getElementById('feedback-box');
     fb.style.display = 'none';
 
+    setTimeout(() => { inp.focus(); }, 50);
+
     speakWord(w.word);
 
-    clearInterval(timerId);
     timer = 25;
     document.getElementById('timer-val').textContent = timer;
     timerId = setInterval(() => {
@@ -206,67 +265,109 @@ function loadWord(idx) {
 }
 
 function speakCurrentWord() {
-    if (curIdx < BEE_WORDS.length) {
-        speakWord(BEE_WORDS[curIdx].word);
+    if (curIdx < roundWords.length) {
+        speakWord(roundWords[curIdx].word);
     }
 }
 
-function speakWord(text) {
+function spellOutLetters() {
+    if (curIdx < roundWords.length) {
+        const letters = roundWords[curIdx].word.split('').join(', ');
+        speakWord(letters, 0.7);
+    }
+}
+
+function speakWord(text, rate = 0.85) {
     if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text.toLowerCase());
-        utter.rate = 0.85;
-        window.speechSynthesis.speak(utter);
+        try {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text.toLowerCase());
+            utter.rate = rate;
+            utter.pitch = 1.0;
+            window.speechSynthesis.speak(utter);
+        } catch(e) {}
     }
 }
 
 function submitSpelling(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const val = document.getElementById('spell-input').value.trim();
     evaluateSpelling(val);
 }
 
+function skipWord() {
+    clearInterval(timerId);
+    evaluateSpelling('SKIPPED');
+}
+
 function evaluateSpelling(submitted) {
     clearInterval(timerId);
-    const target = BEE_WORDS[curIdx].word;
+    clearTimeout(autoAdvanceTimer);
+
+    const target = roundWords[curIdx].word;
     const isCorrect = submitted.toUpperCase() === target;
 
     const inp = document.getElementById('spell-input');
     inp.disabled = true;
 
+    const subBtn = document.getElementById('submit-spell-btn');
+    if (subBtn) subBtn.disabled = true;
+
     const fb = document.getElementById('feedback-box');
+    const msg = document.getElementById('feedback-msg');
     fb.style.display = 'block';
 
     if (isCorrect) {
         score++;
+        streak++;
+        if (streak > maxStreak) maxStreak = streak;
         document.getElementById('current-score').textContent = score;
-        fb.style.color = '#10b981';
-        fb.innerHTML = `✓ Correct! "${target}"`;
-        if (window.LuminaAudio) LuminaAudio.playKey();
+        document.getElementById('current-streak').textContent = streak;
+        msg.style.color = '#10b981';
+        msg.innerHTML = `✓ CORRECT! <span style="letter-spacing:2px; font-size:1.3rem; color:#4ade80;">${target}</span>`;
+        try {
+            if (window.LuminaAudio && typeof LuminaAudio.playKey === 'function') LuminaAudio.playKey();
+            else if (window.LuminaAudio && typeof LuminaAudio.keyCorrect === 'function') LuminaAudio.keyCorrect();
+        } catch(e) {}
+        speakWord("Correct!");
     } else {
-        fb.style.color = '#ef4444';
-        fb.innerHTML = `✕ Incorrect! Correct spelling was: <span style="text-decoration:underline; letter-spacing:2px;">${target}</span>`;
-        if (window.LuminaAudio) LuminaAudio.playError();
+        streak = 0;
+        document.getElementById('current-streak').textContent = streak;
+        msg.style.color = '#ef4444';
+        msg.innerHTML = `✕ INCORRECT! Correct spelling: <span style="text-decoration:underline; letter-spacing:2px; font-size:1.3rem; color:#f87171;">${target}</span>`;
+        try {
+            if (window.LuminaAudio && typeof LuminaAudio.playError === 'function') LuminaAudio.playError();
+            else if (window.LuminaAudio && typeof LuminaAudio.keyWrong === 'function') LuminaAudio.keyWrong();
+        } catch(e) {}
+        speakWord("Incorrect. The word is " + target);
     }
 
-    setTimeout(() => {
-        curIdx++;
-        loadWord(curIdx);
-    }, 2000);
+    // Auto-advance after 1.8 seconds, or user can click manual button immediately
+    autoAdvanceTimer = setTimeout(() => {
+        proceedToNext();
+    }, 1800);
+}
+
+function proceedToNext() {
+    clearTimeout(autoAdvanceTimer);
+    curIdx++;
+    loadWord(curIdx);
 }
 
 function finishBee() {
     clearInterval(timerId);
+    clearTimeout(autoAdvanceTimer);
     document.getElementById('quiz-screen').style.display = 'none';
     document.getElementById('results-screen').style.display = 'block';
 
     const xp = score * 15;
-    document.getElementById('final-score-val').textContent = `${score} / ${BEE_WORDS.length}`;
+    document.getElementById('final-score-val').textContent = `${score} / ${roundWords.length}`;
     document.getElementById('xp-val').textContent = `+${xp} XP`;
     document.getElementById('words-mastered-val').textContent = score;
+    document.getElementById('max-streak-val').textContent = maxStreak;
 
     const badge = document.getElementById('tier-badge');
-    if (score >= 10) {
+    if (score >= 9) {
         badge.textContent = "🌟 LEGENDARY ORATORY CHAMPION";
         badge.style.background = "linear-gradient(135deg, #eab308, #f59e0b)";
         badge.style.color = "#000";
@@ -280,14 +381,16 @@ function finishBee() {
         badge.style.color = "#fff";
     }
 
-    if (window.LuminaConfetti && score >= 6) LuminaConfetti();
-    if (window.LuminaAudio) LuminaAudio.playFanfare();
+    try {
+        if (window.LuminaConfetti && score >= 6) LuminaConfetti();
+        if (window.LuminaAudio && typeof LuminaAudio.playFanfare === 'function') LuminaAudio.playFanfare();
+    } catch(e) {}
 
     fetch('/api/spelling_bee/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ score: score })
-    }).catch(e => console.error(e));
+    }).catch(() => {});
 }
 </script>
 {% endblock %}

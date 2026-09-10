@@ -302,7 +302,10 @@ def register_sockets(socketio):
         sid = request.sid
         if sid in room["players"]:
             room["players"][sid]["ready"] = True
-        if len(room["players"]) >= 1 and all(p.get("ready") for p in room["players"].values()):
+        total = len(room["players"])
+        ready_count = sum(1 for p in room["players"].values() if p.get("ready"))
+        emit("ready_update", {"ready_count": ready_count, "total": total}, room=room_id)
+        if total >= 1 and all(p.get("ready") for p in room["players"].values()):
             room["state"] = "countdown"
             emit("countdown", {"value": 3}, room=room_id)
             socketio.sleep(1)
@@ -599,15 +602,21 @@ def register_sockets(socketio):
             uname = get_username()
             if room["white"] is None:
                 room["white"] = {"sid": request.sid, "uid": uid, "name": uname}
-                emit("chess_assigned", {"color": "white"})
-            elif room["black"] is None and room["white"]["uid"] != uid:
+                emit("chess_assigned", {"color": "white", "white": room["white"], "black": room["black"]})
+            elif room["black"] is None and (room["white"]["uid"] != uid or room["white"]["sid"] != request.sid):
                 room["black"] = {"sid": request.sid, "uid": uid, "name": uname}
-                emit("chess_assigned", {"color": "black"})
+                emit("chess_assigned", {"color": "black", "white": room["white"], "black": room["black"]})
                 room["status"] = "active"
-                emit("game_start", {"turn": "white", "board": room["board"]}, room=room_id)
+                emit("game_start", {"turn": "white", "board": room["board"], "white": room["white"], "black": room["black"]}, room=room_id)
+            elif room["white"] and room["white"].get("uid") == uid:
+                room["white"]["sid"] = request.sid
+                emit("chess_assigned", {"color": "white", "white": room["white"], "black": room["black"]})
+            elif room["black"] and room["black"].get("uid") == uid:
+                room["black"]["sid"] = request.sid
+                emit("chess_assigned", {"color": "black", "white": room["white"], "black": room["black"]})
             else:
                 room["spectators"].append(request.sid)
-                emit("chess_assigned", {"color": "spectator"})
+                emit("chess_assigned", {"color": "spectator", "white": room["white"], "black": room["black"]})
             emit("chess_state", room, room=room_id)
             emit("chess_state", room, room=f"spec_{room_id}")
         except Exception as e:
@@ -625,8 +634,8 @@ def register_sockets(socketio):
             if not room or room["status"] != "active":
                 return
             uid = get_user_id()
-            is_white = room["white"] and room["white"]["uid"] == uid
-            is_black = room["black"] and room["black"]["uid"] == uid
+            is_white = room["white"] and (room["white"]["uid"] == uid or room["white"]["sid"] == request.sid)
+            is_black = room["black"] and (room["black"]["uid"] == uid or room["black"]["sid"] == request.sid)
             if (room["turn"] == "white" and not is_white) or (room["turn"] == "black" and not is_black):
                 emit("chess_error", {"msg": "Not your turn or you are not a player in this room."})
                 return
@@ -872,15 +881,21 @@ def register_sockets(socketio):
             uname = get_username()
             if room["red"] is None:
                 room["red"] = {"sid": request.sid, "uid": uid, "name": uname}
-                emit("checkers_assigned", {"color": "red"})
-            elif room["black"] is None and room["red"]["uid"] != uid:
+                emit("checkers_assigned", {"color": "red", "red": room["red"], "black": room["black"]})
+            elif room["black"] is None and (room["red"]["uid"] != uid or room["red"]["sid"] != request.sid):
                 room["black"] = {"sid": request.sid, "uid": uid, "name": uname}
-                emit("checkers_assigned", {"color": "black"})
+                emit("checkers_assigned", {"color": "black", "red": room["red"], "black": room["black"]})
                 room["status"] = "active"
-                emit("checkers_start", {"turn": "red", "board": room["board"]}, room=room_id)
+                emit("checkers_start", {"turn": "red", "board": room["board"], "red": room["red"], "black": room["black"]}, room=room_id)
+            elif room["red"] and room["red"].get("uid") == uid:
+                room["red"]["sid"] = request.sid
+                emit("checkers_assigned", {"color": "red", "red": room["red"], "black": room["black"]})
+            elif room["black"] and room["black"].get("uid") == uid:
+                room["black"]["sid"] = request.sid
+                emit("checkers_assigned", {"color": "black", "red": room["red"], "black": room["black"]})
             else:
                 room["spectators"].append(request.sid)
-                emit("checkers_assigned", {"color": "spectator"})
+                emit("checkers_assigned", {"color": "spectator", "red": room["red"], "black": room["black"]})
             emit("checkers_state", room, room=room_id)
             emit("checkers_state", room, room=f"spec_{room_id}")
         except Exception as e:
@@ -898,8 +913,8 @@ def register_sockets(socketio):
             if not room or room["status"] != "active":
                 return
             uid = get_user_id()
-            is_red = room["red"] and room["red"]["uid"] == uid
-            is_black = room["black"] and room["black"]["uid"] == uid
+            is_red = room["red"] and (room["red"]["uid"] == uid or room["red"]["sid"] == request.sid)
+            is_black = room["black"] and (room["black"]["uid"] == uid or room["black"]["sid"] == request.sid)
             if (room["turn"] == "red" and not is_red) or (room["turn"] == "black" and not is_black):
                 emit("checkers_error", {"msg": "Not your turn or you are not a player in this room."})
                 return

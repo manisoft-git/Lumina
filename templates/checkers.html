@@ -138,12 +138,31 @@
 
     socket.on('checkers_assigned', (d) => {
         myColor = d.color;
-        statusEl.textContent = d.color === 'spectator' ? 'Spectating' : 'You are ' + d.color;
+        statusEl.textContent = d.color === 'spectator' ? 'Spectating' : 'You are ' + d.color.toUpperCase();
+        if (d.red) document.getElementById('red-name').textContent = d.red.name || 'Player 1';
+        if (d.black) document.getElementById('black-name').textContent = d.black.name || 'Player 2';
+    });
+
+    socket.on('checkers_state', (d) => {
+        if (d.board) {
+            board = d.board;
+            render(board);
+        }
+        if (d.red) document.getElementById('red-name').textContent = d.red.name || 'Player 1';
+        if (d.black) document.getElementById('black-name').textContent = d.black.name || 'Waiting...';
+        if (d.status === 'active') {
+            statusEl.textContent = 'Match active — ' + (d.turn || 'red').toUpperCase() + ' to move';
+        } else if (d.status === 'complete') {
+            statusEl.textContent = 'Match Over. Winner: ' + (d.result || 'concluded');
+        }
     });
 
     socket.on('checkers_start', (d) => {
         board = d.board; render(board);
-        statusEl.textContent = 'Game started! Red moves';
+        statusEl.textContent = '⚡ Game started! RED moves';
+        if (d.red) document.getElementById('red-name').textContent = d.red.name || 'Player 1';
+        if (d.black) document.getElementById('black-name').textContent = d.black.name || 'Player 2';
+        try { if (window.LuminaAudio && typeof LuminaAudio.gameStart === 'function') LuminaAudio.gameStart(); } catch(e) {}
     });
 
     socket.on('checkers_update', (d) => {

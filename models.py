@@ -430,18 +430,51 @@ def init_db():
     ensure_columns()
 
     cnt = db_fetchone("SELECT COUNT(*) FROM passages")
-    if not cnt or cnt[0] == 0:
+    if not cnt or cnt[0] < 30:
         passages = [
             ("general", "The Quick Brown Fox", "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump!"),
+            ("general", "The Art of Focus", "Focus is not merely about saying yes to the thing you have to focus on. It means saying no to the hundred other good ideas that are there. You have to pick carefully."),
+            ("general", "African Renaissance", "Education is the most powerful weapon which you can use to change the world. When an African youth grasps science, technology, and literature, whole communities rise."),
+            ("general", "The Open Mind", "The mind that opens to a new idea never returns to its original size. Cultivating boundless curiosity unlocks realms of innovation that conventional schooling overlooks."),
+            ("general", "The Digital Frontier", "A sovereign digital future belongs to nations that build their own computational infrastructure, train their own artificial intelligence, and cherish indigenous talent."),
+            ("general", "Rivers and Persistence", "A river cuts through rock not because of its sheer power, but because of its relentless persistence. Great works are performed not by brute strength, but by endurance."),
+            ("general", "Architecture of Discipline", "Discipline is the bridge between cognitive aspirations and tangible scholastic accomplishment. Every keystroke mastered builds mental acuity and resilience."),
+            ("general", "The Midnight Lamp", "In the silence of late night study, when the rest of the world rests, visionaries trace the outlines of discoveries that will transform humanity tomorrow."),
+            ("general", "Courage in Learning", "Success is not final, failure is not fatal: it is the courage to continue and refine one's craft that truly counts across every academic trial."),
+            ("general", "The Echo of Wisdom", "Those who read widely and think deeply become architects of their own destiny, immune to transient illusions and anchored in fundamental truths."),
+            ("general", "The Path to Mastery", "Mastery is not an accident of birth; it is the deliberate compounding of rigorous practice, patient reflection, and unyielding intellectual curiosity."),
+            ("general", "The Sovereign Vision", "Building self-reliant educational platforms empowers young minds to compete globally while remaining firmly rooted in communal purpose and excellence."),
+            ("science", "DNA Double Helix", "Deoxyribonucleic acid is a molecule composed of two polynucleotide chains that coil around each other to form a double helix carrying genetic instructions."),
+            ("science", "Quantum Superposition", "In quantum mechanics, particles can exist in a superposition of states until measured, defying macroscopic intuition and enabling quantum computing."),
+            ("science", "Cosmic Expansion", "The universe is expanding at an accelerating rate driven by dark energy, carrying distant galaxies beyond our cosmic horizon into eternal obscurity."),
+            ("science", "Neural Plasticity", "Neuroplasticity allows the human brain to reorganize itself by forming new neural connections throughout life in response to learning and experience."),
+            ("science", "Thermodynamics", "The second law of thermodynamics states that total entropy in an isolated system can never decrease over time, establishing the arrow of time."),
+            ("science", "Photosynthesis", "Photosynthesis converts radiant solar photons into stable chemical energy, fixing atmospheric carbon dioxide into glucose to sustain terrestrial life."),
+            ("science", "Plate Tectonics", "The rigid lithosphere floats upon the ductile asthenosphere, continuously sculpting mountain ranges, oceanic trenches, and volcanic island arcs."),
+            ("science", "Black Hole Physics", "At the event horizon of a black hole, spacetime curvature becomes so acute that not even light can escape gravitational confinement."),
             ("code", "Python Hello World", "def hello_world():\n    print('Hello, world!')\n\nif __name__ == '__main__':\n    hello_world()"),
-            ("quotes", "Einstein", "Imagination is more important than knowledge. For knowledge is limited, whereas imagination embraces the entire world."),
+            ("code", "JavaScript Async Fetch", "const fetchData = async (endpoint) => {\n  const res = await fetch(endpoint);\n  return await res.json();\n};"),
+            ("code", "Binary Search Algorithm", "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target: return mid\n        elif arr[mid] < target: low = mid + 1\n        else: high = mid - 1\n    return -1"),
+            ("code", "Fibonacci Generator", "def fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b"),
+            ("code", "SQL Aggregation", "SELECT u.username, COUNT(s.id) as tests, AVG(s.wpm) as avg_speed FROM users u JOIN scores s ON u.id = s.user_id GROUP BY u.id ORDER BY avg_speed DESC LIMIT 10;"),
+            ("code", "Recursive Factorial", "const factorial = (n) => (n <= 1 ? 1 : n * factorial(n - 1));"),
+            ("code", "Neural Layer Class", "class NeuralLayer {\n  constructor(inputs, outputs) {\n    this.weights = new Float32Array(inputs * outputs);\n    this.biases = new Float32Array(outputs);\n  }\n}"),
+            ("quotes", "Albert Einstein", "Imagination is more important than knowledge. For knowledge is limited, whereas imagination embraces the entire world, stimulating progress, giving birth to evolution."),
+            ("quotes", "Alan Turing", "We can only see a short distance ahead, but we can see plenty there that needs to be done. A computer would deserve to be called intelligent if it could deceive a human."),
+            ("quotes", "Nelson Mandela", "It always seems impossible until it is done. Education is the most powerful weapon which you can use to change the world."),
+            ("quotes", "Ada Lovelace", "The Analytical Engine weaves algebraic patterns just as the Jacquard loom weaves flowers and leaves."),
+            ("quotes", "Chinua Achebe", "Until the lions have their own historians, the history of the hunt will always glorify the hunter."),
+            ("quotes", "Steve Jobs", "Stay hungry. Stay foolish. Never satisfy yourself that you know enough. The people who are crazy enough to think they can change the world usually do."),
+            ("quotes", "Marie Curie", "Nothing in life is to be feared, it is only to be understood. Now is the time to understand more, so that we may fear less."),
+            ("quotes", "Kwame Nkrumah", "Revolutions are brought about by men, by men who think as men of action and act as men of thought."),
             ("numbers", "Pi Digits", "3.1415926535 8979323846 2643383279 5028841971 6939937510 5820974944 5923078164"),
-            ("science", "DNA", "Deoxyribonucleic acid is a molecule composed of two polynucleotide chains that coil around each other to form a double helix."),
-            ("code", "JavaScript Function", "const greet = (name) => {\n  return `Hello, ${name}!`;\n};\nconsole.log(greet('Lumina'));"),
-            ("quotes", "Turing", "We can only see a short distance ahead, but we can see plenty there that needs to be done."),
+            ("numbers", "Mathematical Constants", "1.6180339887 4989484820 2.7182818284 5904523536 0.5772156649 0153286060"),
+            ("numbers", "Prime Numbers Sequence", "2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97")
         ]
         for cat, title, content in passages:
-            db_execute("INSERT INTO passages (category, title, content) VALUES (?, ?, ?)", (cat, title, content))
+            exists = db_fetchone("SELECT 1 FROM passages WHERE title=?", (title,))
+            if not exists:
+                db_execute("INSERT INTO passages (category, title, content) VALUES (?, ?, ?)", (cat, title, content))
 
     today = datetime.utcnow().date().isoformat()
     exists = db_fetchone("SELECT 1 FROM daily_challenges WHERE challenge_date=?", (today,))

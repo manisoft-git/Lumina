@@ -140,22 +140,43 @@
 
     socket.on('chess_assigned', (d) => {
         myColor = d.color;
-        statusEl.textContent = d.color === 'spectator' ? 'Spectating' : 'You are ' + d.color;
+        statusEl.textContent = d.color === 'spectator' ? 'Spectating' : 'You are ' + d.color.toUpperCase();
+        if (d.white) document.getElementById('white-name').textContent = d.white.name || 'Player 1';
+        if (d.black) document.getElementById('black-name').textContent = d.black.name || 'Player 2';
         if (isBot) {
             document.getElementById('white-name').textContent = 'You (White)';
             document.getElementById('black-name').textContent = 'Manisoft_Chess [GM] ♟️';
         }
     });
 
+    socket.on('chess_state', (d) => {
+        if (d.board) {
+            boardState = {turn: d.turn || 'white', board: d.board};
+            renderFEN(d.board);
+        }
+        if (d.white) document.getElementById('white-name').textContent = d.white.name || 'Player 1';
+        if (d.black) document.getElementById('black-name').textContent = d.black.name || 'Waiting...';
+        if (d.status === 'active') {
+            document.getElementById('resign-btn').disabled = (myColor === 'spectator');
+            statusEl.textContent = 'Match in progress — ' + (d.turn || 'white') + ' to move';
+        } else if (d.status === 'complete') {
+            document.getElementById('resign-btn').disabled = true;
+            statusEl.textContent = 'Game Over. Result: ' + (d.result || 'concluded');
+        }
+    });
+
     socket.on('game_start', (d) => {
         boardState = {turn: d.turn, board: d.board};
         renderFEN(d.board);
-        statusEl.textContent = 'Game started! ' + d.turn + ' to move';
-        document.getElementById('resign-btn').disabled = false;
+        statusEl.textContent = '⚡ Game started! ' + d.turn.toUpperCase() + ' to move';
+        if (d.white) document.getElementById('white-name').textContent = d.white.name || 'Player 1';
+        if (d.black) document.getElementById('black-name').textContent = d.black.name || 'Player 2';
+        document.getElementById('resign-btn').disabled = (myColor === 'spectator');
         if (isBot) {
             document.getElementById('white-name').textContent = 'You (White)';
             document.getElementById('black-name').textContent = 'Manisoft_Chess [GM] ♟️';
         }
+        try { if (window.LuminaAudio && typeof LuminaAudio.gameStart === 'function') LuminaAudio.gameStart(); } catch(e) {}
     });
 
     socket.on('chess_update', (d) => {

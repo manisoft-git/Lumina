@@ -3,13 +3,19 @@
 {% block content %}
 <div class="comp-page">
     <div class="comp-main">
-        <div class="comp-header">
-            <h1>Room: {{ room_id }}</h1>
-            <div id="comp-status" class="status-badge">Waiting...</div>
+        <div class="comp-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+            <div>
+                <h1 style="margin:0;">Typing Race — Room: {{ room_id }}</h1>
+                <div id="comp-status" class="status-badge" style="margin-top:6px;">Waiting for players...</div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button id="ready-btn" class="btn btn-primary" onclick="setReady()">⚡ Ready to Race</button>
+                <a href="{{ url_for('competitions_hub') }}" class="btn btn-secondary">Leave</a>
+            </div>
         </div>
-        <div id="comp-arena" class="typing-arena" role="application" aria-label="Typing race area">
+        <div id="comp-arena" class="typing-arena" role="application" aria-label="Typing race area" onclick="if(!document.getElementById('comp-input').disabled) document.getElementById('comp-input').focus()">
             <div id="comp-passage" class="passage-display"></div>
-            <input type="text" id="comp-input" class="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type here" disabled>
+            <input type="text" id="comp-input" class="hidden-input" style="position:absolute; opacity:0; pointer-events:none; width:0; height:0; border:none; padding:0; margin:0; outline:none; z-index:-999;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type here" disabled>
         </div>
         <div id="comp-results" style="display:none" class="results-panel" role="region" aria-label="Race results">
             <h2>Race Results</h2>
@@ -68,13 +74,28 @@
 
     socket.on('room_state', (state) => { updateProgress(state.players); });
 
+    window.setReady = function() {
+        const btn = document.getElementById('ready-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '✓ Ready!';
+            btn.style.background = '#10b981';
+        }
+        socket.emit('typing_ready', {room_id: roomId});
+        statusEl.textContent = 'Ready! Waiting for opponent...';
+    };
+
+    socket.on('ready_update', (d) => {
+        statusEl.textContent = `Players Ready: ${d.ready_count} / ${d.total}`;
+    });
+
     socket.on('countdown', (d) => {
-        statusEl.textContent = d.value;
+        statusEl.textContent = 'Race starting in: ' + d.value + '...';
         statusEl.classList.add('racing');
     });
 
     socket.on('race_start', (d) => {
-        statusEl.textContent = 'GO!';
+        statusEl.textContent = '⚡ GO! RACE IN PROGRESS!';
         input.disabled = false; input.focus(); startTime = d.start_time;
     });
 

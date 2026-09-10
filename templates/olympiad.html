@@ -248,9 +248,9 @@ function selectAnswer(choiceIdx) {
     if (isCorrect) {
         score++;
         document.getElementById('current-score').textContent = score;
-        if (window.LuminaAudio) LuminaAudio.playKey();
+        try { if (window.LuminaAudio && typeof LuminaAudio.playKey === 'function') LuminaAudio.playKey(); } catch(e) {}
     } else {
-        if (window.LuminaAudio) LuminaAudio.playError();
+        try { if (window.LuminaAudio && typeof LuminaAudio.playError === 'function') LuminaAudio.playError(); } catch(e) {}
     }
     const btns = document.querySelectorAll('.opt-btn');
     btns.forEach((b, i) => {

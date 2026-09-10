@@ -1260,3 +1260,34 @@ input:focus, select:focus, textarea:focus, button:focus {
     }
 }
 
+/* Universal Typing Arena & Hidden Input Standards */
+.hidden-input {
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    outline: none !important;
+    z-index: -999 !important;
+}
+
+.typing-arena {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 36px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+    min-height: 160px;
+    cursor: text;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.typing-arena:hover, .typing-arena:focus-within {
+    border-color: rgba(56, 189, 248, 0.45);
+    box-shadow: 0 16px 40px rgba(56, 189, 248, 0.12);
+}
+

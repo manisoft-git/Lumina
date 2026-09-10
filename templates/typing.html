@@ -38,15 +38,41 @@
 }
 /* Current active letter cursor */
 .char.current {
-    border-left: 2.5px solid #38bdf8;
-    background: rgba(56, 189, 248, 0.2);
+    border-left: 3px solid #38bdf8;
+    background: rgba(56, 189, 248, 0.18);
     border-radius: 2px;
-    animation: caretBlink 0.9s ease-in-out infinite;
-    box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+    animation: caretBlink 0.8s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
 }
 @keyframes caretBlink {
     0%, 100% { border-left-color: #38bdf8; }
     50% { border-left-color: transparent; }
+}
+.hidden-input {
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    outline: none !important;
+    z-index: -999 !important;
+}
+.typing-arena {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 36px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+    min-height: 160px;
+    cursor: text;
+    transition: border-color var(--transition);
+}
+.typing-arena:hover, .typing-arena:focus-within {
+    border-color: rgba(56, 189, 248, 0.45);
 }
 </style>
 {% endblock %}
@@ -61,6 +87,7 @@
             <span id="live-acc">100%</span>
             <span id="combo-badge" class="badge" style="display:none; background:#f59e0b; color:#000; font-weight:bold;">🔥 0 Combo</span>
             <span id="ghost-status" class="badge" style="display:none; background:rgba(56,189,248,0.2); color:#38bdf8;">👻 Ghost: Active</span>
+            <a href="{{ url_for('typing_page', category=category) }}" class="btn btn-secondary btn-small" style="font-size:0.8rem; padding:4px 10px; margin-left:8px;" title="Load a new random passage">🔀 New Passage</a>
         </div>
         <div class="typing-controls" style="flex-wrap:wrap; gap:12px;">
             <label><input type="checkbox" id="focus-toggle" {% if focus %}checked{% endif %} onchange="toggleFocus()"> Focus Mode</label>
@@ -76,9 +103,9 @@
         </div>
     </div>
     <div id="status-msg" style="display:none; padding:8px 14px; border-radius:6px; background:rgba(248,113,113,0.15); color:var(--danger); font-weight:600; margin-bottom:12px; text-align:center;"></div>
-    <div id="typing-arena" class="typing-arena" role="application" aria-label="Typing test area">
+    <div id="typing-arena" class="typing-arena" role="application" aria-label="Typing test area" onclick="document.getElementById('hidden-input').focus()">
         <div id="passage-display" class="passage-display" aria-live="polite" aria-atomic="true"></div>
-        <input type="text" id="hidden-input" class="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type here">
+        <input type="text" id="hidden-input" class="hidden-input" style="position:absolute; opacity:0; pointer-events:none; width:0; height:0; border:none; padding:0; margin:0; outline:none; z-index:-999;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type here">
         <div id="ghost-cursor" class="ghost-cursor" style="display:none" aria-hidden="true"></div>
     </div>
     <div id="results-panel" class="results-panel" style="display:none" role="region" aria-label="Results">
