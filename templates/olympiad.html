@@ -187,36 +187,91 @@
 
 <script>
 const QUESTIONS_BANK = [
+    // Mathematics
     { cat: "Mathematics", q: "If 2^(x + 3) = 64, what is the value of x?", opts: ["x = 2", "x = 3", "x = 4", "x = 5"], ans: 1, exp: "64 = 2^6, so x + 3 = 6 => x = 3." },
-    { cat: "Physics", q: "A body of mass 4 kg is accelerated from rest to 15 m/s in 3 seconds. What is the net force acting on the body?", opts: ["12 N", "20 N", "45 N", "60 N"], ans: 1, exp: "a = 15 / 3 = 5 m/s². Force F = m * a = 4 * 5 = 20 N." },
-    { cat: "Chemistry", q: "Which element has the highest first ionization energy among the following?", opts: ["Sodium (Na)", "Helium (He)", "Chlorine (Cl)", "Argon (Ar)"], ans: 1, exp: "Helium has the highest first ionization energy (~2372 kJ/mol) due to its 1s² full shell and small atomic radius." },
-    { cat: "Biology", q: "During cellular respiration, in which organelle does the Krebs Cycle take place?", opts: ["Cytoplasm", "Mitochondrial Matrix", "Ribosome", "Endoplasmic Reticulum"], ans: 1, exp: "The Krebs Cycle occurs inside the mitochondrial matrix in eukaryotes." },
-    { cat: "Computer Science", q: "What is the worst-case time complexity of standard QuickSort on an array of size n?", opts: ["O(log n)", "O(n)", "O(n log n)", "O(n²)"], ans: 3, exp: "QuickSort degrades to O(n²) in the worst case with unbalanced partitioning." },
     { cat: "Mathematics", q: "What is the derivative of f(x) = 3x³ - 5x² + 7x - 9 with respect to x?", opts: ["9x² - 10x + 7", "6x² - 10x + 7", "9x³ - 5x + 7", "x³ - x² + x"], ans: 0, exp: "Applying power rule: d/dx(3x³) = 9x², d/dx(-5x²) = -10x, d/dx(7x) = 7." },
-    { cat: "Physics", q: "What happens to the electrical resistance of a pure intrinsic semiconductor as temperature increases?", opts: ["Increases linearly", "Remains constant", "Decreases exponentially", "Fluctuates erratically"], ans: 2, exp: "Semiconductors have a negative temperature coefficient: heat excites electrons into the conduction band, decreasing resistance." },
-    { cat: "Chemistry", q: "What is the pH of a 0.001 M solution of hydrochloric acid (HCl)?", opts: ["pH = 1", "pH = 2", "pH = 3", "pH = 11"], ans: 2, exp: "HCl is strong: [H+] = 10^-3 M. pH = -log10(10^-3) = 3." },
-    { cat: "Biology", q: "Which blood vessel transports oxygenated blood from the lungs to the left atrium of the heart?", opts: ["Pulmonary Artery", "Pulmonary Vein", "Aorta", "Vena Cava"], ans: 1, exp: "The pulmonary vein is the only vein carrying oxygenated blood back to the left atrium." },
-    { cat: "Mathematics", q: "A bag has 5 red and 3 blue balls. If two are drawn without replacement, what is the probability both are red?", opts: ["5/14", "25/64", "5/8", "10/28"], ans: 0, exp: "P(1st Red) = 5/8; P(2nd Red) = 4/7. (5/8)*(4/7) = 20/56 = 5/14." }
+    { cat: "Mathematics", q: "A bag has 5 red and 3 blue balls. If two are drawn without replacement, what is the probability both are red?", opts: ["5/14", "25/64", "5/8", "10/28"], ans: 0, exp: "P(1st Red) = 5/8; P(2nd Red) = 4/7. (5/8)*(4/7) = 20/56 = 5/14." },
+    { cat: "Mathematics", q: "What is the sum of the interior angles of a regular hexagon?", opts: ["540°", "720°", "900°", "1080°"], ans: 1, exp: "Formula (n - 2) * 180° = (6 - 2) * 180° = 720°." },
+    { cat: "Mathematics", q: "Evaluate the limit as x approaches 0 of sin(5x) / x:", opts: ["0", "1", "5", "Undefined"], ans: 2, exp: "Using standard trig limit lim (sin kx)/x = k as x->0, the value is 5." },
+    { cat: "Mathematics", q: "What is the value of log₂(32) + log₃(81)?", opts: ["8", "9", "12", "7"], ans: 1, exp: "log₂(32) = 5 and log₃(81) = 4; 5 + 4 = 9." },
+    { cat: "Mathematics", q: "If the roots of x² - kx + 12 = 0 differ by 1, what is a possible value of k?", opts: ["±5", "±7", "±8", "±13"], ans: 1, exp: "(r1 - r2)² = (r1 + r2)² - 4*r1*r2 => 1 = k² - 48 => k² = 49 => k = ±7." },
+    { cat: "Mathematics", q: "What is the integral of (4x³ + 2x) dx from x = 0 to 2?", opts: ["16", "20", "24", "28"], ans: 1, exp: "Antiderivative is x⁴ + x². At 2: 2⁴ + 2² = 16 + 4 = 20." },
+    { cat: "Mathematics", q: "How many distinct permutations can be made from the letters in the word 'COWBELL'?", opts: ["2520", "5040", "1260", "720"], ans: 0, exp: "7 letters with L repeating twice: 7! / 2! = 5040 / 2 = 2520." },
+    { cat: "Mathematics", q: "In triangle ABC, if a = 7, b = 8, and angle C = 60°, what is c² using the Law of Cosines?", opts: ["57", "65", "113", "49"], ans: 0, exp: "c² = a² + b² - 2ab*cos(C) = 49 + 64 - 2(7)(8)(0.5) = 113 - 56 = 57." },
+
+    // Physics
+    { cat: "Physics", q: "A body of mass 4 kg is accelerated from rest to 15 m/s in 3 seconds. What is the net force acting on the body?", opts: ["12 N", "20 N", "45 N", "60 N"], ans: 1, exp: "a = 15 / 3 = 5 m/s². Force F = m * a = 4 * 5 = 20 N." },
+    { cat: "Physics", q: "What happens to the electrical resistance of a pure intrinsic semiconductor as temperature increases?", opts: ["Increases linearly", "Remains constant", "Decreases exponentially", "Fluctuates erratically"], ans: 2, exp: "Semiconductors have a negative temperature coefficient: thermal energy excites valence electrons across the band gap into the conduction band." },
+    { cat: "Physics", q: "A photon has a frequency of 6 × 10¹⁴ Hz. Given Planck's constant h ≈ 6.63 × 10⁻³⁴ J·s, what is its energy?", opts: ["3.98 × 10⁻¹⁹ J", "1.11 × 10⁻⁴⁸ J", "4.42 × 10⁻²⁰ J", "2.21 × 10⁻¹⁸ J"], ans: 0, exp: "E = h*f = (6.63 × 10⁻³⁴) * (6 × 10¹⁴) ≈ 3.98 × 10⁻¹⁹ J." },
+    { cat: "Physics", q: "What is the de Broglie wavelength formula for a particle with momentum p?", opts: ["λ = h / p", "λ = p / h", "λ = h * p", "λ = hc / p"], ans: 0, exp: "de Broglie relation establishes wave-particle duality as λ = h / p." },
+    { cat: "Physics", q: "If light travels from water (n = 1.33) into air (n = 1.00), at what critical angle does total internal reflection occur?", opts: ["≈ 41.8°", "≈ 48.8°", "≈ 53.1°", "≈ 60.0°"], ans: 1, exp: "sin(θc) = n2 / n1 = 1 / 1.33 ≈ 0.7519 => θc = arcsin(0.7519) ≈ 48.8°." },
+    { cat: "Physics", q: "Two parallel wires carrying currents in opposite directions will:", opts: ["Attract each other", "Repel each other", "Exert zero force", "Rotate perpendicular"], ans: 1, exp: "By Ampere's force law and right-hand rule, antiparallel currents repel, whereas parallel currents attract." },
+    { cat: "Physics", q: "What is the escape velocity from the surface of the Earth approximately equal to?", opts: ["7.9 km/s", "11.2 km/s", "16.7 km/s", "29.8 km/s"], ans: 1, exp: "Escape velocity vesc = √(2GM/R) ≈ 11.2 km/s (orbital speed is ~7.9 km/s)." },
+    { cat: "Physics", q: "A 2 kg block attached to an ideal spring with spring constant k = 200 N/m oscillates on a frictionless surface. What is its angular frequency ω?", opts: ["10 rad/s", "20 rad/s", "100 rad/s", "14.14 rad/s"], ans: 0, exp: "ω = √(k / m) = √(200 / 2) = √100 = 10 rad/s." },
+    { cat: "Physics", q: "Which thermodynamic cycle achieves the maximum theoretical efficiency between two thermal reservoirs?", opts: ["Otto cycle", "Rankine cycle", "Carnot cycle", "Diesel cycle"], ans: 2, exp: "The Carnot cycle, composed of reversible isothermal and adiabatic processes, represents the upper Carnot efficiency limit." },
+    { cat: "Physics", q: "What phenomenon explains the reddening of sunsets due to particle scattering in Earth's atmosphere?", opts: ["Raman scattering", "Rayleigh scattering", "Compton scattering", "Bragg scattering"], ans: 1, exp: "Rayleigh scattering intensity is proportional to 1/λ⁴, scattering short blue wavelengths far more than red light." },
+
+    // Chemistry
+    { cat: "Chemistry", q: "Which element has the highest first ionization energy among the following?", opts: ["Sodium (Na)", "Helium (He)", "Chlorine (Cl)", "Argon (Ar)"], ans: 1, exp: "Helium has the highest first ionization energy (~2372 kJ/mol) due to its 1s² full shell and minimal atomic radius." },
+    { cat: "Chemistry", q: "What is the pH of a 0.001 M solution of hydrochloric acid (HCl)?", opts: ["pH = 1", "pH = 2", "pH = 3", "pH = 11"], ans: 2, exp: "HCl is strong monoprotic: [H+] = 10^-3 M. pH = -log10(10^-3) = 3." },
+    { cat: "Chemistry", q: "What is the oxidation state of Chromium in the dichromate ion (Cr₂O₇²⁻)?", opts: ["+3", "+4", "+6", "+7"], ans: 2, exp: "2(Cr) + 7(-2) = -2 => 2Cr - 14 = -2 => 2Cr = 12 => Cr = +6." },
+    { cat: "Chemistry", q: "Which gas law states that at constant temperature and pressure, equal volumes of all gases contain equal numbers of molecules?", opts: ["Boyle's Law", "Charles's Law", "Avogadro's Law", "Graham's Law"], ans: 2, exp: "Avogadro's Hypothesis (1811) states V ∝ n under constant temperature and pressure." },
+    { cat: "Chemistry", q: "What type of hybridization exists in the central carbon atoms of ethyne (acetylene, H-C≡C-H)?", opts: ["sp³", "sp²", "sp", "dsp²"], ans: 2, exp: "Each triply bonded carbon forms one σ bond and two π bonds, exhibiting linear sp hybridization with 180° bond angles." },
+    { cat: "Chemistry", q: "According to Le Chatelier's principle, what happens to the exothermic Haber ammonia reaction N₂ + 3H₂ ⇌ 2NH₃ (ΔH < 0) when temperature is increased?", opts: ["Shifts forward (more NH₃)", "Shifts reverse (more N₂ and H₂)", "No change in equilibrium", "Equilibrium constant K increases"], ans: 1, exp: "For an exothermic reaction, heat acts as a product; increasing temperature shifts equilibrium to the left (endothermic direction)." },
+    { cat: "Chemistry", q: "Which quantum number specifies the spatial orientation of an electron orbital in a magnetic field?", opts: ["Principal (n)", "Azimuthal (l)", "Magnetic (ml)", "Spin (ms)"], ans: 2, exp: "The magnetic quantum number ml determines the orientation of the orbital in space, ranging from -l to +l." },
+    { cat: "Chemistry", q: "What is the conjugate base of the bisulfate ion (HSO₄⁻)?", opts: ["H₂SO₄", "SO₄²⁻", "HSO₃⁻", "SO₃²⁻"], ans: 1, exp: "A conjugate base results when an acid donates a proton: HSO₄⁻ - H⁺ = SO₄²⁻ (sulfate ion)." },
+    { cat: "Chemistry", q: "Which metal is liquid at standard temperature and pressure (STP)?", opts: ["Gallium", "Mercury", "Cesium", "Bromine"], ans: 1, exp: "Mercury (Hg) is the only metal that is liquid at standard STP (Bromine is a liquid nonmetal)." },
+    { cat: "Chemistry", q: "What is the standard molar volume occupied by one mole of an ideal gas at STP (0°C, 1 atm)?", opts: ["22.4 L", "24.0 L", "22.7 L", "20.8 L"], ans: 0, exp: "At standard temperature (273.15 K) and pressure (1 atm), 1 mol of ideal gas occupies 22.414 liters." },
+
+    // Biology
+    { cat: "Biology", q: "During cellular respiration, in which organelle does the Krebs Cycle take place?", opts: ["Cytoplasm", "Mitochondrial Matrix", "Ribosome", "Endoplasmic Reticulum"], ans: 1, exp: "The Krebs (Citric Acid) Cycle occurs inside the mitochondrial matrix in eukaryotes." },
+    { cat: "Biology", q: "Which blood vessel transports oxygenated blood from the lungs to the left atrium of the heart?", opts: ["Pulmonary Artery", "Pulmonary Vein", "Aorta", "Vena Cava"], ans: 1, exp: "The pulmonary veins are unique among veins in carrying freshly oxygenated blood from the alveolar capillary beds to the left atrium." },
+    { cat: "Biology", q: "In Mendelian genetics, crossing two heterozygous pea plants (Aa × Aa) yields what phenotypic ratio under complete dominance?", opts: ["1:2:1", "3:1", "9:3:3:1", "1:1"], ans: 1, exp: "Genotypes are 1 AA : 2 Aa : 1 aa, yielding a 3 dominant to 1 recessive phenotype ratio." },
+    { cat: "Biology", q: "Which nitrogenous base is present in RNA but absent in DNA?", opts: ["Thymine", "Uracil", "Guanine", "Cytosine"], ans: 1, exp: "RNA utilizes Uracil (U) which pairs with Adenine (A), replacing DNA's Thymine (T)." },
+    { cat: "Biology", q: "What is the primary site of photosynthetic light-dependent reactions in plant chloroplasts?", opts: ["Stroma", "Thylakoid Membrane", "Outer Membrane", "Cristae"], ans: 1, exp: "Light reactions occur in the thylakoid membranes where Photosystems II and I and ATP synthase are embedded." },
+    { cat: "Biology", q: "Which hormone is produced by the beta cells of the islets of Langerhans in the pancreas?", opts: ["Glucagon", "Insulin", "Cortisol", "Thyroxine"], ans: 1, exp: "Beta cells secrete insulin to lower blood glucose levels, whereas alpha cells secrete glucagon." },
+    { cat: "Biology", q: "During which phase of mitosis do sister chromatids separate toward opposite poles of the spindle?", opts: ["Prophase", "Metaphase", "Anaphase", "Telophase"], ans: 2, exp: "In anaphase, cohesin proteins cleave and sister chromatids are pulled apart toward opposite centrosomes." },
+    { cat: "Biology", q: "What type of ecological interaction benefits one species while leaving the other unaffected?", opts: ["Mutualism", "Commensalism", "Parasitism", "Amensalism"], ans: 1, exp: "Commensalism is a (+ / 0) relationship, exemplified by remora fish adhering to sharks." },
+    { cat: "Biology", q: "What is the basic functional filtering unit of the human mammalian kidney?", opts: ["Nephron", "Alveolus", "Villus", "Hepatocyte"], ans: 0, exp: "The nephron, composed of the glomerulus, Bowman's capsule, and tubular system, filters metabolic waste." },
+    { cat: "Biology", q: "Which cellular organelle contains hydrolytic enzymes responsible for intracellular digestion and autophagy?", opts: ["Peroxisome", "Lysosome", "Golgi Apparatus", "Vacuole"], ans: 1, exp: "Lysosomes maintain an acidic interior packed with acid hydrolases to degrade macromolecular debris." },
+
+    // Computer Science & Logic
+    { cat: "Computer Science", q: "What is the worst-case time complexity of standard QuickSort on an array of size n?", opts: ["O(log n)", "O(n)", "O(n log n)", "O(n²)"], ans: 3, exp: "QuickSort degrades to O(n²) in the worst case with unbalanced partitioning (e.g. already sorted array with naive pivot selection)." },
+    { cat: "Computer Science", q: "Which data structure operates on a strict Last-In, First-Out (LIFO) protocol?", opts: ["Queue", "Stack", "Binary Heap", "Linked List"], ans: 1, exp: "A Stack enforces LIFO access, where elements are pushed and popped exclusively from the top." },
+    { cat: "Computer Science", q: "What is the decimal equivalent of the 8-bit binary number 10110100₂?", opts: ["164", "180", "196", "212"], ans: 1, exp: "128 + 0 + 32 + 16 + 0 + 4 + 0 + 0 = 180." },
+    { cat: "Computer Science", q: "Which logic gate produces an output of 1 if and only if its two inputs differ?", opts: ["NAND", "NOR", "XOR", "XNOR"], ans: 2, exp: "The XOR (exclusive OR) gate outputs 1 when inputs are distinct (1,0 or 0,1) and 0 when identical." },
+    { cat: "Computer Science", q: "In relational database design, what normal form eliminates transitive dependencies?", opts: ["1NF", "2NF", "3NF", "BCNF"], ans: 2, exp: "Third Normal Form (3NF) requires a table to be in 2NF and contain no non-prime attributes transitively dependent on the primary key." },
+    { cat: "Computer Science", q: "What is the minimum number of comparisons needed to find the maximum in an unsorted array of n elements?", opts: ["n - 1", "n", "n log n", "log n"], ans: 0, exp: "Determining the maximum requires every non-maximum element to be verified as smaller in at least one comparison: n - 1." },
+    { cat: "Computer Science", q: "Which algorithm finds the shortest path between nodes in a weighted graph with non-negative edge weights?", opts: ["Kruskal's Algorithm", "Dijkstra's Algorithm", "Floyd-Warshall", "Bellman-Ford"], ans: 1, exp: "Dijkstra's algorithm uses a priority queue to compute single-source shortest paths in non-negative weighted graphs in O((V + E) log V)." },
+    { cat: "Computer Science", q: "In cryptography, what mathematical problem underpins the security of standard RSA encryption?", opts: ["Discrete Logarithm", "Integer Prime Factorization", "Elliptic Curve Isogeny", "Knapsack Problem"], ans: 1, exp: "RSA relies on the computational intractability of factoring large semiprime integers into their constituent primes." },
+    { cat: "Computer Science", q: "What is the space complexity of Depth-First Search (DFS) on a tree of maximum depth d?", opts: ["O(1)", "O(d)", "O(b^d)", "O(n²)"], ans: 1, exp: "DFS only stores the current branch in the call stack, consuming memory proportional to the maximum tree depth: O(d)." },
+    { cat: "Computer Science", q: "Which networking layer in the OSI 7-layer model is responsible for end-to-end flow control and reliable delivery via TCP?", opts: ["Network Layer (Layer 3)", "Transport Layer (Layer 4)", "Session Layer (Layer 5)", "Data Link Layer (Layer 2)"], ans: 1, exp: "The Transport Layer (Layer 4) handles segment sequencing, flow control, acknowledgment, and error recovery." }
 ];
 
+let sessionQuestions = [];
 let currentIndex = 0, score = 0, timer = 15, timerInterval = null, totalStartTime = 0, answered = false;
 
 function startOlympiad() {
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('results-screen').style.display = 'none';
     document.getElementById('quiz-screen').style.display = 'block';
-    currentIndex = 0; score = 0; totalStartTime = Date.now();
+    
+    // Pick 10 randomized questions from the 50-question bank
+    sessionQuestions = [...QUESTIONS_BANK].sort(() => 0.5 - Math.random()).slice(0, 10);
+    currentIndex = 0;
+    score = 0;
+    totalStartTime = Date.now();
     loadQuestion(0);
 }
 
 function loadQuestion(idx) {
-    if (idx >= QUESTIONS_BANK.length) { finishOlympiad(); return; }
+    if (idx >= sessionQuestions.length) { finishOlympiad(); return; }
     answered = false;
-    const q = QUESTIONS_BANK[idx];
+    const q = sessionQuestions[idx];
     document.getElementById('category-badge').textContent = q.cat;
-    document.getElementById('q-counter').textContent = `Question ${idx + 1} / ${QUESTIONS_BANK.length}`;
+    document.getElementById('q-counter').textContent = `Question ${idx + 1} / ${sessionQuestions.length}`;
     document.getElementById('current-score').textContent = score;
-    document.getElementById('progress-fill').style.width = `${(idx / QUESTIONS_BANK.length) * 100}%`;
+    document.getElementById('progress-fill').style.width = `${(idx / sessionQuestions.length) * 100}%`;
     document.getElementById('q-text').textContent = q.q;
     document.getElementById('explanation-box').style.display = 'none';
     document.getElementById('next-btn').style.display = 'none';
@@ -243,7 +298,7 @@ function selectAnswer(choiceIdx) {
     if (answered) return;
     answered = true;
     clearInterval(timerInterval);
-    const q = QUESTIONS_BANK[currentIndex];
+    const q = sessionQuestions[currentIndex];
     const isCorrect = choiceIdx === q.ans;
     if (isCorrect) {
         score++;
@@ -274,10 +329,10 @@ function finishOlympiad() {
     document.getElementById('results-screen').style.display = 'block';
 
     const duration = Math.round((Date.now() - totalStartTime) / 1000);
-    const acc = Math.round((score / QUESTIONS_BANK.length) * 100);
+    const acc = Math.round((score / sessionQuestions.length) * 100);
     const xp = score * 15;
 
-    document.getElementById('final-score-val').textContent = `${score} / ${QUESTIONS_BANK.length}`;
+    document.getElementById('final-score-val').textContent = `${score} / ${sessionQuestions.length}`;
     document.getElementById('accuracy-val').textContent = `${acc}%`;
     document.getElementById('xp-val').textContent = `+${xp} XP`;
     document.getElementById('time-val').textContent = `${duration}s`;

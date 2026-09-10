@@ -149,6 +149,7 @@
 
 <script>
 const PUZZLES = [
+    // Python 3 - Core & Data Structures
     {
         lang: "Python 3",
         prompt: "What is the output of the following list comprehension?",
@@ -164,14 +165,6 @@ const PUZZLES = [
         opts: ["None", "KeyError: 'c'", "42", "0"],
         ans: 2,
         exp: "`dict.get(key, default)` returns the fallback default value (42) if the key is not present in the dictionary."
-    },
-    {
-        lang: "JavaScript",
-        prompt: "What does this JavaScript snippet output in node / browser?",
-        code: "const arr = [1, 2, 3];\narr.push(4);\nconsole.log(arr.length);",
-        opts: ["TypeError: Assignment to constant variable", "4", "3", "undefined"],
-        ans: 1,
-        exp: "`const` prevents reassignment of the variable binding `arr`, but the underlying array object remains mutable. `.push(4)` expands length to 4."
     },
     {
         lang: "Python 3",
@@ -198,6 +191,72 @@ const PUZZLES = [
         exp: "`a & b` evaluates the set intersection of common elements: {3, 4}."
     },
     {
+        lang: "Python 3",
+        prompt: "What does this lambda function produce?",
+        code: "sq = lambda x, y=2: x ** y\nprint(sq(3))",
+        opts: ["6", "9", "27", "TypeError: missing required argument"],
+        ans: 1,
+        exp: "`sq(3)` uses the default argument `y=2`, computing 3 ** 2 = 9."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What happens when appending to a default mutable argument?",
+        code: "def append_val(val, lst=[]):\n    lst.append(val)\n    return lst\nappend_val(1)\nprint(append_val(2))",
+        opts: ["[2]", "[1, 2]", "[1]", "TypeError"],
+        ans: 1,
+        exp: "Default argument expressions in Python are evaluated once at function definition time, so the list persists across invocations."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What does `zip()` with unequal lengths produce in standard Python 3?",
+        code: "a = [1, 2, 3]\nb = ['x', 'y']\nprint(list(zip(a, b)))",
+        opts: ["[(1, 'x'), (2, 'y')]", "[(1, 'x'), (2, 'y'), (3, None)]", "ValueError", "[(1, 'x')]"],
+        ans: 0,
+        exp: "`zip()` truncates at the length of the shortest input iterable: [(1, 'x'), (2, 'y')]."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What is the result of floor division with negative numbers?",
+        code: "print(-7 // 2)",
+        opts: ["-3", "-4", "-3.5", "3"],
+        ans: 1,
+        exp: "Python floor division rounds toward negative infinity: -7 / 2 = -3.5, which floors to -4."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What is the output of this generator expression?",
+        code: "gen = (x * 2 for x in range(3))\nprint(list(gen))\nprint(list(gen))",
+        opts: ["[0, 2, 4] then [0, 2, 4]", "[0, 2, 4] then []", "[] then [0, 2, 4]", "GeneratorExit"],
+        ans: 1,
+        exp: "Generators are single-use iterators. Once exhausted by the first `list()`, subsequent iteration yields an empty list."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What is the output of `any()` and `all()` on an empty list?",
+        code: "print(any([]), all([]))",
+        opts: ["False True", "False False", "True True", "True False"],
+        ans: 0,
+        exp: "`any([])` is False (no truthy element found), whereas `all([])` is vacuously True (no falsy element exists)."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What will this dictionary comprehension produce?",
+        code: "words = ['ant', 'gravity']\nd = {w[0]: len(w) for w in words}\nprint(d)",
+        opts: ["{'a': 3, 'g': 7}", "{'ant': 3, 'gravity': 7}", "[3, 7]", "{'a': 0, 'g': 1}"],
+        ans: 0,
+        exp: "`w[0]` maps the first character ('a' and 'g') to the string's length (3 and 7): {'a': 3, 'g': 7}."
+    },
+
+    // JavaScript - Asynchrony & Core Quirks
+    {
+        lang: "JavaScript",
+        prompt: "What does this JavaScript snippet output in node / browser?",
+        code: "const arr = [1, 2, 3];\narr.push(4);\nconsole.log(arr.length);",
+        opts: ["TypeError: Assignment to constant variable", "4", "3", "undefined"],
+        ans: 1,
+        exp: "`const` prevents reassignment of the variable binding `arr`, but the underlying array object remains mutable. `.push(4)` expands length to 4."
+    },
+    {
         lang: "JavaScript",
         prompt: "What is the value of `x` after the ternary operator?",
         code: "let score = 85;\nlet x = score >= 90 ? 'A' : score >= 80 ? 'B' : 'C';\nconsole.log(x);",
@@ -206,31 +265,221 @@ const PUZZLES = [
         exp: "85 >= 90 is false, advancing to the second condition: 85 >= 80 is true, evaluating to 'B'."
     },
     {
+        lang: "JavaScript",
+        prompt: "What does `typeof NaN` evaluate to in JavaScript?",
+        code: "console.log(typeof NaN);",
+        opts: ["'number'", "'NaN'", "'undefined'", "'object'"],
+        ans: 0,
+        exp: "In IEEE 754 floating-point specification and JavaScript, NaN (Not-a-Number) is formally of type 'number'."
+    },
+    {
+        lang: "JavaScript",
+        prompt: "What is the output of this array mapping and parsing?",
+        code: "console.log(['1', '2', '3'].map(parseInt));",
+        opts: ["[1, NaN, NaN]", "[1, 2, 3]", "[1, 2, 0]", "TypeError"],
+        ans: 0,
+        exp: "`map` passes (element, index, array). `parseInt` receives radix: parseInt('1', 0) = 1, parseInt('2', 1) = NaN, parseInt('3', 2) = NaN."
+    },
+    {
+        lang: "JavaScript",
+        prompt: "What does `[1, 2] + [3, 4]` evaluate to in JavaScript?",
+        code: "console.log([1, 2] + [3, 4]);",
+        opts: ["'1,23,4'", "[1, 2, 3, 4]", "NaN", "TypeError"],
+        ans: 0,
+        exp: "The `+` operator coerces both arrays to strings ('1,2' and '3,4') and concatenates them into '1,23,4'."
+    },
+    {
+        lang: "JavaScript",
+        prompt: "What is the event loop output sequence?",
+        code: "console.log('1');\nsetTimeout(() => console.log('2'), 0);\nPromise.resolve().then(() => console.log('3'));\nconsole.log('4');",
+        opts: ["1, 4, 3, 2", "1, 2, 3, 4", "1, 4, 2, 3", "1, 3, 4, 2"],
+        ans: 0,
+        exp: "Synchronous code runs first (1, 4), then microtask queue (Promise: 3), then macrotask queue (setTimeout: 2)."
+    },
+    {
+        lang: "JavaScript",
+        prompt: "What is the output of `null == undefined` vs `null === undefined`?",
+        code: "console.log(null == undefined, null === undefined);",
+        opts: ["true false", "true true", "false false", "false true"],
+        ans: 0,
+        exp: "Abstract equality `==` coerces null and undefined as equal (true), but strict equality `===` detects different types (false)."
+    },
+    {
+        lang: "JavaScript",
+        prompt: "What does the spread operator produce here?",
+        code: "const a = { x: 1, y: 2 };\nconst b = { y: 99, z: 3 };\nconst c = { ...a, ...b };\nconsole.log(c.y);",
+        opts: ["99", "2", "undefined", "[2, 99]"],
+        ans: 0,
+        exp: "Properties in later spread objects overwrite identical property keys in earlier objects: `b.y` overrides `a.y` to 99."
+    },
+    {
+        lang: "JavaScript",
+        prompt: "What is the return value of `Boolean('false')`?",
+        code: "console.log(Boolean('false'));",
+        opts: ["true", "false", "undefined", "TypeError"],
+        ans: 0,
+        exp: "Any non-empty string in JavaScript (including 'false', '0', and ' ') evaluates to true."
+    },
+    {
+        lang: "JavaScript",
+        prompt: "What is the behavior of arrow functions regarding `this`?",
+        code: "const obj = {\n  val: 10,\n  getVal: () => this.val\n};\nconsole.log(obj.getVal());",
+        opts: ["undefined (or global)", "10", "TypeError", "ReferenceError"],
+        ans: 0,
+        exp: "Arrow functions do not bind their own `this`; they retain the lexical `this` of the enclosing execution scope (global/window)."
+    },
+
+    // Algorithms, Data Structures & Complexity
+    {
+        lang: "Algorithms",
+        prompt: "What is the average time complexity of searching in a balanced Binary Search Tree (AVL / Red-Black)?",
+        code: "// AVL Tree Search\nfind(node, target)",
+        opts: ["O(log n)", "O(n)", "O(1)", "O(n log n)"],
+        ans: 0,
+        exp: "A balanced BST maintains height h = O(log n), ensuring lookup, insertion, and deletion run in O(log n) time."
+    },
+    {
+        lang: "Algorithms",
+        prompt: "What data structure is ideally suited for implementing Breadth-First Search (BFS)?",
+        code: "function bfs(graph, startNode) {\n  const structure = new ???();\n}",
+        opts: ["Queue (FIFO)", "Stack (LIFO)", "Priority Queue", "Bloom Filter"],
+        ans: 0,
+        exp: "BFS processes nodes level-by-level using a FIFO Queue to enqueue neighbors."
+    },
+    {
+        lang: "Data Structures",
+        prompt: "What is the amortized time complexity of appending an element to a dynamic array (like Python list or JS Array)?",
+        code: "list.append(x)",
+        opts: ["O(1)", "O(n)", "O(log n)", "O(n²)"],
+        ans: 0,
+        exp: "While array resizing takes O(n), geometric doubling ensures the amortized cost per append is O(1)."
+    },
+    {
+        lang: "Algorithms",
+        prompt: "What algorithm paradigm does MergeSort utilize?",
+        code: "function mergeSort(arr) {\n  // split, sort, combine\n}",
+        opts: ["Divide and Conquer", "Greedy Method", "Dynamic Programming", "Backtracking"],
+        ans: 0,
+        exp: "MergeSort divides the array into halves, recursively sorts them, and merges the sorted subarrays: Divide and Conquer."
+    },
+    {
+        lang: "Algorithms",
+        prompt: "What is the worst-case space complexity of standard non-in-place MergeSort on an array of size n?",
+        code: "mergeSort(arr)",
+        opts: ["O(n)", "O(1)", "O(n log n)", "O(log n)"],
+        ans: 0,
+        exp: "MergeSort requires an auxiliary buffer array of size n to merge elements during the combine step: O(n) space."
+    },
+    {
+        lang: "Data Structures",
+        prompt: "What is the time complexity of checking if an element exists in a Hash Table with good hash distribution?",
+        code: "if key in hash_table:",
+        opts: ["O(1) average", "O(log n)", "O(n) always", "O(n log n)"],
+        ans: 0,
+        exp: "Hash tables compute array indices via hashing in O(1) average time, degrading to O(n) only with severe hash collisions."
+    },
+    {
+        lang: "Algorithms",
+        prompt: "Which dynamic programming problem finds the longest sequence that appears in the same relative order in two strings?",
+        code: "LCS('LUMINA', 'ALUMNI')",
+        opts: ["Longest Common Subsequence", "Knapsack Problem", "Traveling Salesperson", "Levenshtein Distance"],
+        ans: 0,
+        exp: "The Longest Common Subsequence (LCS) problem determines the maximum length subsequence common to both strings."
+    },
+    {
+        lang: "Data Structures",
+        prompt: "In a Min-Heap, where is the minimum element always located?",
+        code: "min_heap.peek()",
+        opts: ["At the root (index 0)", "At the leftmost leaf", "At the rightmost leaf", "Any random leaf"],
+        ans: 0,
+        exp: "The Min-Heap property enforces that parent nodes are always smaller than children, guaranteeing the minimum is at the root."
+    },
+    {
+        lang: "SQL",
+        prompt: "What does an `INNER JOIN` between two tables return?",
+        code: "SELECT * FROM students INNER JOIN scores ON students.id = scores.student_id;",
+        opts: ["Only rows with matching keys in both tables", "All rows from the left table regardless of matches", "All rows from both tables", "Only rows where left key is null"],
+        ans: 0,
+        exp: "INNER JOIN produces only the Cartesian subset where the join condition matches in both relations."
+    },
+    {
+        lang: "SQL",
+        prompt: "Which SQL clause filters the results of aggregated groups produced by `GROUP BY`?",
+        code: "SELECT class, AVG(score) FROM students GROUP BY class ??? AVG(score) > 80;",
+        opts: ["HAVING", "WHERE", "ORDER BY", "FILTER"],
+        ans: 0,
+        exp: "`HAVING` filters aggregated group records, whereas `WHERE` filters individual rows prior to aggregation."
+    },
+    {
+        lang: "Algorithms",
+        prompt: "What is the Big-O time complexity of binary search on a sorted array of size n?",
+        code: "binarySearch(sortedArr, target)",
+        opts: ["O(log n)", "O(n)", "O(1)", "O(n log n)"],
+        ans: 0,
+        exp: "Binary search cuts the search space in half at each step: log₂(n) comparisons."
+    },
+    {
+        lang: "Data Structures",
+        prompt: "What is the time complexity to insert an element at the beginning of a singly linked list with a head pointer?",
+        code: "list.prepend(node)",
+        opts: ["O(1)", "O(n)", "O(log n)", "O(n²)"],
+        ans: 0,
+        exp: "Prepending to a linked list simply updates the new node's next pointer and moves the head pointer in O(1) time."
+    },
+    {
         lang: "Python 3",
-        prompt: "What does this lambda function produce?",
-        code: "sq = lambda x, y=2: x ** y\nprint(sq(3))",
-        opts: ["6", "9", "27", "TypeError: missing required argument"],
-        ans: 1,
-        exp: "`sq(3)` uses the default argument `y=2`, computing 3 ** 2 = 9."
+        prompt: "What will `try...except...finally` execute if an unhandled exception occurs?",
+        code: "try:\n  1 / 0\nfinally:\n  print('clean')",
+        opts: ["Prints 'clean' then raises ZeroDivisionError", "Raises ZeroDivisionError without printing", "Catches error silently", "SyntaxError"],
+        ans: 0,
+        exp: "The `finally` block is guaranteed to execute before the uncaught exception propagates up the call stack."
+    },
+    {
+        lang: "JavaScript",
+        prompt: "What does `Object.freeze()` do to an object?",
+        code: "const user = Object.freeze({ name: 'Tobi' });\nuser.name = 'Olive';",
+        opts: ["Silently ignores edit (or throws in strict mode)", "Throws ReferenceError", "Mutates name to 'Olive'", "Converts object to array"],
+        ans: 0,
+        exp: "`Object.freeze()` prevents property additions, deletions, and modifications. In non-strict mode it fails silently; in strict mode it throws."
+    },
+    {
+        lang: "Python 3",
+        prompt: "What is the output of `is` vs `==` on small integers in CPython?",
+        code: "a = 256\nb = 256\nprint(a is b, a == b)",
+        opts: ["True True", "False True", "False False", "True False"],
+        ans: 0,
+        exp: "CPython caches small integers in the range [-5, 256], so `a` and `b` reference the identical memory address (True True)."
+    },
+    {
+        lang: "Algorithms",
+        prompt: "Which graph traversal algorithm finds all connected components in an undirected graph?",
+        code: "findComponents(graph)",
+        opts: ["Both BFS and DFS", "Only Dijkstra", "Only Bellman-Ford", "Only Prim's Algorithm"],
+        ans: 0,
+        exp: "Both Breadth-First Search and Depth-First Search can traverse and label all connected components in an undirected graph."
     }
 ];
 
+let sessionPuzzles = [];
 let cur = 0, score = 0, streak = 0, maxStreak = 0, timer = 25, timerId = null, answered = false;
 
 function startSprint() {
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('results-screen').style.display = 'none';
     document.getElementById('quiz-screen').style.display = 'block';
+    
+    // Pick 8 randomized puzzles from the 40-puzzle reservoir
+    sessionPuzzles = [...PUZZLES].sort(() => 0.5 - Math.random()).slice(0, 8);
     cur = 0; score = 0; streak = 0; maxStreak = 0;
     loadPuzzle(0);
 }
 
 function loadPuzzle(idx) {
-    if (idx >= PUZZLES.length) { finishSprint(); return; }
+    if (idx >= sessionPuzzles.length) { finishSprint(); return; }
     answered = false;
-    const p = PUZZLES[idx];
+    const p = sessionPuzzles[idx];
     document.getElementById('lang-badge').textContent = p.lang;
-    document.getElementById('q-counter').textContent = `Puzzle ${idx + 1} / ${PUZZLES.length}`;
+    document.getElementById('q-counter').textContent = `Puzzle ${idx + 1} / ${sessionPuzzles.length}`;
     document.getElementById('current-score').textContent = score;
     document.getElementById('streak-val').textContent = streak;
     document.getElementById('q-prompt').textContent = p.prompt;
@@ -260,7 +509,7 @@ function selectCodeAnswer(choiceIdx) {
     answered = true;
     clearInterval(timerId);
 
-    const p = PUZZLES[cur];
+    const p = sessionPuzzles[cur];
     const isCorrect = choiceIdx === p.ans;
     if (isCorrect) {
         score++;
@@ -298,7 +547,9 @@ function finishSprint() {
     document.getElementById('results-screen').style.display = 'block';
 
     const xp = score * 20;
-    document.getElementById('final-score-val').textContent = `${score} / ${PUZZLES.length} Solved`;
+    document.getElementById('final-score-val').textContent = `${score} / ${sessionPuzzles.length} Solved`;
+    document.getElementById('xp-val').textContent = `+${xp} XP`;
+    document.getElementById('max-streak-val').textContent = maxStreak;
     document.getElementById('xp-val').textContent = `+${xp} XP`;
     document.getElementById('max-streak-val').textContent = maxStreak;
 

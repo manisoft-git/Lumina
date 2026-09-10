@@ -35,10 +35,15 @@
     grid-template-rows: repeat(4, 56px);
     width: 224px;
 }
+.sudoku-board.grid-6 {
+    grid-template-columns: repeat(6, 46px);
+    grid-template-rows: repeat(6, 46px);
+    width: 276px;
+}
 .sudoku-board.grid-9 {
-    grid-template-columns: repeat(9, 40px);
-    grid-template-rows: repeat(9, 40px);
-    width: 360px;
+    grid-template-columns: repeat(9, 38px);
+    grid-template-rows: repeat(9, 38px);
+    width: 342px;
 }
 .sudoku-cell {
     display: flex;
@@ -60,6 +65,16 @@
 /* 4x4 subgrid borders */
 .sudoku-board.grid-4 .sudoku-cell:nth-child(2n) { border-right: 2px solid var(--border); }
 .sudoku-board.grid-4 .sudoku-cell:nth-child(n+9):nth-child(-n+16) { border-top: 2px solid var(--border); }
+
+/* 6x6 subgrid borders (2 rows x 3 cols) */
+.sudoku-board.grid-6 .sudoku-cell:nth-child(3n) { border-right: 2px solid #38bdf8; }
+.sudoku-board.grid-6 .sudoku-cell:nth-child(n+13):nth-child(-n+18),
+.sudoku-board.grid-6 .sudoku-cell:nth-child(n+25):nth-child(-n+30) { border-top: 2px solid #38bdf8; }
+
+/* 9x9 subgrid borders (3 rows x 3 cols) */
+.sudoku-board.grid-9 .sudoku-cell:nth-child(3n) { border-right: 2px solid #a855f7; }
+.sudoku-board.grid-9 .sudoku-cell:nth-child(n+28):nth-child(-n+36),
+.sudoku-board.grid-9 .sudoku-cell:nth-child(n+55):nth-child(-n+63) { border-top: 2px solid #a855f7; }
 
 /* Keypad */
 .sudoku-keypad {
@@ -100,12 +115,15 @@
             <p style="color:var(--muted); font-size:1.05rem; max-width:560px; margin:0 auto 24px; line-height:1.5;">
                 Train non-verbal deductive reasoning and elimination matrices. Fill every row, column, and sub-grid with unique numerals without repeating!
             </p>
-            <div style="display:flex; gap:12px; justify-content:center; margin-bottom:16px;">
-                <button class="btn btn-primary" onclick="startSudoku(4)" style="padding:12px 28px; font-weight:800; background:linear-gradient(135deg,#ec4899,#8b5cf6); border:none;">
+            <div style="display:flex; gap:12px; justify-content:center; margin-bottom:16px; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="startSudoku(4)" style="padding:12px 24px; font-weight:800; background:linear-gradient(135deg,#ec4899,#8b5cf6); border:none;">
                     ⚡ 4x4 Mini Sprint (Fast)
                 </button>
-                <button class="btn btn-secondary" onclick="startSudoku(9)" style="padding:12px 28px; font-weight:800;">
-                    🧩 9x9 Classic
+                <button class="btn btn-secondary" onclick="startSudoku(6)" style="padding:12px 24px; font-weight:800; border-color:#38bdf8; color:#38bdf8;">
+                    🔷 6x6 Junior Grid (Medium)
+                </button>
+                <button class="btn btn-secondary" onclick="startSudoku(9)" style="padding:12px 24px; font-weight:800;">
+                    🧩 9x9 Classic (Master)
                 </button>
             </div>
         </div>
@@ -163,6 +181,218 @@ const PUZZLES_4x4 = [
     {
         initial: [0, 2, 4, 0, 1, 0, 0, 3, 4, 0, 0, 2, 0, 1, 3, 0],
         solution: [3, 2, 4, 1, 1, 4, 2, 3, 4, 3, 1, 2, 2, 1, 3, 4]
+    },
+    {
+        initial: [2, 0, 0, 3, 0, 3, 2, 0, 0, 2, 3, 0, 3, 0, 0, 2],
+        solution: [2, 1, 4, 3, 4, 3, 2, 1, 1, 2, 3, 4, 3, 4, 1, 2]
+    },
+    {
+        initial: [4, 0, 3, 0, 0, 3, 0, 4, 3, 0, 2, 0, 0, 2, 0, 3],
+        solution: [4, 1, 3, 2, 2, 3, 1, 4, 3, 4, 2, 1, 1, 2, 4, 3]
+    },
+    {
+        initial: [3, 0, 0, 2, 0, 1, 4, 0, 0, 3, 2, 0, 1, 0, 0, 4],
+        solution: [3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1, 1, 2, 3, 4]
+    },
+    {
+        initial: [1, 0, 0, 3, 3, 0, 4, 0, 0, 1, 0, 2, 2, 0, 0, 4],
+        solution: [1, 4, 2, 3, 3, 2, 4, 1, 4, 1, 3, 2, 2, 3, 1, 4]
+    },
+    {
+        initial: [0, 4, 3, 0, 3, 0, 0, 2, 1, 0, 0, 4, 0, 2, 1, 0],
+        solution: [2, 4, 3, 1, 3, 1, 4, 2, 1, 3, 2, 4, 4, 2, 1, 3]
+    },
+    {
+        initial: [4, 0, 0, 3, 0, 3, 4, 0, 0, 4, 3, 0, 3, 0, 0, 4],
+        solution: [4, 2, 1, 3, 1, 3, 4, 2, 2, 4, 3, 1, 3, 1, 2, 4]
+    },
+    {
+        initial: [1, 0, 3, 0, 0, 4, 0, 2, 2, 0, 4, 0, 0, 3, 0, 1],
+        solution: [1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1]
+    },
+    {
+        initial: [2, 0, 1, 0, 0, 1, 0, 3, 3, 0, 4, 0, 0, 4, 0, 2],
+        solution: [2, 3, 1, 4, 4, 1, 2, 3, 3, 2, 4, 1, 1, 4, 3, 2]
+    },
+    {
+        initial: [0, 1, 2, 0, 4, 0, 0, 1, 1, 0, 0, 2, 0, 4, 1, 0],
+        solution: [3, 1, 2, 4, 4, 2, 3, 1, 1, 3, 4, 2, 2, 4, 1, 3]
+    },
+    {
+        initial: [4, 0, 0, 1, 0, 2, 4, 0, 0, 1, 3, 0, 3, 0, 0, 2],
+        solution: [4, 3, 2, 1, 1, 2, 4, 3, 2, 1, 3, 4, 3, 4, 1, 2]
+    },
+    {
+        initial: [2, 0, 3, 0, 0, 4, 0, 1, 4, 0, 1, 0, 0, 2, 0, 3],
+        solution: [2, 1, 3, 4, 3, 4, 2, 1, 4, 3, 1, 2, 1, 2, 4, 3]
+    },
+    {
+        initial: [1, 0, 0, 2, 0, 2, 1, 0, 0, 3, 4, 0, 4, 0, 0, 3],
+        solution: [1, 4, 3, 2, 3, 2, 1, 4, 2, 3, 4, 1, 4, 1, 2, 3]
+    },
+    {
+        initial: [0, 4, 2, 0, 1, 0, 0, 4, 4, 0, 0, 2, 0, 1, 4, 0],
+        solution: [3, 4, 2, 1, 1, 2, 3, 4, 4, 3, 1, 2, 2, 1, 4, 3]
+    },
+    {
+        initial: [4, 0, 0, 1, 0, 1, 4, 0, 0, 3, 2, 0, 2, 0, 0, 3],
+        solution: [4, 2, 3, 1, 3, 1, 4, 2, 1, 3, 2, 4, 2, 4, 1, 3]
+    }
+];
+
+const PUZZLES_6x6 = [
+    {
+        initial: [
+            1, 0, 3, 0, 5, 0,
+            0, 5, 0, 1, 0, 3,
+            2, 0, 1, 0, 6, 0,
+            0, 6, 0, 2, 0, 1,
+            3, 0, 2, 0, 4, 0,
+            0, 4, 0, 3, 0, 2
+        ],
+        solution: [
+            1, 2, 3, 4, 5, 6,
+            4, 5, 6, 1, 2, 3,
+            2, 3, 1, 5, 6, 4,
+            5, 6, 4, 2, 3, 1,
+            3, 1, 2, 6, 4, 5,
+            6, 4, 5, 3, 1, 2
+        ]
+    },
+    {
+        initial: [
+            2, 0, 0, 3, 0, 5,
+            0, 6, 5, 0, 1, 0,
+            1, 0, 2, 0, 5, 0,
+            0, 5, 0, 1, 0, 2,
+            0, 2, 0, 5, 3, 0,
+            5, 0, 1, 0, 0, 6
+        ],
+        solution: [
+            2, 1, 4, 3, 6, 5,
+            3, 6, 5, 2, 1, 4,
+            1, 4, 2, 6, 5, 3,
+            6, 5, 3, 1, 4, 2,
+            4, 2, 6, 5, 3, 1,
+            5, 3, 1, 4, 2, 6
+        ]
+    },
+    {
+        initial: [
+            3, 0, 5, 0, 1, 0,
+            0, 1, 0, 3, 0, 5,
+            4, 0, 6, 0, 2, 0,
+            0, 2, 0, 4, 0, 6,
+            5, 0, 1, 0, 3, 0,
+            0, 3, 0, 5, 0, 1
+        ],
+        solution: [
+            3, 4, 5, 6, 1, 2,
+            6, 1, 2, 3, 4, 5,
+            4, 5, 6, 1, 2, 3,
+            1, 2, 3, 4, 5, 6,
+            5, 6, 1, 2, 3, 4,
+            2, 3, 4, 5, 6, 1
+        ]
+    }
+];
+
+const PUZZLES_9x9 = [
+    {
+        initial: [
+            5, 3, 0, 0, 7, 0, 0, 0, 0,
+            6, 0, 0, 1, 9, 5, 0, 0, 0,
+            0, 9, 8, 0, 0, 0, 0, 6, 0,
+            8, 0, 0, 0, 6, 0, 0, 0, 3,
+            4, 0, 0, 8, 0, 3, 0, 0, 1,
+            7, 0, 0, 0, 2, 0, 0, 0, 6,
+            0, 6, 0, 0, 0, 0, 2, 8, 0,
+            0, 0, 0, 4, 1, 9, 0, 0, 5,
+            0, 0, 0, 0, 8, 0, 0, 7, 9
+        ],
+        solution: [
+            5, 3, 4, 6, 7, 8, 9, 1, 2,
+            6, 7, 2, 1, 9, 5, 3, 4, 8,
+            1, 9, 8, 3, 4, 2, 5, 6, 7,
+            8, 5, 9, 7, 6, 1, 4, 2, 3,
+            4, 2, 6, 8, 5, 3, 7, 9, 1,
+            7, 1, 3, 9, 2, 4, 8, 5, 6,
+            9, 6, 1, 5, 3, 7, 2, 8, 4,
+            2, 8, 7, 4, 1, 9, 6, 3, 5,
+            3, 4, 5, 2, 8, 6, 1, 7, 9
+        ]
+    },
+    {
+        initial: [
+            0, 0, 0, 2, 6, 0, 7, 0, 1,
+            6, 8, 0, 0, 7, 0, 0, 9, 0,
+            1, 9, 0, 0, 0, 4, 5, 0, 0,
+            8, 2, 0, 1, 0, 0, 0, 4, 0,
+            0, 0, 4, 6, 0, 2, 9, 0, 0,
+            0, 5, 0, 0, 0, 3, 0, 2, 8,
+            0, 0, 9, 3, 0, 0, 0, 7, 4,
+            0, 4, 0, 0, 5, 0, 0, 3, 6,
+            7, 0, 3, 0, 1, 8, 0, 0, 0
+        ],
+        solution: [
+            4, 3, 5, 2, 6, 9, 7, 8, 1,
+            6, 8, 2, 5, 7, 1, 4, 9, 3,
+            1, 9, 7, 8, 3, 4, 5, 6, 2,
+            8, 2, 6, 1, 9, 5, 3, 4, 7,
+            3, 7, 4, 6, 8, 2, 9, 1, 5,
+            9, 5, 1, 7, 4, 3, 6, 2, 8,
+            5, 1, 9, 3, 2, 6, 8, 7, 4,
+            2, 4, 8, 9, 5, 7, 1, 3, 6,
+            7, 6, 3, 4, 1, 8, 2, 5, 9
+        ]
+    },
+    {
+        initial: [
+            1, 0, 0, 4, 0, 6, 0, 8, 0,
+            0, 5, 0, 7, 0, 0, 1, 0, 3,
+            7, 0, 9, 0, 2, 0, 0, 5, 0,
+            0, 1, 0, 3, 0, 5, 0, 9, 0,
+            3, 0, 5, 0, 9, 0, 2, 0, 4,
+            0, 9, 0, 2, 0, 4, 0, 6, 0,
+            0, 3, 0, 0, 4, 0, 9, 0, 8,
+            6, 0, 2, 0, 0, 8, 0, 3, 0,
+            0, 7, 0, 5, 0, 1, 0, 0, 2
+        ],
+        solution: [
+            1, 2, 3, 4, 5, 6, 7, 8, 9,
+            4, 5, 6, 7, 8, 9, 1, 2, 3,
+            7, 8, 9, 1, 2, 3, 4, 5, 6,
+            2, 1, 4, 3, 6, 5, 8, 9, 7,
+            3, 6, 5, 8, 9, 7, 2, 1, 4,
+            8, 9, 7, 2, 1, 4, 3, 6, 5,
+            5, 3, 1, 6, 4, 2, 9, 7, 8,
+            6, 4, 2, 9, 7, 8, 5, 3, 1,
+            9, 7, 8, 5, 3, 1, 6, 4, 2
+        ]
+    },
+    {
+        initial: [
+            2, 0, 0, 3, 0, 0, 9, 0, 8,
+            0, 5, 0, 0, 6, 2, 0, 1, 0,
+            9, 1, 0, 8, 0, 0, 0, 0, 4,
+            0, 0, 8, 1, 0, 7, 3, 0, 0,
+            5, 9, 0, 0, 3, 0, 0, 2, 1,
+            0, 0, 2, 5, 0, 6, 4, 0, 0,
+            3, 0, 0, 0, 0, 9, 0, 4, 6,
+            0, 4, 0, 2, 5, 0, 0, 7, 0,
+            7, 0, 9, 0, 0, 1, 0, 0, 2
+        ],
+        solution: [
+            2, 7, 6, 3, 1, 4, 9, 5, 8,
+            8, 5, 4, 9, 6, 2, 7, 1, 3,
+            9, 1, 3, 8, 7, 5, 2, 6, 4,
+            4, 6, 8, 1, 2, 7, 3, 9, 5,
+            5, 9, 7, 4, 3, 8, 6, 2, 1,
+            1, 3, 2, 5, 9, 6, 4, 8, 7,
+            3, 2, 5, 7, 8, 9, 1, 4, 6,
+            6, 4, 1, 2, 5, 3, 8, 7, 9,
+            7, 8, 9, 6, 4, 1, 5, 3, 2
+        ]
     }
 ];
 
@@ -171,10 +401,14 @@ function startSudoku(size) {
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('results-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'block';
-    document.getElementById('mode-badge').textContent = `${size}x${size} Mini Sudoku`;
+    document.getElementById('mode-badge').textContent = size === 4 ? '4x4 Mini Sudoku' : (size === 6 ? '6x6 Junior Sudoku' : '9x9 Classic Sudoku');
     document.getElementById('error-msg').style.display = 'none';
 
-    const pz = PUZZLES_4x4[Math.floor(Math.random() * PUZZLES_4x4.length)];
+    let puzzleList = PUZZLES_4x4;
+    if (size === 6) puzzleList = PUZZLES_6x6;
+    else if (size === 9) puzzleList = PUZZLES_9x9;
+
+    const pz = puzzleList[Math.floor(Math.random() * puzzleList.length)];
     currentGrid = [...pz.initial];
     solutionGrid = [...pz.solution];
     givenIndices = new Set();

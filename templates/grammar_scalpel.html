@@ -369,6 +369,310 @@ const GRAMMAR_QUESTIONS = [
         options: ["is", "are", "were", "have been"],
         ans: 0,
         exp: "Rule: Expressions of money, time, and distance functioning as a unified sum take a singular verb ('Ten thousand naira is...')."
+    },
+    {
+        cat: "Subjunctive Mood",
+        sentence: "The disciplinary committee recommended that the errant student _____ two weeks of community service.",
+        prompt: "Select the mandative subjunctive base form:",
+        options: ["perform", "performs", "performed", "shall perform"],
+        ans: 0,
+        exp: "Rule: Mandative subjunctive clauses following verbs like recommend, demand, or suggest use the base verb ('recommend that he perform...')."
+    },
+    {
+        cat: "Prepositional Precision",
+        sentence: "The research findings are completely immune _____ external political interference.",
+        prompt: "Select the correct preposition governed by 'immune':",
+        options: ["to", "from", "against", "with"],
+        ans: 0,
+        exp: "Rule: The adjective 'immune' in formal English takes the preposition 'to' ('immune to interference/disease')."
+    },
+    {
+        cat: "The Number vs A Number",
+        sentence: "The number of accredited universities in the country _____ steadily increased over the decade.",
+        prompt: "Choose the singular verb governed by 'The number':",
+        options: ["has", "have", "are", "were"],
+        ans: 0,
+        exp: "Rule: 'The number' denotes a singular mathematical total and requires a singular verb ('The number has increased'). 'A number' takes plural."
+    },
+    {
+        cat: "The Number vs A Number",
+        sentence: "A number of brilliant scholars _____ shortlisted for the prestigious Olympiad finals.",
+        prompt: "Choose the plural verb governed by 'A number':",
+        options: ["have been", "has been", "was", "is"],
+        ans: 0,
+        exp: "Rule: 'A number of' functions as an indefinite quantifier meaning 'several' and takes a plural verb ('A number have been shortlisted')."
+    },
+    {
+        cat: "More Than One Concord",
+        sentence: "More than one student _____ failed to submit the term laboratory report.",
+        prompt: "Choose the grammatically sound verb:",
+        options: ["has", "have", "were", "are"],
+        ans: 0,
+        exp: "Rule: 'More than one' followed by a singular countable noun takes a singular verb by formal attraction ('More than one student has...')."
+    },
+    {
+        cat: "Distributive Concord",
+        sentence: "Many a courageous warrior _____ fallen on the ancient battlefields of West Africa.",
+        prompt: "Choose the singular verb:",
+        options: ["has", "have", "are", "were"],
+        ans: 0,
+        exp: "Rule: The formal idiom 'many a' is followed by a singular countable noun and requires a singular verb ('Many a warrior has fallen')."
+    },
+    {
+        cat: "Parenthetical Concord",
+        sentence: "Physics, in addition to chemistry and biology, _____ compulsory for pre-medical matriculation.",
+        prompt: "Choose the correct singular verb:",
+        options: ["is", "are", "were", "have been"],
+        ans: 0,
+        exp: "Rule: 'In addition to' introduces an adjunct phrase that does not alter the singular subject 'Physics'."
+    },
+    {
+        cat: "Prepositional Precision",
+        sentence: "The school prefect insisted _____ inspecting every student's laboratory coat.",
+        prompt: "Select the required preposition after 'insist':",
+        options: ["on", "at", "in", "for"],
+        ans: 0,
+        exp: "Rule: In standard English, the verb 'insist' strictly takes the preposition 'on' or 'upon' before a gerund."
+    },
+    {
+        cat: "Relative Pronoun Concord",
+        sentence: "He is one of those rare researchers who _____ painstakingly before drawing a conclusion.",
+        prompt: "Select the plural verb agreeing with antecedent 'researchers':",
+        options: ["investigate", "investigates", "investigating", "has investigated"],
+        ans: 0,
+        exp: "Rule: In 'one of those [plural noun] who [verb]', the relative pronoun 'who' refers to the plural antecedent ('researchers investigate')."
+    },
+    {
+        cat: "Negative Inversion",
+        sentence: "Seldom _____ such an extraordinary display of mathematical prowess in a junior competition.",
+        prompt: "Select the correctly inverted verb phrase:",
+        options: ["have we witnessed", "we have witnessed", "we witnessed", "had we witness"],
+        ans: 0,
+        exp: "Rule: Negative and restrictive adverbs at the beginning of a sentence (seldom, rarely, scarcely) trigger auxiliary-subject inversion."
+    },
+    {
+        cat: "Correlative Conjunctions",
+        sentence: "Scarcely had the examination begun _____ the electrical generator suffered an unexpected outage.",
+        prompt: "Choose the correct correlative conjunction:",
+        options: ["when", "than", "then", "before"],
+        ans: 0,
+        exp: "Rule: 'Scarcely' and 'hardly' pair with 'when' ('Scarcely had... when...'). 'No sooner' pairs with 'than'."
+    },
+    {
+        cat: "Correlative Conjunctions",
+        sentence: "No sooner had the bell rung _____ the eager candidates flipped over their test scripts.",
+        prompt: "Choose the correct correlative conjunction:",
+        options: ["than", "when", "then", "where"],
+        ans: 0,
+        exp: "Rule: 'No sooner' is always paired with 'than' ('No sooner had... than...')."
+    },
+    {
+        cat: "Unreal Past Conditional",
+        sentence: "Had the school management known about the severe storm warning, they _____ the inter-house sports.",
+        prompt: "Select the conditional perfect form:",
+        options: ["would have postponed", "will have postponed", "postponed", "would postpone"],
+        ans: 0,
+        exp: "Rule: An inverted third conditional ('Had + past participle') requires 'would have + past participle' in the main clause."
+    },
+    {
+        cat: "Lexical Precision",
+        sentence: "Prolonged agricultural drought will drastically _____ food security across the savannah belt.",
+        prompt: "Select the correct verb meaning to influence or modify:",
+        options: ["affect", "effect", "affects", "effects"],
+        ans: 0,
+        exp: "Usage: 'Affect' is a verb meaning to influence; 'effect' is typically a noun meaning the result or outcome."
+    },
+    {
+        cat: "Lexical Precision",
+        sentence: "The introduction of automated biometric registers had an immediate positive _____ on class punctuality.",
+        prompt: "Select the correct noun meaning result or outcome:",
+        options: ["effect", "affect", "effective", "affective"],
+        ans: 0,
+        exp: "Usage: 'Effect' as a noun signifies the outcome or consequence of an action."
+    },
+    {
+        cat: "Lexical Precision",
+        sentence: "Her insightful critique was a thoughtful _____ on the student's ambitious graduation thesis.",
+        prompt: "Select the word meaning an expression of praise or admiration:",
+        options: ["compliment", "complement", "complaisance", "compliance"],
+        ans: 0,
+        exp: "Vocabulary: 'Compliment' means praise or commendation; 'complement' means something that completes or brings to perfection."
+    },
+    {
+        cat: "Lexical Precision",
+        sentence: "The rich, savory spices and fresh herbs _____ the grilled salmon to perfection.",
+        prompt: "Select the word meaning to complete or bring to harmonious perfection:",
+        options: ["complement", "compliment", "compliments", "complements"],
+        ans: 0,
+        exp: "Vocabulary: 'Complement' means to add to in a way that enhances or completes."
+    },
+    {
+        cat: "Lexical Precision",
+        sentence: "The detective conducted a _____ inquiry so that the suspects would not be alerted.",
+        prompt: "Select the word meaning careful, prudent, and unobtrusive:",
+        options: ["discreet", "discrete", "discretion", "discreetly"],
+        ans: 0,
+        exp: "Vocabulary: 'Discreet' means tactful and cautious; 'discrete' means separate, distinct, and detached."
+    },
+    {
+        cat: "Lexical Precision",
+        sentence: "Quantum theory posits that energy is absorbed or emitted in _____ packet units called quanta.",
+        prompt: "Select the word meaning individually separate and distinct:",
+        options: ["discrete", "discreet", "discretionary", "discretely"],
+        ans: 0,
+        exp: "Vocabulary: 'Discrete' denotes separate, unconnected, or distinct parts."
+    },
+    {
+        cat: "Lexical Precision",
+        sentence: "The defense attorney attempted to _____ a truthful testimony from the reluctant witness.",
+        prompt: "Select the verb meaning to draw out or evoke a response:",
+        options: ["elicit", "illicit", "elision", "eligible"],
+        ans: 0,
+        exp: "Vocabulary: 'Elicit' means to draw out or evoke; 'illicit' means unlawful or prohibited."
+    },
+    {
+        cat: "Lexical Precision",
+        sentence: "Trafficking in endangered wildlife specimens is strictly _____ under international environmental conventions.",
+        prompt: "Select the word meaning forbidden by law or rules:",
+        options: ["illicit", "elicit", "illiterate", "illimitable"],
+        ans: 0,
+        exp: "Vocabulary: 'Illicit' means illegal, prohibited, or contrary to accepted moral standards."
+    },
+    {
+        cat: "Lexical Precision",
+        sentence: "A leader of unblemished moral _____ will never compromise institutional integrity for personal gain.",
+        prompt: "Select the noun meaning a fundamental truth, rule, or doctrine:",
+        options: ["principle", "principal", "principality", "principles"],
+        ans: 0,
+        exp: "Vocabulary: 'Principle' is a fundamental truth or ethical code; 'principal' denotes a school head or chief amount."
+    },
+    {
+        cat: "Lexical Precision",
+        sentence: "The school _____ addressed the graduating class during the valedictory banquet.",
+        prompt: "Select the noun denoting the institutional head of a school:",
+        options: ["principal", "principle", "principled", "principality"],
+        ans: 0,
+        exp: "Vocabulary: 'Principal' is the chief executive or head of an educational institution."
+    },
+    {
+        cat: "Question Tags",
+        sentence: "Let's review the calculus and mechanics equations together before the exam, _____?",
+        prompt: "Select the correct question tag following 'Let's':",
+        options: ["shall we", "will we", "can we", "don't we"],
+        ans: 0,
+        exp: "Rule: Suggestions beginning with 'Let's' (let us) universally take the question tag 'shall we?'."
+    },
+    {
+        cat: "Question Tags",
+        sentence: "Nobody had solved the differential equation before the tutorial ended, _____?",
+        prompt: "Select the correct tag for indefinite negative pronouns:",
+        options: ["had they", "hadn't they", "did they", "didn't they"],
+        ans: 0,
+        exp: "Rule: 'Nobody' is negative, requiring a positive tag; indefinite pronouns denoting persons take the plural pronoun 'they' ('had they?')."
+    },
+    {
+        cat: "Question Tags",
+        sentence: "Everybody has arrived at the lecture hall, _____?",
+        prompt: "Select the correct question tag:",
+        options: ["haven't they", "hasn't they", "hasn't he", "don't they"],
+        ans: 0,
+        exp: "Rule: 'Everybody' takes the plural pronoun 'they' in question tags, requiring the plural auxiliary 'haven't they?'."
+    },
+    {
+        cat: "Question Tags",
+        sentence: "You rarely arrive late to the robotics laboratory, _____?",
+        prompt: "Select the correct tag following the restrictive adverb 'rarely':",
+        options: ["do you", "don't you", "did you", "are you"],
+        ans: 0,
+        exp: "Rule: The semi-negative adverb 'rarely' makes the clause semantically negative, requiring a positive tag ('do you?')."
+    },
+    {
+        cat: "Prepositional Precision",
+        sentence: "She has an intense aversion _____ working in cluttered, disorganized workspaces.",
+        prompt: "Select the correct preposition governed by 'aversion':",
+        options: ["to", "for", "with", "against"],
+        ans: 0,
+        exp: "Rule: The noun 'aversion' is idiomatically followed by the preposition 'to' ('aversion to something')."
+    },
+    {
+        cat: "Prepositional Precision",
+        sentence: "The high court acquitted the accused executive _____ all charges of embezzlement.",
+        prompt: "Select the correct preposition governed by 'acquit':",
+        options: ["of", "from", "for", "with"],
+        ans: 0,
+        exp: "Rule: In legal English, one is 'acquitted OF' an offence."
+    },
+    {
+        cat: "Prepositional Precision",
+        sentence: "I would greatly prefer reading original historical treatises _____ reading modern digests.",
+        prompt: "Select the preposition governed by 'prefer':",
+        options: ["to", "than", "over", "instead"],
+        ans: 0,
+        exp: "Rule: In formal syntax, 'prefer' governs 'to' ('prefer X to Y'), never 'than'."
+    },
+    {
+        cat: "Prepositional Precision",
+        sentence: "All competing schools must strictly comply _____ the competition guidelines.",
+        prompt: "Select the correct preposition governed by 'comply':",
+        options: ["with", "to", "by", "for"],
+        ans: 0,
+        exp: "Rule: The verb 'comply' takes the preposition 'with' ('comply with regulations'). Note: 'abide BY regulations'."
+    },
+    {
+        cat: "Idiomatic Accuracy",
+        sentence: "The medical student burned the _____ oil every night preparing for the licensing boards.",
+        prompt: "Complete the established idiom:",
+        options: ["midnight", "evening", "candle", "nightly"],
+        ans: 0,
+        exp: "Idiom: 'To burn the midnight oil' means to study or work diligently late into the night."
+    },
+    {
+        cat: "Idiomatic Accuracy",
+        sentence: "After years of bitter institutional dispute, the two university chancellors finally decided to bury the _____.",
+        prompt: "Complete the established idiom:",
+        options: ["hatchet", "sword", "weapon", "grudge"],
+        ans: 0,
+        exp: "Idiom: 'To bury the hatchet' means to make peace and end an ancient conflict."
+    },
+    {
+        cat: "Idiomatic Accuracy",
+        sentence: "The headmistress took the senior prefect to _____ for failing to enforce library silence.",
+        prompt: "Complete the idiom meaning to rebuke or reprimand:",
+        options: ["task", "court", "account", "trial"],
+        ans: 0,
+        exp: "Idiom: 'To take someone to task' means to criticize, reprimand, or hold someone accountable for an error."
+    },
+    {
+        cat: "Correlative Concord",
+        sentence: "Either the laboratory technician or the physics teachers _____ responsible for calibrating the spectrometer.",
+        prompt: "Choose the verb agreeing with the closest subject 'teachers':",
+        options: ["are", "is", "was", "has been"],
+        ans: 0,
+        exp: "Rule: With 'either... or', the verb agrees in person and number with the subject closer to it ('teachers are')."
+    },
+    {
+        cat: "Collective Noun Concord",
+        sentence: "The jury _____ unanimous in its verdict to declare the patent valid.",
+        prompt: "Choose the singular verb for a unified collective entity:",
+        options: ["was", "were", "are", "have been"],
+        ans: 0,
+        exp: "Rule: When a collective noun acts as a single unified whole (indicated by 'its verdict'), a singular verb ('was') is required."
+    },
+    {
+        cat: "Subjunctive Mood",
+        sentence: "It is imperative that each candidate _____ their sovereign credentials prior to entry.",
+        prompt: "Choose the subjunctive base form:",
+        options: ["verify", "verifies", "verified", "will verify"],
+        ans: 0,
+        exp: "Rule: Impersonal expressions of necessity ('It is imperative that...') require the mandative subjunctive base form ('verify')."
+    },
+    {
+        cat: "Subject-Verb Concord",
+        sentence: "The quality of the research presentations and experimental posters _____ commendable.",
+        prompt: "Select the verb agreeing with the true head noun 'quality':",
+        options: ["was", "were", "are", "have been"],
+        ans: 0,
+        exp: "Rule: The true head subject is the singular noun 'quality', not the intervening prepositional objects ('quality was commendable')."
     }
 ];
 
@@ -380,6 +684,16 @@ let timeLeft = 15;
 let answered = false;
 let missedQuestions = [];
 let latestHistoryId = null;
+
+function shuffleQuestionOptions(q) {
+    const correctText = q.options[q.ans];
+    const shuffledOpts = [...q.options].sort(() => Math.random() - 0.5);
+    return {
+        ...q,
+        options: shuffledOpts,
+        ans: shuffledOpts.indexOf(correctText)
+    };
+}
 
 function playSound(type) {
     if (window.soundFx && window.soundFx.play) {
@@ -406,7 +720,10 @@ function playSound(type) {
 }
 
 function startGrammarScalpel() {
-    sessionQuestions = [...GRAMMAR_QUESTIONS].sort(() => 0.5 - Math.random()).slice(0, 10);
+    sessionQuestions = [...GRAMMAR_QUESTIONS]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 10)
+        .map(shuffleQuestionOptions);
     currentQIndex = 0;
     score = 0;
     missedQuestions = [];
