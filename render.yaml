@@ -1,26 +1,20 @@
-databases:
-  - name: lumina-db
-    plan: free
-    databaseName: lumina
-    user: lumina
-
 services:
   - type: web
-    name: lumina
+    name: manisoft-lumina
     runtime: python
     plan: free
-    buildCommand: "pip install -r requirements.txt && pip install eventlet gunicorn psycopg2-binary"
-    startCommand: "gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT app:create_app()"
+    region: oregon
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT 'app:create_app()'"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: "3.11.0"
       - key: SECRET_KEY
         generateValue: true
       - key: TEACHER_KEY
         value: LUMINA_EDU_2026
       - key: PORT
-        value: 10000
-      - key: DATABASE_URL
-        fromDatabase:
-          name: lumina-db
-          property: connectionString
+        value: "10000"
+      - key: FLASK_ENV
+        value: production
+
