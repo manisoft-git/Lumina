@@ -32,3 +32,4 @@ Whenever form inputs for user accounts, registration, login, profile editing, gu
 - **Firstname**: 'Olive'
 - **Full Name (Surname Firstname)**: 'Tobi Olive' (or 'Surname Firstname (e.g. Tobi Olive)' where format guidance is needed)
 - **Email**: 'tobi585olive@gmail.com'
+- **Password & Secret Fields**: NEVER use real passwords, master secrets, seeds, or system keys as placeholders, values, helper text, tooltips, or alerts. Always use standard masked placeholder dots (`••••••••••••`) or generic text (`'Enter password'`).

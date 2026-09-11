@@ -87,7 +87,7 @@
     <h1 class="gatekeeper-title" style="font-family:var(--term-font,monospace);">🔒 PRODUCER ACCESS</h1>
     <p class="gatekeeper-subtitle">Restricted diagnostics terminal. Enter your console key to proceed.</p>
     <form method="POST" action="{{ url_for('producer_panel') }}" class="gatekeeper-form">
-        <input type="password" name="console_key" required autocomplete="off" autofocus>
+        <input type="password" name="console_key" placeholder="••••••••••••••••" required autocomplete="off" autofocus>
         <button type="submit" class="btn btn-primary">Unlock <span class="beam-text">[./]</span></button>
     </form>
     <p class="gatekeeper-hint">Authorized console credentials required.</p>
