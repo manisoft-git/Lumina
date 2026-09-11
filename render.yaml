@@ -1,3 +1,9 @@
+databases:
+  - name: lumina-db
+    plan: free
+    databaseName: lumina
+    user: lumina
+
 services:
   - type: web
     name: lumina
@@ -14,3 +20,7 @@ services:
         value: LUMINA_EDU_2026
       - key: PORT
         value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lumina-db
+          property: connectionString
