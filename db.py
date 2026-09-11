@@ -4,13 +4,14 @@ from config import DATABASE_URL, get_db_path
 
 try:
     import psycopg2
+    import psycopg2.extras
 except ImportError:
     psycopg2 = None
 
 def get_db():
     if "db" not in g:
         if DATABASE_URL and psycopg2:
-            g.db = psycopg2.connect(DATABASE_URL)
+            g.db = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
         else:
             g.db = sqlite3.connect(str(get_db_path()), check_same_thread=False, timeout=10.0)
             g.db.row_factory = sqlite3.Row

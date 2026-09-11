@@ -521,9 +521,9 @@ def init_db():
             PRIMARY KEY (user_id, key_char)
         )
     """)
-    db_execute("""
+    db_execute(f"""
         CREATE TABLE IF NOT EXISTS password_resets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            {pk},
             user_id INTEGER NOT NULL,
             token TEXT UNIQUE NOT NULL,
             expires_at TIMESTAMP NOT NULL,
