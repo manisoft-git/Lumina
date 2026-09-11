@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-Lumina v5.1 — Student Client
-Double-click to launch: opens the Lumina web app in your browser
-and connects this computer for remote teacher diagnostics.
+Lumina v5.2 — Student & Classroom Client
+Double-click to launch:
+- Connects automatically to the live Lumina cloud server (https://manisoft-lumina.onrender.com)
+- Opens the Lumina platform in your default web browser
+- Registers this computer with persistent identity for teacher diagnostics
 """
 import os
 import sys
@@ -12,15 +14,19 @@ import time
 import argparse
 import webbrowser
 import threading
+import uuid
+
+DEFAULT_SERVER = "https://manisoft-lumina.onrender.com"
 
 try:
     import socketio
 except ImportError:
-    print("=" * 50)
-    print("  Lumina needs python-socketio")
-    print("  Install: pip install python-socketio")
-    print("=" * 50)
-    input("Press Enter to exit...")
+    print("=" * 55)
+    print("  Lumina Client requires 'python-socketio' and 'websocket-client'")
+    print("  Install via: pip install -r requirements-client.txt")
+    print("  Or run: build_exe.bat to compile a standalone Lumina.exe")
+    print("=" * 55)
+    input("\nPress Enter to exit...")
     sys.exit(1)
 
 SAFE_COMMANDS = {
@@ -31,9 +37,21 @@ SAFE_COMMANDS = {
     'uname', 'uptime', 'ps', 'df', 'free'
 }
 
+FORBIDDEN_COMMAND_CHARS = {';', '&', '|', '>', '<', '`', '$', '\n', '\r'}
+
+def is_safe(cmd):
+    """Validate diagnostic command against safe educational whitelist."""
+    cmd_str = cmd.strip() if cmd else ''
+    if not cmd_str or any(c in cmd_str for c in FORBIDDEN_COMMAND_CHARS):
+        return False
+    base = cmd_str.split()[0].lower()
+    return base in SAFE_COMMANDS
+
 def get_ip():
+    """Discover the active local network IP address."""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(2.0)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
@@ -41,76 +59,108 @@ def get_ip():
     except Exception:
         return "127.0.0.1"
 
-FORBIDDEN_COMMAND_CHARS = {';', '&', '|', '>', '<', '`', '$', '\n', '\r'}
+def get_persistent_agent_id(override=None):
+    """Generate or retrieve a persistent agent ID for this computer."""
+    if override:
+        return override
 
-def is_safe(cmd):
-    cmd_str = cmd.strip() if cmd else ''
-    if not cmd_str or any(c in cmd_str for c in FORBIDDEN_COMMAND_CHARS):
-        return False
-    base = cmd_str.split()[0].lower()
-    return base in SAFE_COMMANDS
+    # Robust multi-platform directory resolution (Windows %LOCALAPPDATA% / %APPDATA%, Unix ~/.lumina, fallback temp)
+    base_dir = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
+    if not base_dir:
+        try:
+            base_dir = os.path.expanduser("~")
+        except Exception:
+            base_dir = None
+    if not base_dir or not os.path.isdir(base_dir):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    config_dir = os.path.join(base_dir, ".lumina")
+    id_file = os.path.join(config_dir, "agent_id.txt")
+    try:
+        if os.path.isfile(id_file):
+            with open(id_file, "r", encoding="utf-8") as f:
+                saved = f.read().strip()
+                if saved:
+                    return saved
+    except Exception:
+        pass
+
+    # Create new persistent machine-bound ID
+    node_name = platform.node().lower() or "device"
+    clean_node = "".join(c for c in node_name if c.isalnum() or c in "-_")[:20]
+    random_suffix = uuid.uuid4().hex[:6]
+    new_id = f"agent-{clean_node}-{random_suffix}"
+    try:
+        os.makedirs(config_dir, exist_ok=True)
+        with open(id_file, "w", encoding="utf-8") as f:
+            f.write(new_id)
+    except Exception:
+        pass
+    return new_id
 
 def open_browser(url):
-    """Open the Lumina web app in the default browser."""
+    """Open the Lumina web application in the user's default browser."""
     try:
-        webbrowser.open(url, new=2)  # new=2 opens in new tab
-        print(f"[./] Opened browser: {url}")
+        print(f"[./] Launching Lumina web application: {url}")
+        time.sleep(0.5)
+        webbrowser.open(url, new=2)
     except Exception as e:
-        print(f"[./] Could not open browser: {e}")
-        print(f"[./] Please manually open: {url}")
+        print(f"[./] Note: Could not auto-launch browser ({e})")
+        print(f"[./] Please open manually: {url}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Lumina Student Client")
-    parser.add_argument("--server", default=None, help="Lumina server URL (e.g., https://lumina.onrender.com)")
-    parser.add_argument("--agent-id", default=None, help="Unique agent ID")
-    parser.add_argument("--user-id", default=None, help="Associated user ID")
+    parser = argparse.ArgumentParser(description="Lumina v5.2 Client Agent")
+    parser.add_argument("--server", default=None, help=f"Lumina server URL (default: {DEFAULT_SERVER})")
+    parser.add_argument("--agent-id", default=None, help="Custom persistent agent ID")
+    parser.add_argument("--user-id", default=None, help="Associated student/user ID")
     parser.add_argument("--no-browser", action="store_true", help="Do not open browser")
+    parser.add_argument("--prompt", action="store_true", help="Prompt interactively for custom server address")
     args = parser.parse_args()
 
-    # Interactive server URL prompt if not provided
-    server_url = args.server
+    # Determine server URL: CLI flag > prompt > env var > default Render link
+    server_url = args.server or os.environ.get("LUMINA_SERVER")
+    if args.prompt:
+        print("=" * 55)
+        print("  Lumina v5.2 — Client Setup")
+        print("=" * 55)
+        print(f"Default Server: {DEFAULT_SERVER}")
+        custom = input("Enter server URL (press Enter to use default): ").strip()
+        if custom:
+            server_url = custom
+
     if not server_url:
-        print("=" * 50)
-        print("  Lumina v5.1 — Student Client")
-        print("=" * 50)
-        print()
-        print("Enter your school's Lumina server address.")
-        print("Examples:")
-        print("  https://lumina-school.onrender.com")
-        print("  http://192.168.1.5:8080")
-        print("  http://localhost:8080")
-        print("=" * 50)
-        server_url = input("\nServer URL: ").strip()
-        if not server_url:
-            server_url = "http://127.0.0.1:8080"
-            print(f"Using default: {server_url}")
+        server_url = DEFAULT_SERVER
 
-    # Ensure URL has protocol
+    # Ensure valid protocol
     if not server_url.startswith("http://") and not server_url.startswith("https://"):
-        server_url = "http://" + server_url
+        server_url = "https://" + server_url
 
-    agent_id = args.agent_id or f"agent-{platform.node()}-{int(time.time())}"
-    sio = socketio.Client(reconnection=False)
+    agent_id = get_persistent_agent_id(args.agent_id)
+    sio = socketio.Client(request_timeout=30, reconnection=True, reconnection_attempts=0, reconnection_delay=2, reconnection_delay_max=10)
 
     @sio.event
     def connect():
-        print(f"[./] Connected to Lumina server: {server_url}")
+        print(f"[✓] Connected to Lumina server: {server_url}")
         sio.emit("agent_register", {
             "agent_id": agent_id,
             "user_id": args.user_id,
             "hostname": platform.node(),
             "ip_address": get_ip(),
-            "platform": f"{platform.system()} {platform.release()}"
+            "platform": f"{platform.system()} {platform.release()} ({platform.machine()})"
         })
 
     @sio.event
     def disconnect():
-        print("[./] Disconnected from server.")
+        print("[!] Disconnected from server. Reconnecting in background...")
+
+    @sio.on("agent_registered")
+    def on_registered(data):
+        print(f"[✓] Lumina registration confirmed: {data.get('status', 'ok')}")
 
     @sio.on("run_command")
     def on_run_command(data):
         cmd = data.get("command", "").strip()
-        print(f"[./] Received command: {cmd}")
+        print(f"[./] Received teacher diagnostic request: {cmd}")
         if not is_safe(cmd):
             sio.emit("agent_output", {
                 "agent_id": agent_id,
@@ -123,45 +173,52 @@ def main():
             output = stream.read()
             stream.close()
             if not output:
-                output = "[Command executed successfully with no output]"
+                output = "[Diagnostic command executed successfully with no output]"
         except Exception as e:
             output = f"ERROR: {str(e)}"
+
         sio.emit("agent_output", {
             "agent_id": agent_id,
             "command": cmd,
             "output": output
         })
-        print(f"[./] Sent output for: {cmd}")
+        print(f"[✓] Diagnostic output returned for: {cmd}")
 
-    @sio.on("agent_registered")
-    def on_registered(data):
-        print(f"[./] Agent registered: {data}")
+    print("=" * 60)
+    print("  Lumina v5.2 — Classroom Client & Remote Diagnostics")
+    print(f"  Target Server: {server_url}")
+    print(f"  Agent ID:      {agent_id}")
+    print(f"  Platform:      {platform.system()} {platform.release()} ({platform.machine()})")
+    print("=" * 60)
+    print("[./] Lumina is active. Minimize this window to keep running in background.\n")
 
-    print(f"[./] Starting Lumina Client v5.1")
-    print(f"[./] Agent ID: {agent_id}")
-    print(f"[./] Server: {server_url}")
-    print(f"[./] Press Ctrl+C to stop\n")
-
-    # Open browser in a separate thread so agent connection isn't blocked
+    # Automatically launch browser to the Lumina Render server
     if not args.no_browser:
-        browser_url = server_url
-        threading.Thread(target=open_browser, args=(browser_url,), daemon=True).start()
+        threading.Thread(target=open_browser, args=(server_url,), daemon=True).start()
 
+    # Connection and heartbeat loop
     while True:
         try:
-            sio.connect(server_url, namespaces=["/"])
+            if not sio.connected:
+                print(f"[./] Connecting to {server_url}...")
+                sio.connect(
+                    server_url,
+                    namespaces=["/"],
+                    transports=["websocket", "polling"],
+                    wait_timeout=15
+                )
             while sio.connected:
                 sio.emit("agent_heartbeat", {"agent_id": agent_id})
                 time.sleep(15)
         except KeyboardInterrupt:
-            print("\n[./] Shutting down.")
+            print("\n[./] Shutting down Lumina client.")
             try:
                 sio.disconnect()
             except Exception:
                 pass
             break
         except Exception as e:
-            print(f"[./] Connection error: {e}. Retrying in 5s...")
+            print(f"[./] Server connecting ({e}). Retrying in 5s...")
             try:
                 sio.disconnect()
             except Exception:
