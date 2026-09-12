@@ -11,7 +11,7 @@ except ImportError:
 def get_db():
     if "db" not in g:
         if DATABASE_URL and psycopg2:
-            g.db = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+            g.db = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.DictCursor)
         else:
             g.db = sqlite3.connect(str(get_db_path()), check_same_thread=False, timeout=10.0)
             g.db.row_factory = sqlite3.Row
@@ -47,7 +47,11 @@ def db_execute_returning_id(sql, params=()):
         cur.execute(sql, params)
         result = cur.fetchone()
         db.commit()
-        return result[0] if result else None
+        if not result:
+            return None
+        if hasattr(result, "get") and result.get("id") is not None:
+            return result["id"]
+        return result[0]
     else:
         cur.execute(sql, params)
         db.commit()

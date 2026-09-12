@@ -238,7 +238,9 @@ def ensure_columns():
                 cols = [row[1] for row in cur.fetchall()]
                 if col in cols:
                     continue
-            db_execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
+                db_execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
+            else:
+                db_execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {col_type}")
         except Exception:
             try:
                 db.rollback()
