@@ -81,7 +81,10 @@ def create_app():
     app.teardown_appcontext(close_db)
 
     with app.app_context():
-        init_db()
+        try:
+            init_db()
+        except Exception as e:
+            print(f"[WARNING] init_db error (non-fatal): {e}")
 
     return app
 
@@ -105,7 +108,8 @@ if __name__ == "__main__":
     print("Press Ctrl+C to stop\n")
 
     try:
-        socketio.run(app, host=host, port=port, debug=True, use_reloader=False)
+        is_debug = os.environ.get("FLASK_ENV", "development") != "production"
+        socketio.run(app, host=host, port=port, debug=is_debug, use_reloader=False)
     except PermissionError as e:
         print(f"\n❌ Port {port} is blocked or in use.")
         print(f"   Error: {e}")
