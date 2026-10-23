@@ -16,7 +16,7 @@ import webbrowser
 import threading
 import uuid
 
-DEFAULT_SERVER = "https://manisoft-lumina.onrender.com"
+DEFAULT_SERVER = "https://manisoft-lumina-a6sk.onrender.com"
 
 try:
     import socketio
