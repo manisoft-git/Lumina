@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 """Lumina v5.0 - Talent Discovery Platform"""
-try:
-    import eventlet
-    eventlet.monkey_patch()
-except Exception:
-    pass
-
 import os
 import sys
 from flask import Flask, render_template, request
