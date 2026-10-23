@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """Lumina v5.0 - Talent Discovery Platform"""
+try:
+    import eventlet
+    eventlet.monkey_patch()
+except Exception:
+    pass
+
 import os
 import sys
 from flask import Flask, render_template, request
@@ -117,11 +123,11 @@ def create_app():
 
     return app
 
+app = create_app()
+
 if __name__ == "__main__":
     if not os.environ.get("SECRET_KEY"):
         print("WARNING: Using default SECRET_KEY. Set SECRET_KEY env var for production.")
-
-    app = create_app()
 
     print("\n✅ Registered routes:")
     for rule in app.url_map.iter_rules():
