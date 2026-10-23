@@ -94,13 +94,11 @@ def create_app():
         app._keep_alive_started = True
         import threading, time, urllib.request
         fleet_urls = [
-            "https://manisoft-passmaster-ai.onrender.com",
-            "https://manisoft-lumina.onrender.com",
-            "https://manisoft-panel.onrender.com",
-            "https://manisoft-starshine.onrender.com",
-            "https://manisoft-strike-ops.onrender.com",
-            "https://manisoft-subway-surfers.onrender.com",
-            "https://manisoft-aether-transport.onrender.com"
+            "https://manisoft-lumina-a6sk.onrender.com",
+            "https://manisoft-passmaster-ai-jc1n.onrender.com",
+            "https://manisoft-panel-hepk.onrender.com",
+            "https://manisoft-starshine-fezw.onrender.com",
+            "https://manisoft-aether-transport-u7di.onrender.com"
         ]
         def _fleet_loop():
             time.sleep(25)
