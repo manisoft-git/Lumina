@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
     try:
         is_debug = os.environ.get("FLASK_ENV", "development") != "production"
-        socketio.run(app, host=host, port=port, debug=is_debug, use_reloader=False)
+        socketio.run(app, host=host, port=port, debug=is_debug, use_reloader=False, allow_unsafe_werkzeug=True)
     except PermissionError as e:
         print(f"\n❌ Port {port} is blocked or in use.")
         print(f"   Error: {e}")
