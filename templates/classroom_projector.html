@@ -217,7 +217,7 @@
 
 <script>
 const roomId = {{ room_id | tojson }};
-const socket = io();
+const socket = window.LUMINA_SOCKET || io({ transports: ['websocket', 'polling'] });
 let soundEnabled = true;
 const players = {};
 const avatars = ['🚀', '⚡', '🏎️', '🦊', '🦅', '🎯', '👾', '🔥'];

@@ -9,7 +9,7 @@
     </div>
 </div>
 <script>
-const socket = io();
+const socket = window.LUMINA_SOCKET || io({ transports: ['websocket', 'polling'] });
 const grid = document.getElementById('monitor-grid');
 const students = {};
 socket.emit('teacher_subscribe', {classroom_code: {{ code | tojson }}});

@@ -619,8 +619,17 @@ def register_sockets(socketio):
     def handle_agent_heartbeat(data):
         agent_id = data.get("agent_id")
         if agent_id in AGENTS:
-            AGENTS[agent_id]["last_seen"] = datetime.utcnow().isoformat()
-            db_execute("UPDATE client_agents SET last_seen=? WHERE agent_id=?", (datetime.utcnow().isoformat(), agent_id))
+            now_iso = datetime.utcnow().isoformat()
+            now_ts = time.time()
+            AGENTS[agent_id]["last_seen"] = now_iso
+            # Throttle database write to at most once every 60 seconds to eliminate SQLite write locks
+            last_db_write = AGENTS[agent_id].get("_last_db_write", 0)
+            if now_ts - last_db_write >= 60.0:
+                AGENTS[agent_id]["_last_db_write"] = now_ts
+                try:
+                    db_execute("UPDATE client_agents SET last_seen=? WHERE agent_id=?", (now_iso, agent_id))
+                except Exception:
+                    pass
 
     @socketio.on("agent_output")
     def handle_agent_output(data):

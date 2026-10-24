@@ -117,7 +117,7 @@
 
 <script src="/static/socket.io.min.js"></script>
 <script>
-let socket = io();
+let socket = window.LUMINA_SOCKET || io({ transports: ['websocket', 'polling'] });
 let myCode = "";
 let myName = "";
 let myLives = 3;

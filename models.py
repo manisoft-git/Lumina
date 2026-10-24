@@ -493,6 +493,13 @@ def init_db():
         db_execute("INSERT INTO daily_challenges (challenge_date, game_type, description, target_value, reward_xp) VALUES (?, ?, ?, ?, ?)",
                    (today, "typing", "Type at 40 WPM with 95% accuracy", 40, 50))
 
+    try:
+        from config import DATABASE_URL
+        if not DATABASE_URL:
+            db_execute("PRAGMA journal_mode=WAL")
+    except Exception:
+        pass
+
     db_execute("CREATE INDEX IF NOT EXISTS idx_scores_user ON scores(user_id)")
     db_execute("CREATE INDEX IF NOT EXISTS idx_scores_created ON scores(created_at)")
     db_execute("CREATE INDEX IF NOT EXISTS idx_scores_user_created ON scores(user_id, created_at)")
@@ -510,6 +517,12 @@ def init_db():
     db_execute("CREATE INDEX IF NOT EXISTS idx_hw_classroom ON homework(classroom_id)")
     db_execute("CREATE INDEX IF NOT EXISTS idx_hw_sub_user ON homework_submissions(user_id)")
     db_execute("CREATE INDEX IF NOT EXISTS idx_classroom_members_stu ON classroom_members(student_id)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_dm_receiver_read ON direct_messages(receiver_id, read_at)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_math_user_created ON math_sprints(user_id, created_at)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_mem_user_created ON memory_tests(user_id, created_at)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_react_user_created ON reaction_tests(user_id, created_at)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_pattern_user_created ON pattern_tests(user_id, created_at)")
+    db_execute("CREATE INDEX IF NOT EXISTS idx_word_user_created ON word_blitz_scores(user_id, created_at)")
 
     # Per-key typing statistics table
     db_execute("""

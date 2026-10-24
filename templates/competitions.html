@@ -38,7 +38,7 @@
 (function(){
     const roomId = {{ room_id | tojson }};
     const passage = {{ passage | tojson }};
-    const socket = io();
+    const socket = window.LUMINA_SOCKET || io({ transports: ['websocket', 'polling'] });
     const statusEl = document.getElementById('comp-status');
     const display = document.getElementById('comp-passage');
     const input = document.getElementById('comp-input');

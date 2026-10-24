@@ -95,7 +95,7 @@
 
 <script>
 const roomId = {{ room_id | tojson }};
-const socket = io();
+const socket = window.LUMINA_SOCKET || io({ transports: ['websocket', 'polling'] });
 let currentTeam = 'alpha';
 let currentLeg = 1;
 let currentProgress = 0;

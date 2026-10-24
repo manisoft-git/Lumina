@@ -12,6 +12,7 @@ Synthesizes student game performance into standardized cognitive domains:
 """
 import math
 import hashlib
+import time
 from datetime import datetime
 from db import db_fetchone, db_fetchall
 
@@ -94,11 +95,30 @@ def _percentile_approx(score_0_to_100):
     sig = 1.0 / (1.0 + math.exp(-x))
     return round(_clamp(sig * 100.0, 1.0, 99.9), 1)
 
+
+_institutional_cache = None
+_institutional_cache_time = 0.0
+_user_profile_cache = {}
+
+def invalidate_profile_cache(user_id=None):
+    global _institutional_cache, _institutional_cache_time, _user_profile_cache
+    if user_id is None:
+        _institutional_cache = None
+        _institutional_cache_time = 0.0
+        _user_profile_cache.clear()
+    else:
+        _user_profile_cache.pop(user_id, None)
+        _institutional_cache = None
+
 def compute_institutional_profile():
     """
     Synthesizes campus-wide aggregated cognitive metrics into an institutional benchmark profile.
     Used for public preview, guest analytics, and comparative student baselines.
     """
+    global _institutional_cache, _institutional_cache_time
+    now = time.time()
+    if _institutional_cache is not None and (now - _institutional_cache_time) < 60.0:
+        return _institutional_cache
     # 1. Campus Typing
     scores = db_fetchall("SELECT wpm, accuracy, net_wpm FROM scores ORDER BY created_at DESC LIMIT 200")
     if scores:
@@ -187,7 +207,7 @@ def compute_institutional_profile():
         ]
     }
 
-    return {
+    _institutional_cache = {
         "user_id": None,
         "username": "campus_benchmark",
         "fullname": "Campus Benchmark Cohort",
@@ -206,6 +226,8 @@ def compute_institutional_profile():
         "dossier_hash": "CAMPUS-COHORT-LTI",
         "generated_date": datetime.utcnow().strftime("%B %d, %Y")
     }
+    _institutional_cache_time = now
+    return _institutional_cache
 
 def compute_cognitive_profile(user_id):
     """
@@ -214,6 +236,11 @@ def compute_cognitive_profile(user_id):
     """
     if user_id is None:
         return compute_institutional_profile()
+
+    now = time.time()
+    cached = _user_profile_cache.get(user_id)
+    if cached and (now - cached["timestamp"]) < 30.0:
+        return cached["data"]
 
     user_row = db_fetchone("SELECT id, username, fullname, level, xp, streak, created_at FROM users WHERE id=?", (user_id,))
     if not user_row:
@@ -448,7 +475,10 @@ def compute_cognitive_profile(user_id):
     raw_hash_data = f"{user_id}:{user_row[1]}:{lti}:{overall_percentile}:{datetime.utcnow().strftime('%Y-%m-%d')}"
     dossier_hash = hashlib.sha256(raw_hash_data.encode()).hexdigest()[:16].upper()
 
-    return {
+    if len(_user_profile_cache) > 500:
+        _user_profile_cache.clear()
+
+    profile_result = {
         "user_id": user_id,
         "username": user_row[1],
         "fullname": user_row[2],
@@ -467,3 +497,5 @@ def compute_cognitive_profile(user_id):
         "dossier_hash": dossier_hash,
         "generated_date": datetime.utcnow().strftime("%B %d, %Y")
     }
+    _user_profile_cache[user_id] = {"timestamp": now, "data": profile_result}
+    return profile_result

@@ -181,7 +181,7 @@
 
 <script src="/static/socket.io.min.js"></script>
 <script>
-let socket = io();
+let socket = window.LUMINA_SOCKET || io({ transports: ['websocket', 'polling'] });
 let roomCode = "";
 let currentRound = 0;
 let roundTimer = null;

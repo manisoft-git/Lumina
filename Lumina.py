@@ -262,7 +262,7 @@ def main():
                 sio.connect(
                     server_url,
                     namespaces=["/"],
-                    transports=["polling", "websocket"],
+                    transports=["websocket", "polling"],
                     wait_timeout=10
                 )
             while sio.connected:

@@ -748,7 +748,7 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const socket = io();
+const socket = window.LUMINA_SOCKET || io({ transports: ['websocket', 'polling'] });
 let selectedAgent = null;
 
 const terminalBody = document.getElementById('terminal-body');

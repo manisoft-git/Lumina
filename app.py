@@ -62,6 +62,27 @@ def create_app():
         response.headers["X-XSS-Protection"] = "1; mode=block"
         if request.path.startswith("/static/"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+
+        # High-performance standard library gzip compression for text/html/css/js/json
+        accept_encoding = request.headers.get("Accept-Encoding", "")
+        if (
+            "gzip" in accept_encoding
+            and response.status_code == 200
+            and not response.direct_passthrough
+            and "Content-Encoding" not in response.headers
+            and response.mimetype in (
+                "text/html", "text/css", "application/javascript",
+                "application/json", "text/javascript", "image/svg+xml"
+            )
+        ):
+            data = response.get_data()
+            if len(data) >= 500:
+                import gzip
+                compressed = gzip.compress(data, compresslevel=6)
+                response.set_data(compressed)
+                response.headers["Content-Encoding"] = "gzip"
+                response.headers["Content-Length"] = len(compressed)
+                response.headers["Vary"] = "Accept-Encoding"
         return response
 
     @app.errorhandler(404)

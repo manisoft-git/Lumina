@@ -476,7 +476,16 @@
     <script>
     if (typeof io !== 'undefined') {
         try {
-            const _globalSocket = io();
+            if (!window.LUMINA_SOCKET) {
+                window.LUMINA_SOCKET = io({
+                    transports: ['websocket', 'polling'],
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 2000,
+                    timeout: 8000
+                });
+            }
+            const _globalSocket = window.LUMINA_SOCKET;
             _globalSocket.on('system_broadcast', function(data) {
                 const b = document.getElementById('system-broadcast-banner');
                 const txt = document.getElementById('broadcast-text');

@@ -191,7 +191,7 @@ document.getElementById('diag-ua').textContent = navigator.userAgent.substring(0
 document.getElementById('diag-platform').textContent = navigator.platform;
 document.getElementById('diag-screen').textContent = screen.width + 'x' + screen.height;
 
-const socket = io();
+const socket = window.LUMINA_SOCKET || io({ transports: ['websocket', 'polling'] });
 let selectedAgentDetail = null;
 const diagTerm = document.getElementById('diag-terminal');
 const diagInput = document.getElementById('diag-input');

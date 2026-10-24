@@ -12,7 +12,7 @@
     </div>
 </div>
 <script>
-const socket = io();
+const socket = window.LUMINA_SOCKET || io({ transports: ['websocket', 'polling'] });
 const log = document.getElementById('global-chat-log');
 const form = document.getElementById('global-chat-form');
 const input = document.getElementById('global-chat-input');
