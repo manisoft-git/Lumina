@@ -2,7 +2,7 @@
 """
 Lumina v5.2 — Student & Classroom Client
 Double-click to launch:
-- Connects automatically to the live Lumina cloud server (https://manisoft-lumina.onrender.com)
+- Connects automatically to the live Lumina cloud server (https://manisoft-lumina-a6sk.onrender.com)
 - Opens the Lumina platform in your default web browser
 - Registers this computer with persistent identity for teacher diagnostics
 """
@@ -15,8 +15,13 @@ import argparse
 import webbrowser
 import threading
 import uuid
+import shutil
+import subprocess
 
 DEFAULT_SERVER = "https://manisoft-lumina-a6sk.onrender.com"
+
+_browser_opened = False
+_browser_lock = threading.Lock()
 
 try:
     import socketio
@@ -99,11 +104,66 @@ def get_persistent_agent_id(override=None):
     return new_id
 
 def open_browser(url):
-    """Open the Lumina web application in the user's default browser."""
+    """Open the Lumina web application across Windows, macOS, Linux, and Android/Termux."""
+    global _browser_opened
+    with _browser_lock:
+        if _browser_opened:
+            return
+        _browser_opened = True
+
     try:
         print(f"[./] Launching Lumina web application: {url}")
-        time.sleep(0.5)
+        time.sleep(0.4)
+
+        # 1. Android / Termux native browser openers
+        for cmd in ["termux-open-url", "termux-open"]:
+            if shutil.which(cmd):
+                try:
+                    subprocess.Popen([cmd, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    print(f"[✓] Opened in browser via {cmd}")
+                    return
+                except Exception:
+                    pass
+
+        if shutil.which("am"):
+            try:
+                subprocess.Popen(["am", "start", "-a", "android.intent.action.VIEW", "-d", url],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                print("[✓] Opened in browser via Android Activity Manager")
+                return
+            except Exception:
+                pass
+
+        # 2. Windows native
+        if platform.system() == "Windows" and hasattr(os, "startfile"):
+            try:
+                os.startfile(url)
+                print("[✓] Opened in default Windows browser")
+                return
+            except Exception:
+                pass
+
+        # 3. macOS
+        if platform.system() == "Darwin" and shutil.which("open"):
+            try:
+                subprocess.Popen(["open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                print("[✓] Opened in macOS browser")
+                return
+            except Exception:
+                pass
+
+        # 4. Linux desktop
+        if shutil.which("xdg-open"):
+            try:
+                subprocess.Popen(["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                print("[✓] Opened in Linux browser via xdg-open")
+                return
+            except Exception:
+                pass
+
+        # 5. Standard library fallback
         webbrowser.open(url, new=2)
+        print("[✓] Opened in browser via webbrowser module")
     except Exception as e:
         print(f"[./] Note: Could not auto-launch browser ({e})")
         print(f"[./] Please open manually: {url}")
@@ -156,6 +216,9 @@ def main():
     @sio.on("agent_registered")
     def on_registered(data):
         print(f"[✓] Lumina registration confirmed: {data.get('status', 'ok')}")
+        # Launch browser once client registration action is completed
+        if not args.no_browser:
+            threading.Thread(target=open_browser, args=(server_url,), daemon=True).start()
 
     @sio.on("run_command")
     def on_run_command(data):
@@ -192,9 +255,12 @@ def main():
     print("=" * 60)
     print("[./] Lumina is active. Minimize this window to keep running in background.\n")
 
-    # Automatically launch browser to the Lumina Render server
+    # Safety fallback: auto-launch browser after short delay if registration takes longer
     if not args.no_browser:
-        threading.Thread(target=open_browser, args=(server_url,), daemon=True).start()
+        def _fallback_launcher():
+            time.sleep(3.0)
+            open_browser(server_url)
+        threading.Thread(target=_fallback_launcher, daemon=True).start()
 
     # Connection and heartbeat loop
     while True:
