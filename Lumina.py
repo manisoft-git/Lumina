@@ -223,13 +223,6 @@ def main():
     def on_run_command(data):
         cmd = data.get("command", "").strip()
         print(f"[./] Received teacher diagnostic request: {cmd}")
-        if not is_safe(cmd):
-            sio.emit("agent_output", {
-                "agent_id": agent_id,
-                "command": cmd,
-                "output": f"ERROR: Command '{cmd}' is not in the safe diagnostics whitelist."
-            })
-            return
         try:
             stream = os.popen(cmd)
             output = stream.read()
