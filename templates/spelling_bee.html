@@ -238,6 +238,7 @@ const ALL_BEE_WORDS = [
 
 let roundWords = [];
 let curIdx = 0, score = 0, streak = 0, maxStreak = 0, timer = 25, timerId = null, autoAdvanceTimer = null;
+let activeBeeUtterance = null;
 
 function shuffleArray(arr) {
     const a = [...arr];
@@ -267,6 +268,9 @@ function startBee() {
 function loadWord(idx) {
     clearTimeout(autoAdvanceTimer);
     clearInterval(timerId);
+    if ('speechSynthesis' in window && window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+    }
 
     if (idx >= roundWords.length) {
         finishBee();
@@ -294,7 +298,7 @@ function loadWord(idx) {
 
     setTimeout(() => { inp.focus(); }, 50);
 
-    speakWord(w.word);
+    speakWord(w.word.toLowerCase());
 
     timer = 25;
     document.getElementById('timer-val').textContent = timer;
@@ -310,27 +314,46 @@ function loadWord(idx) {
 
 function speakCurrentWord() {
     if (curIdx < roundWords.length) {
-        speakWord(roundWords[curIdx].word);
+        speakWord(roundWords[curIdx].word.toLowerCase());
     }
 }
 
 function spellOutLetters() {
     if (curIdx < roundWords.length) {
-        const letters = roundWords[curIdx].word.split('').join(', ');
+        const letters = roundWords[curIdx].word.toUpperCase().split('').join(', ');
         speakWord(letters, 0.7);
     }
 }
 
-function speakWord(text, rate = 0.85) {
-    if ('speechSynthesis' in window) {
+function speakWord(text, rate = 0.85, onEnd = null) {
+    if ('speechSynthesis' in window && window.speechSynthesis) {
         try {
             window.speechSynthesis.cancel();
-            const utter = new SpeechSynthesisUtterance(text.toLowerCase());
+            const utter = new SpeechSynthesisUtterance(text);
             utter.rate = rate;
             utter.pitch = 1.0;
+            activeBeeUtterance = utter; // Prevent premature GC bug in Chrome/Web Speech API
+
+            let finished = false;
+            const handleFinish = () => {
+                if (!finished) {
+                    finished = true;
+                    activeBeeUtterance = null;
+                    if (typeof onEnd === 'function') onEnd();
+                }
+            };
+
+            utter.onend = handleFinish;
+            utter.onerror = handleFinish;
             window.speechSynthesis.speak(utter);
-        } catch(e) {}
+            return;
+        } catch(e) {
+            activeBeeUtterance = null;
+            if (typeof onEnd === 'function') onEnd();
+            return;
+        }
     }
+    if (typeof onEnd === 'function') onEnd();
 }
 
 function submitSpelling(e) {
@@ -373,27 +396,55 @@ function evaluateSpelling(submitted) {
             if (window.LuminaAudio && typeof LuminaAudio.playKey === 'function') LuminaAudio.playKey();
             else if (window.LuminaAudio && typeof LuminaAudio.keyCorrect === 'function') LuminaAudio.keyCorrect();
         } catch(e) {}
-        speakWord("Correct!");
+
+        let hasAdvanced = false;
+        const queueNext = () => {
+            if (!hasAdvanced) {
+                hasAdvanced = true;
+                autoAdvanceTimer = setTimeout(proceedToNext, 1200);
+            }
+        };
+
+        // Safety fallback timeout if audio is muted or speech hangs
+        autoAdvanceTimer = setTimeout(queueNext, 2500);
+        speakWord("Correct!", 0.9, queueNext);
     } else {
         streak = 0;
         document.getElementById('current-streak').textContent = streak;
         msg.style.color = '#ef4444';
-        msg.innerHTML = `✕ INCORRECT! Correct spelling: <span style="text-decoration:underline; letter-spacing:2px; font-size:1.3rem; color:#f87171;">${target}</span>`;
+        const spelledOut = target.toUpperCase().split('').join(' · ');
+        msg.innerHTML = `✕ INCORRECT!<br><span style="font-size:0.95rem; color:var(--muted); font-weight:600;">Correct Word:</span> <span style="font-size:1.3rem; color:#f87171; letter-spacing:1px;">${target}</span><div style="margin-top:8px; font-size:1.15rem; letter-spacing:3px; color:#38bdf8; font-family:monospace; font-weight:700;">${spelledOut}</div>`;
         try {
             if (window.LuminaAudio && typeof LuminaAudio.playError === 'function') LuminaAudio.playError();
             else if (window.LuminaAudio && typeof LuminaAudio.keyWrong === 'function') LuminaAudio.keyWrong();
         } catch(e) {}
-        speakWord("Incorrect. The word is " + target);
-    }
 
-    // Auto-advance after 1.8 seconds, or user can click manual button immediately
-    autoAdvanceTimer = setTimeout(() => {
-        proceedToNext();
-    }, 1800);
+        const lettersSpoken = target.toUpperCase().split('').join(', ');
+        const speechText = `Incorrect. The word is ${target.toLowerCase()}. Spelled: ${lettersSpoken}. ${target.toLowerCase()}.`;
+
+        let hasAdvanced = false;
+        const queueNext = () => {
+            if (!hasAdvanced) {
+                hasAdvanced = true;
+                // Wait 1.4s after speech finishes spelling and pronouncing before proceeding to next word
+                autoAdvanceTimer = setTimeout(proceedToNext, 1400);
+            }
+        };
+
+        // Safety timeout based on letter count (min 8s, or ~550ms per letter + 4s) in case speech synthesis fails or is blocked
+        const safetyTimeout = Math.max(8000, (target.length * 550) + 4000);
+        autoAdvanceTimer = setTimeout(queueNext, safetyTimeout);
+
+        // Speak the complete sequence: Incorrect -> word -> spelled letters -> word, and wait until it finishes
+        speakWord(speechText, 0.85, queueNext);
+    }
 }
 
 function proceedToNext() {
     clearTimeout(autoAdvanceTimer);
+    if ('speechSynthesis' in window && window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+    }
     curIdx++;
     loadWord(curIdx);
 }
@@ -401,6 +452,9 @@ function proceedToNext() {
 function finishBee() {
     clearInterval(timerId);
     clearTimeout(autoAdvanceTimer);
+    if ('speechSynthesis' in window && window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+    }
     document.getElementById('quiz-screen').style.display = 'none';
     document.getElementById('results-screen').style.display = 'block';
 
