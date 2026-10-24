@@ -18,10 +18,10 @@ def create_app():
     # Dynamic async_mode: eventlet for production, threading for local/Termux
     try:
         import eventlet
-        socketio.init_app(app, cors_allowed_origins=CORS_ORIGIN, async_mode="eventlet")
+        socketio.init_app(app, cors_allowed_origins=CORS_ORIGIN, async_mode="eventlet", ping_timeout=20, ping_interval=10)
         print("[./] Using eventlet async mode")
     except (ImportError, ValueError) as e:
-        socketio.init_app(app, cors_allowed_origins=CORS_ORIGIN, async_mode="threading")
+        socketio.init_app(app, cors_allowed_origins=CORS_ORIGIN, async_mode="threading", ping_timeout=20, ping_interval=10)
         print(f"[./] Eventlet unavailable ({e}), using threading async mode")
     login_manager.init_app(app)
 
@@ -94,7 +94,7 @@ def create_app():
         app._keep_alive_started = True
         import threading, time, urllib.request
         fleet_urls = [
-            "https://manisoft-lumina-a6sk.onrender.com",
+            "https://manisoft-lumina-a6sk.onrender.com/health",
             "https://manisoft-passmaster-ai-jc1n.onrender.com",
             "https://manisoft-panel-hepk.onrender.com",
             "https://manisoft-starshine-fezw.onrender.com",
@@ -106,7 +106,7 @@ def create_app():
                 for u in fleet_urls:
                     try:
                         req = urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 ManiSoft-Lumina-KeepAlive/2.0"})
-                        with urllib.request.urlopen(req, timeout=15) as r:
+                        with urllib.request.urlopen(req, timeout=8) as r:
                             r.read(100)
                     except Exception:
                         pass

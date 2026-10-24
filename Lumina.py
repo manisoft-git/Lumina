@@ -262,8 +262,8 @@ def main():
                 sio.connect(
                     server_url,
                     namespaces=["/"],
-                    transports=["websocket", "polling"],
-                    wait_timeout=15
+                    transports=["polling", "websocket"],
+                    wait_timeout=10
                 )
             while sio.connected:
                 sio.emit("agent_heartbeat", {"agent_id": agent_id})
