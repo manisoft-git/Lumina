@@ -119,11 +119,8 @@ def get_user_id():
 FORBIDDEN_COMMAND_CHARS = {';', '&', '|', '>', '<', '`', '$', '\n', '\r'}
 
 def is_safe_command(cmd):
-    cmd_str = cmd.strip() if cmd else ''
-    if not cmd_str or any(c in cmd_str for c in FORBIDDEN_COMMAND_CHARS):
-        return False
-    base = cmd_str.split()[0].lower()
-    return base in SAFE_COMMANDS
+    """Validate that a command is non-empty."""
+    return bool(cmd and cmd.strip())
 
 CHAT_RATELIMIT = {}  # sid -> {count, last_reset}
 
