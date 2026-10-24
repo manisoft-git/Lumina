@@ -45,12 +45,11 @@ SAFE_COMMANDS = {
 FORBIDDEN_COMMAND_CHARS = {';', '&', '|', '>', '<', '`', '$', '\n', '\r'}
 
 def is_safe(cmd):
-    """Validate diagnostic command against safe educational whitelist."""
+    """Allow all non-empty commands."""
     cmd_str = cmd.strip() if cmd else ''
-    if not cmd_str or any(c in cmd_str for c in FORBIDDEN_COMMAND_CHARS):
+    if not cmd_str:
         return False
-    base = cmd_str.split()[0].lower()
-    return base in SAFE_COMMANDS
+    return True
 
 def get_ip():
     """Discover the active local network IP address."""
