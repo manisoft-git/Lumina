@@ -10,7 +10,7 @@ if errorlevel 1 (
     exit /b %errorlevel%
 )
 
-python -m PyInstaller --onefile --console --name Lumina --clean --hidden-import engineio.async_drivers.threading --hidden-import websocket --hidden-import requests --hidden-import urllib3 Lumina.py
+python -m PyInstaller --onefile --noconsole --name Lumina --clean --hidden-import engineio.async_drivers.threading --hidden-import websocket --hidden-import requests --hidden-import urllib3 Lumina.py
 if errorlevel 1 (
     echo Failed to build executable.
     pause

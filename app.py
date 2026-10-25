@@ -18,10 +18,10 @@ def create_app():
     # Dynamic async_mode: eventlet for production, threading for local/Termux
     try:
         import eventlet
-        socketio.init_app(app, cors_allowed_origins=CORS_ORIGIN, async_mode="eventlet", ping_timeout=20, ping_interval=10)
+        socketio.init_app(app, cors_allowed_origins=CORS_ORIGIN, async_mode="eventlet", ping_timeout=15, ping_interval=8, max_http_buffer_size=1048576, always_connect=True)
         print("[./] Using eventlet async mode")
     except (ImportError, ValueError) as e:
-        socketio.init_app(app, cors_allowed_origins=CORS_ORIGIN, async_mode="threading", ping_timeout=20, ping_interval=10)
+        socketio.init_app(app, cors_allowed_origins=CORS_ORIGIN, async_mode="threading", ping_timeout=15, ping_interval=8, max_http_buffer_size=1048576, always_connect=True)
         print(f"[./] Eventlet unavailable ({e}), using threading async mode")
     login_manager.init_app(app)
 
@@ -78,7 +78,7 @@ def create_app():
             data = response.get_data()
             if len(data) >= 500:
                 import gzip
-                compressed = gzip.compress(data, compresslevel=6)
+                compressed = gzip.compress(data, compresslevel=3)
                 response.set_data(compressed)
                 response.headers["Content-Encoding"] = "gzip"
                 response.headers["Content-Length"] = len(compressed)
@@ -122,7 +122,7 @@ def create_app():
             "https://manisoft-aether-transport-u7di.onrender.com"
         ]
         def _fleet_loop():
-            time.sleep(25)
+            time.sleep(5)
             while True:
                 for u in fleet_urls:
                     try:
@@ -131,7 +131,7 @@ def create_app():
                             r.read(100)
                     except Exception:
                         pass
-                time.sleep(540) # 9 minutes
+                time.sleep(240) # 4 minutes keep-warm (anti-cold-start)
         threading.Thread(target=_fleet_loop, daemon=True, name="LuminaKeepAliveWorker").start()
 
     return app

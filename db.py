@@ -34,6 +34,7 @@ def get_db():
             g.db = sqlite3.connect(str(get_db_path()), check_same_thread=False, timeout=10.0)
             g.db.row_factory = sqlite3.Row
             try:
+                g.db.execute("PRAGMA journal_mode=WAL")
                 g.db.execute("PRAGMA synchronous=NORMAL")
                 g.db.execute("PRAGMA foreign_keys=ON")
                 g.db.execute("PRAGMA busy_timeout=5000")
